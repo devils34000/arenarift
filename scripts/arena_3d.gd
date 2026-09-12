@@ -452,6 +452,7 @@ func _build_world() -> void:
 		# Nomme ton mesh de sol "Terrain" pour que ça fonctionne pareil.
 		_update_map_bounds()
 		_create_terrain_collision()
+		_rebake_scaled_wall_collisions(map_root)
 	else:
 		# On ne génère plus l'ancienne arène procédurale bleue.
 		# La vraie map est chargée depuis Demo.tscn sans toucher à arena.tscn.
@@ -466,6 +467,7 @@ func _build_world() -> void:
 				map_root.name = "DemoMap"
 				_update_map_bounds()
 				_create_terrain_collision()
+				_rebake_scaled_wall_collisions(map_root)
 		else:
 			push_warning("ARENA RIFT : aucune Demo.tscn trouvée dans res://. La partie démarre sans map externe.")
 
@@ -575,6 +577,82 @@ func _create_terrain_collision() -> void:
 	collision.shape = shape
 	body.add_child(collision)
 	terrain.add_child(body)
+
+## Godot ne supporte pas correctement une échelle non-uniforme sur un corps
+## physique (StaticBody3D) : quand un ancêtre du décor (ex. le nœud "Maps"
+## d'Arena1v1.tscn, scale (2.24, 2.71, 2.43)) porte une échelle différente
+## par axe, les CollisionShape3D générées à l'import FBX héritent de cette
+## échelle et la physique se retrouve fausse — c'est ce qui laissait les
+## joueurs traverser les murs intérieurs même quand leur mesh s'affichait
+## correctement à l'écran. On reconstruit ici, pour chaque StaticBody3D
+## trouvé sous la map, une forme figée en coordonnées MONDE (donc sans
+## échelle) portée par un nouveau corps sans échelle, en désactivant
+## l'ancien corps devenu inutile.
+func _rebake_scaled_wall_collisions(root: Node) -> void:
+	if root == null:
+		return
+	var bodies: Array[StaticBody3D] = []
+	_collect_rebakeable_static_bodies(root, bodies)
+	if bodies.is_empty():
+		return
+	var baked_root := Node3D.new()
+	baked_root.name = "BakedWallCollisions"
+	add_child(baked_root)
+	for body in bodies:
+		for child in body.get_children():
+			var shape_node := child as CollisionShape3D
+			if shape_node == null or shape_node.shape == null or shape_node.disabled:
+				continue
+			var world_shape: Shape3D = _bake_shape_to_world(shape_node)
+			if world_shape == null:
+				continue
+			var new_body := StaticBody3D.new()
+			new_body.collision_layer = 1
+			new_body.collision_mask = 1
+			var new_shape := CollisionShape3D.new()
+			new_shape.shape = world_shape
+			new_body.add_child(new_shape)
+			baked_root.add_child(new_body)
+		body.collision_layer = 0
+		body.collision_mask = 0
+
+func _collect_rebakeable_static_bodies(node: Node, out_list: Array[StaticBody3D]) -> void:
+	for child in node.get_children():
+		if child is StaticBody3D and child.name != "ARENA_TerrainCollision" and child.name != "MapBoundary":
+			out_list.append(child as StaticBody3D)
+		_collect_rebakeable_static_bodies(child, out_list)
+
+func _bake_shape_to_world(shape_node: CollisionShape3D) -> Shape3D:
+	var world_transform: Transform3D = shape_node.global_transform
+	var shape: Shape3D = shape_node.shape
+	if shape is ConcavePolygonShape3D:
+		var faces: PackedVector3Array = (shape as ConcavePolygonShape3D).get_faces()
+		for i in faces.size():
+			faces[i] = world_transform * faces[i]
+		var world_shape := ConcavePolygonShape3D.new()
+		world_shape.set_faces(faces)
+		return world_shape
+	if shape is ConvexPolygonShape3D:
+		var points: PackedVector3Array = (shape as ConvexPolygonShape3D).points.duplicate()
+		for i in points.size():
+			points[i] = world_transform * points[i]
+		var convex_shape := ConvexPolygonShape3D.new()
+		convex_shape.points = points
+		return convex_shape
+	if shape is BoxShape3D:
+		var half: Vector3 = (shape as BoxShape3D).size * 0.5
+		var local_points: PackedVector3Array = PackedVector3Array([
+			Vector3(-half.x, -half.y, -half.z), Vector3(half.x, -half.y, -half.z),
+			Vector3(-half.x, half.y, -half.z), Vector3(half.x, half.y, -half.z),
+			Vector3(-half.x, -half.y, half.z), Vector3(half.x, -half.y, half.z),
+			Vector3(-half.x, half.y, half.z), Vector3(half.x, half.y, half.z),
+		])
+		for i in local_points.size():
+			local_points[i] = world_transform * local_points[i]
+		var box_shape := ConvexPolygonShape3D.new()
+		box_shape.points = local_points
+		return box_shape
+	return null
 
 func _update_map_bounds() -> void:
 	if map_root == null:

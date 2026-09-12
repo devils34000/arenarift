@@ -1141,7 +1141,7 @@ func _network_client_hard_correction(fighter_id: int, pos: Vector3, rot_y: float
 		visual_root.position = Vector3.ZERO
 		visual_root.rotation = Vector3.ZERO
 
-func _network_client_match_state(time_left: float, local_kills: int, local_deaths: int, astral_kills: int, arcane_kills: int, team_astral: int, team_arcane: int, serial: int, sudden_death: bool = false) -> void:
+func _network_client_match_state(time_left: float, local_kills: int, local_deaths: int, astral_kills: int, arcane_kills: int, team_astral: int, team_arcane: int, serial: int, sudden_death: bool = false, match_kills: int = 0, match_damage_dealt: float = 0.0) -> void:
 	if serial < network_round_serial:
 		return
 	network_round_serial = serial
@@ -1152,6 +1152,13 @@ func _network_client_match_state(time_left: float, local_kills: int, local_death
 	duel_arcane_kills = arcane_kills
 	team_astral_kills = team_astral
 	team_arcane_kills = team_arcane
+	# "match_kills"/"match_damage_dealt" ne sont jamais calculés localement
+	# côté client (les dégâts/kills restent autoritaires côté serveur) : sans
+	# cette synchronisation, le tableau de score de fin de partie affichait
+	# toujours 0 pour un client distant.
+	if player != null and is_instance_valid(player):
+		player.match_kills = match_kills
+		player.match_damage_dealt = match_damage_dealt
 	if sudden_death != network_sudden_death_active:
 		network_sudden_death_active = sudden_death
 		if sudden_death:
@@ -1204,7 +1211,7 @@ func _broadcast_network_state() -> void:
 		# son vrai score, tous les autres voyaient CELUI DU PREMIER JOUEUR.
 		var fighter_kills: int = int(deathmatch_scores.get(fighter, 0))
 		var fighter_deaths: int = int(deathmatch_deaths.get(fighter, 0))
-		network_node.arena_match_state.rpc_id(int(id), round_time, fighter_kills, fighter_deaths, duel_astral_kills, duel_arcane_kills, team_astral_kills, team_arcane_kills, network_round_serial, duel_sudden_death_active or team_sudden_death)
+		network_node.arena_match_state.rpc_id(int(id), round_time, fighter_kills, fighter_deaths, duel_astral_kills, duel_arcane_kills, team_astral_kills, team_arcane_kills, network_round_serial, duel_sudden_death_active or team_sudden_death, fighter.match_kills, fighter.match_damage_dealt)
 
 func _build_fighters() -> void:
 	player = PlayerScene.new()
@@ -1860,8 +1867,9 @@ func _show_duel_match_end(astral_wins: bool) -> void:
 	_show_match_results(player_won, winner, "BO3 : %d — %d" % [duel_astral_rounds, duel_arcane_rounds])
 
 func _show_match_results(player_won: bool, winner_name: String, score_text: String) -> void:
-	var xp_gained: int = PlayerProgress.award_match_xp(player_won, kills)
+	var personal_kills: int = int(player.match_kills) if player != null and is_instance_valid(player) else 0
 	var damage_dealt: int = int(round(player.match_damage_dealt)) if player != null and is_instance_valid(player) else 0
+	var xp_gained: int = PlayerProgress.award_match_xp(player_won, personal_kills)
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
 		round_end_label = null
@@ -1918,7 +1926,7 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	stats_panel.add_theme_stylebox_override("panel", _box(Color("0a1a2ecc"), Color("2c5a82"), 14, 1))
 	panel.add_child(stats_panel)
 
-	_add_match_stat_column(stats_panel, Vector2(10, 0), "ÉLIMINATIONS", str(maxi(0, kills)), Color("ffd166"))
+	_add_match_stat_column(stats_panel, Vector2(10, 0), "ÉLIMINATIONS", str(maxi(0, personal_kills)), Color("ffd166"))
 	_add_match_stat_column(stats_panel, Vector2(163, 0), "DÉGÂTS INFLIGÉS", str(damage_dealt), Color("ff8f6b"))
 	_add_match_stat_column(stats_panel, Vector2(316, 0), "XP GAGNÉE", "+%d" % xp_gained, Color("62e6a7"))
 
@@ -2500,8 +2508,12 @@ func _update_thrown_axes(delta: float) -> void:
 						if killed:
 							vfx_manager.spawn_explosion(self, fighter.global_position, 0.45)
 							_play_sfx(DEATH_SFX, fighter.global_position, -5.0)
-							if owner_player == player:
-								kills += 1
+							# Avant : on incrémentait juste "kills" sans jamais passer par
+							# _handle_combat_death, donc ces kills n'alimentaient ni le score
+							# de round DUEL/TEAM, ni le respawn de la victime, ni la mort
+							# subite. Un kill à la hache pouvait laisser la victime bloquée
+							# sans jamais respawn.
+							_handle_combat_death(fighter, owner_player)
 						axe.global_position.y = 0.34
 						# Hache réellement plantée, lame vers le bas : on part de la pose
 						# tenue en main (quasi verticale) et on la retourne à 180° plutôt
@@ -2635,8 +2647,9 @@ func _update_thrown_daggers(delta: float) -> void:
 						if killed:
 							vfx_manager.spawn_explosion(self, fighter.global_position, 0.4)
 							_play_sfx(DEATH_SFX, fighter.global_position, -5.0)
-							if owner_player == player:
-								kills += 1
+							# cf. hache : sans _handle_combat_death, ce kill n'alimentait ni
+							# le score de round, ni le respawn de la victime, ni la mort subite.
+							_handle_combat_death(fighter, owner_player)
 						state["hit_done"] = true
 						hit_done = true
 						break
@@ -2772,6 +2785,7 @@ func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
 func _handle_combat_death(victim: ArenaPlayer3D, killer: ArenaPlayer3D) -> void:
 	if victim == null or killer == null:
 		return
+	killer.match_kills += 1
 	if _is_duel_mode():
 		_handle_duel_death(victim, killer)
 	elif _is_team_mode():

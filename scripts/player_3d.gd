@@ -25,6 +25,9 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var aeris_staff_held_position: Vector3 = Vector3.ZERO
 @export var aeris_staff_held_rotation_degrees: Vector3 = Vector3.ZERO
 @export var aeris_staff_scale: float = 1.0
+## Décalage local (par rapport à la main tenant le bâton) du point d'où
+## partent ses sorts : sert à viser le bout du bâton plutôt que la main.
+@export var aeris_staff_tip_local_offset: Vector3 = Vector3(0.0, 0.65, 0.0)
 
 @export_group("MAYLINH")
 @export var maylinh_max_health: float = 100.0
@@ -35,9 +38,17 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var maylinh_spirit_cooldown: float = 4.0
 @export var maylinh_spirit_damage: int = 22
 @export var maylinh_heal_cooldown: float = 10.0
-@export var maylinh_heal_radius: float = 4.5
+@export var maylinh_heal_radius: float = 7.5
 @export var maylinh_heal_amount: float = 28.0
 @export var maylinh_passive_max_charges: int = 2
+## Dague lancée (RMB) : part, touche le premier ennemi sur sa trajectoire
+## (ou atteint sa portée max), puis revient automatiquement dans la main de
+## Maylinh sans avoir besoin de marcher dessus.
+@export var maylinh_dagger_throw_cooldown: float = 3.0
+@export var maylinh_dagger_damage: int = 25
+@export var maylinh_dagger_range: float = 14.0
+@export var maylinh_dagger_throw_speed: float = 24.0
+@export var maylinh_dagger_return_speed: float = 20.0
 ## La dague est accrochée à l'os "handslot.r" du squelette (déjà bien
 ## orienté par l'artiste) : ces valeurs ne sont qu'un ajustement fin optionnel.
 @export var maylinh_dagger_held_position: Vector3 = Vector3.ZERO
@@ -227,6 +238,7 @@ var _skeleton: Skeleton3D
 var _axe_weapon: Node3D
 var _shield_weapon: Node3D
 var _held_weapon: Node3D
+var _held_weapon_attachment: BoneAttachment3D
 var _axe_bone_index: int = -1
 var _shield_bone_index: int = -1
 var _axe_attachment: BoneAttachment3D
@@ -502,13 +514,13 @@ func _player_input(delta: float) -> void:
 				release_axe_charge()
 	elif Input.is_action_just_pressed("spell_orb") or controller_orb_pressed:
 		if hero_id == "MAYLINH":
-			try_spirit(aim_direction)
+			try_heal()
 		else:
 			try_orb(aim_direction)
 
 	if Input.is_action_just_pressed("spell_nova") or controller_nova_pressed:
 		if hero_id == "MAYLINH":
-			try_heal()
+			try_throw_dagger(aim_direction)
 		elif hero_id == "KAITHLYN":
 			try_shield()
 		elif hero_id == "EREN":
@@ -677,6 +689,14 @@ func try_dash(direction: Vector3) -> void:
 	dash_cooldown = aeris_dash_cooldown
 	spell_cast.emit("dash", global_position + Vector3.UP * 0.05, aim_direction, self)
 
+## Pour Aeris, les sorts partent du bout du bâton (accroché à la main) plutôt
+## que d'un point fixe deviné sur le corps : plus précis avec la caméra et
+## cohérent quel que soit l'angle de vue.
+func _aeris_spell_origin(fallback: Vector3) -> Vector3:
+	if hero_id == "AERIS" and _held_weapon != null and is_instance_valid(_held_weapon):
+		return _held_weapon.global_transform * aeris_staff_tip_local_offset
+	return fallback
+
 func try_orb(direction: Vector3) -> void:
 	if orb_cooldown > 0.0:
 		return
@@ -686,7 +706,8 @@ func try_orb(direction: Vector3) -> void:
 	direction = direction.normalized()
 	aim_direction = direction
 	orb_cooldown = eren_orb_cooldown if hero_id == "EREN" else aeris_orb_cooldown
-	spell_cast.emit("orb", global_position + Vector3.UP * 1.05 + direction * 0.8, direction, self)
+	var origin: Vector3 = _aeris_spell_origin(global_position + Vector3.UP * 1.05 + direction * 0.8)
+	spell_cast.emit("orb", origin, direction, self)
 
 func try_nova() -> void:
 	if teleport_cooldown > 0.0:
@@ -775,7 +796,24 @@ func try_teleport() -> void:
 	var direction := aim_direction.normalized()
 	if direction.length_squared() < 0.001:
 		direction = Vector3(0.0, 0.0, -1.0)
-	spell_cast.emit("teleport", global_position + Vector3.UP * 0.05, direction, self)
+	var origin: Vector3 = _aeris_spell_origin(global_position + Vector3.UP * 0.05)
+	spell_cast.emit("teleport", origin, direction, self)
+
+func try_throw_dagger(direction: Vector3 = Vector3.ZERO) -> void:
+	if orb_cooldown > 0.0:
+		return
+	if _held_weapon == null or not is_instance_valid(_held_weapon):
+		return
+	if direction.length_squared() < 0.001:
+		direction = aim_direction
+	direction.y = 0.0
+	if direction.length_squared() < 0.001:
+		return
+	direction = direction.normalized()
+	aim_direction = direction
+	_face_direction(direction, 1.0)
+	orb_cooldown = maylinh_dagger_throw_cooldown
+	spell_cast.emit("dagger_throw", global_position + Vector3.UP * 0.95 + direction * 0.55, direction, self)
 
 func take_damage(amount: int, force: Vector3) -> bool:
 	last_damage_dealt = 0.0
@@ -1096,8 +1134,28 @@ func _create_simple_held_weapon(scene_path: String, node_name: String, held_posi
 	if mesh_node != null:
 		mesh_node.visible = true
 		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	_attach_weapon_node(weapon, "handslot.r", held_position, held_rotation_degrees)
+	_held_weapon_attachment = _attach_weapon_node(weapon, "handslot.r", held_position, held_rotation_degrees)
 	return weapon
+
+func release_dagger_for_throw() -> Node3D:
+	if _held_weapon == null or not is_instance_valid(_held_weapon):
+		return null
+	var dagger: Node3D = _held_weapon
+	_held_weapon = null
+	return dagger
+
+func recover_dagger(dagger: Node3D) -> void:
+	if dagger == null or not is_instance_valid(dagger) or hero_id != "MAYLINH":
+		return
+	if _held_weapon_attachment != null and is_instance_valid(_held_weapon_attachment):
+		dagger.reparent(_held_weapon_attachment, false)
+	else:
+		dagger.reparent(self, true)
+	dagger.position = maylinh_dagger_held_position
+	dagger.rotation_degrees = maylinh_dagger_held_rotation_degrees
+	dagger.scale = Vector3.ONE * maylinh_dagger_scale
+	dagger.visible = true
+	_held_weapon = dagger
 
 func release_axe_for_throw() -> Node3D:
 	if _axe_weapon == null or not is_instance_valid(_axe_weapon):

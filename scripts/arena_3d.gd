@@ -141,6 +141,7 @@ var network_local_respawn_left: float = -1.0
 var team_ring_materials: Dictionary = {}
 var vfx_manager: ArenaVFXManager
 var thrown_axes: Array[Dictionary] = []
+var thrown_daggers: Array[Dictionary] = []
 var eren_fire_trails: Array[Dictionary] = []
 var eren_trail_hit_cooldowns: Dictionary = {}
 var round_end_label: Label
@@ -242,6 +243,7 @@ func _process(delta: float) -> void:
 					remote_fighter.network_move_direction = Vector3.ZERO
 
 		_update_thrown_axes(delta)
+		_update_thrown_daggers(delta)
 		_update_eren_fire_trails(delta)
 		if _is_duel_mode():
 			_update_duel(delta)
@@ -287,6 +289,7 @@ func _process(delta: float) -> void:
 		_update_hud()
 		_update_camera(delta)
 		_update_thrown_axes(delta)
+		_update_thrown_daggers(delta)
 		_update_axe_preview()
 		_update_team_rings()
 		_update_hud()
@@ -303,6 +306,7 @@ func _process(delta: float) -> void:
 
 	_update_camera(delta)
 	_update_thrown_axes(delta)
+	_update_thrown_daggers(delta)
 	_update_eren_fire_trails(delta)
 	_update_axe_preview()
 	_update_team_rings()
@@ -973,7 +977,7 @@ func _network_receive_ability_request(peer_id: int, kind: String, direction: Vec
 	var fighter := network_fighters.get(peer_id) as ArenaPlayer3D
 	if fighter == null or not is_instance_valid(fighter) or fighter.is_bot:
 		return
-	var allowed := ["dash", "teleport", "orb", "nova", "flee", "charge", "eren_charge", "spirit", "heal", "shield", "axe_throw"]
+	var allowed := ["dash", "teleport", "orb", "nova", "flee", "charge", "eren_charge", "spirit", "heal", "shield", "axe_throw", "dagger_throw"]
 	if kind not in allowed:
 		return
 	if fighter.process_mode == Node.PROCESS_MODE_DISABLED or fighter.health <= 0.0:
@@ -994,6 +998,7 @@ func _network_receive_ability_request(peer_id: int, kind: String, direction: Vec
 		"heal": fighter.try_heal()
 		"shield": fighter.try_shield()
 		"axe_throw": fighter.try_throw_axe(direction, clampf(value, 0.0, 1.0))
+		"dagger_throw": fighter.try_throw_dagger(direction)
 
 func _refresh_network_targets() -> void:
 	var fighters := get_tree().get_nodes_in_group("fighters")
@@ -2032,6 +2037,8 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		# cette copie locale utilisait l'ancienne distance de lancer connue
 		# du lanceur au lieu de la distance réellement choisie cette fois-ci.
 		_spawn_thrown_axe(caster, direction, value)
+	elif kind == "dagger_throw":
+		_spawn_thrown_dagger(caster, direction)
 
 func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: CharacterBody3D) -> void:
 	# En réseau, le client propriétaire ne simule jamais le gameplay du sort.
@@ -2103,6 +2110,8 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 
 	elif kind == "axe_throw":
 		_spawn_thrown_axe(caster, direction)
+	elif kind == "dagger_throw":
+		_spawn_thrown_dagger(caster, direction)
 	elif kind == "shield":
 		vfx_manager.spawn_shield_bash(self, caster.global_position, direction)
 		_spawn_kaithlyn_shield_fx(caster)
@@ -2515,6 +2524,101 @@ func _network_client_axe_recovered(caster_id: int) -> void:
 		_play_sfx(TELEPORT_SFX, owner_player.global_position, -8.0)
 		thrown_axes.remove_at(index)
 		break
+
+## Dague de Maylinh : contrairement à la hache de Kaithlyn, elle revient
+## automatiquement dans sa main (pas besoin de marcher dessus). Comme le
+## cooldown se recharge normalement avec le temps (pas remis à zéro à la
+## réception), un léger décalage entre pairs sur l'instant exact du retour
+## est purement cosmétique : chaque pair peut donc décider localement sans
+## RPC dédiée, contrairement à la hache (cf. _update_thrown_axes).
+func _spawn_thrown_dagger(caster: CharacterBody3D, direction: Vector3) -> void:
+	var owner_player: ArenaPlayer3D = caster as ArenaPlayer3D
+	if owner_player == null:
+		return
+	var dagger: Node3D = owner_player.release_dagger_for_throw()
+	if dagger == null:
+		return
+	dagger.reparent(self, true)
+	dagger.global_position = caster.global_position + Vector3.UP * 0.95 + direction.normalized() * 0.55
+	dagger.visible = true
+	var state: Dictionary = {
+		"dagger": dagger,
+		"owner": owner_player,
+		"velocity": direction.normalized() * owner_player.maylinh_dagger_throw_speed,
+		"traveled": 0.0,
+		"max_range": owner_player.maylinh_dagger_range,
+		"returning": false,
+		"hit_done": false,
+	}
+	thrown_daggers.append(state)
+	vfx_manager.spawn_dash(self, dagger.global_position, direction)
+	_play_sfx(HIT_SFX, dagger.global_position, -6.0)
+
+func _update_thrown_daggers(delta: float) -> void:
+	for index in range(thrown_daggers.size() - 1, -1, -1):
+		var state: Dictionary = thrown_daggers[index]
+		var dagger: Node3D = state.get("dagger") as Node3D
+		var owner_player: ArenaPlayer3D = state.get("owner") as ArenaPlayer3D
+		if dagger == null or not is_instance_valid(dagger) or owner_player == null or not is_instance_valid(owner_player):
+			thrown_daggers.remove_at(index)
+			continue
+
+		var returning: bool = bool(state.get("returning", false))
+		var velocity_dagger: Vector3 = state.get("velocity", Vector3.ZERO) as Vector3
+
+		if not returning:
+			var step: Vector3 = velocity_dagger * delta
+			dagger.global_position += step
+			dagger.rotate_y(24.0 * delta)
+			state["traveled"] = float(state.get("traveled", 0.0)) + step.length()
+
+			var hit_done: bool = bool(state.get("hit_done", false))
+			if not hit_done:
+				for fighter_node in get_tree().get_nodes_in_group("fighters"):
+					var fighter: ArenaPlayer3D = fighter_node as ArenaPlayer3D
+					if fighter == null or fighter == owner_player or not is_instance_valid(fighter):
+						continue
+					if fighter.team_color == owner_player.team_color:
+						continue
+					if dagger.global_position.distance_to(fighter.global_position + Vector3.UP * 0.6) < 0.85:
+						var push: Vector3 = (fighter.global_position - owner_player.global_position)
+						push.y = 0.0
+						if push.length_squared() < 0.001:
+							push = velocity_dagger.normalized()
+						push = push.normalized()
+						# Comme pour la hache : le serveur applique seul les
+						# dégâts, les clients ne rejouent que le rendu.
+						var is_authoritative: bool = not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
+						var killed: bool = false
+						if is_authoritative:
+							killed = bool(fighter.take_damage(owner_player.maylinh_dagger_damage, push * 3.5))
+						vfx_manager.spawn_axe_hit(self, fighter.global_position + Vector3.UP * 0.15, velocity_dagger.normalized())
+						vfx_manager.spawn_damage_flash(self, fighter.global_position, velocity_dagger.normalized())
+						_play_sfx(HIT_SFX, fighter.global_position, -5.0)
+						if killed:
+							vfx_manager.spawn_explosion(self, fighter.global_position, 0.4)
+							_play_sfx(DEATH_SFX, fighter.global_position, -5.0)
+							if owner_player == player:
+								kills += 1
+						state["hit_done"] = true
+						hit_done = true
+						break
+
+			if hit_done or float(state.get("traveled", 0.0)) >= float(state.get("max_range", 10.0)):
+				state["returning"] = true
+				returning = true
+
+		if returning:
+			var target_position: Vector3 = owner_player.global_position + Vector3.UP * 0.95
+			var to_owner: Vector3 = target_position - dagger.global_position
+			var distance: float = to_owner.length()
+			if distance < 0.6:
+				owner_player.recover_dagger(dagger)
+				thrown_daggers.remove_at(index)
+				continue
+			var return_direction: Vector3 = to_owner.normalized()
+			dagger.global_position += return_direction * owner_player.maylinh_dagger_return_speed * delta
+			dagger.rotate_y(24.0 * delta)
 
 func _raycast_map_obstacle(from_pos: Vector3, to_pos: Vector3, owner_player: ArenaPlayer3D) -> Dictionary:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state

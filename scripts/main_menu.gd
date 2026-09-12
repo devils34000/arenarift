@@ -17,7 +17,8 @@ var steam_name_label: Label
 var steam_status_label: Label
 var level_label: Label
 var xp_label: Label
-var level_progress: ProgressBar
+var level_progress_fill: ColorRect
+const LEVEL_BAR_WIDTH: float = 164.0
 
 var party_panel: Panel
 var party_title_label: Label
@@ -381,29 +382,23 @@ func _build_steam_profile() -> void:
 	xp_label = _label("0 / 100 XP", 9, Color("c9a877"), Vector2(10, 27), Vector2(164, 14))
 	level_panel.add_child(xp_label)
 
-	level_progress = ProgressBar.new()
-	# Sans ceci, la taille minimale par défaut du thème (bien plus grande que
-	# 164x8) l'emportait sur .size ci-dessous et la barre débordait largement
-	# du bloc (même bug que sur les boutons Arkanite : custom_minimum_size
-	# prime toujours sur .size quand il est plus grand).
-	level_progress.custom_minimum_size = Vector2(164, 8)
-	level_progress.position = Vector2(10, 45)
-	level_progress.size = Vector2(164, 8)
-	level_progress.show_percentage = false
-	level_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var progress_bg := StyleBoxFlat.new()
-	progress_bg.bg_color = Color("241a0d")
-	progress_bg.set_corner_radius_all(4)
-	progress_bg.content_margin_top = 0.0
-	progress_bg.content_margin_bottom = 0.0
-	var progress_fill := StyleBoxFlat.new()
-	progress_fill.bg_color = Color("e8b656")
-	progress_fill.set_corner_radius_all(4)
-	progress_fill.content_margin_top = 0.0
-	progress_fill.content_margin_bottom = 0.0
-	level_progress.add_theme_stylebox_override("background", progress_bg)
-	level_progress.add_theme_stylebox_override("fill", progress_fill)
-	level_panel.add_child(level_progress)
+	# ProgressBar posait problème (sa taille minimale par thème l'emportait
+	# sur .size et débordait largement du bloc, même avec custom_minimum_size
+	# forcé). Remplacé par deux ColorRect simples : leur taille ne dépend
+	# d'aucun thème, donc aucune surprise possible.
+	var progress_bg := ColorRect.new()
+	progress_bg.position = Vector2(10, 45)
+	progress_bg.size = Vector2(LEVEL_BAR_WIDTH, 8)
+	progress_bg.color = Color("241a0d")
+	progress_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	level_panel.add_child(progress_bg)
+
+	level_progress_fill = ColorRect.new()
+	level_progress_fill.position = Vector2(10, 45)
+	level_progress_fill.size = Vector2(0, 8)
+	level_progress_fill.color = Color("58cfff")
+	level_progress_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	level_panel.add_child(level_progress_fill)
 	level_panel.clip_contents = true
 
 	_update_level_display()
@@ -425,15 +420,14 @@ func _update_level_display() -> void:
 			xp_label.text = "MAX"
 		else:
 			xp_label.text = "%d / %d XP" % [PlayerProgress.get_xp(), PlayerProgress.xp_to_next_level(current_level)]
-	if level_progress == null or not is_instance_valid(level_progress):
+	if level_progress_fill == null or not is_instance_valid(level_progress_fill):
 		return
 	if current_level >= PlayerProgress.MAX_LEVEL:
-		level_progress.max_value = 1.0
-		level_progress.value = 1.0
+		level_progress_fill.size.x = LEVEL_BAR_WIDTH
 		return
 	var xp_needed: int = PlayerProgress.xp_to_next_level(current_level)
-	level_progress.max_value = float(maxi(1, xp_needed))
-	level_progress.value = float(PlayerProgress.get_xp())
+	var ratio: float = clampf(float(PlayerProgress.get_xp()) / float(maxi(1, xp_needed)), 0.0, 1.0)
+	level_progress_fill.size.x = LEVEL_BAR_WIDTH * ratio
 
 
 func _setup_steam_profile() -> void:

@@ -20,6 +20,11 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var aeris_orb_damage_empowered: int = 27
 @export var aeris_teleport_cooldown: float = 4.0
 @export var aeris_passive_max_charges: int = 3
+## Position/rotation du bâton tenu en main. Ajustables ici pour corriger son
+## orientation sans toucher au code.
+@export var aeris_staff_held_position: Vector3 = Vector3(0.55, 1.0, -0.05)
+@export var aeris_staff_held_rotation_degrees: Vector3 = Vector3(0.0, 0.0, -18.0)
+@export var aeris_staff_scale: float = 1.15
 
 @export_group("MAYLINH")
 @export var maylinh_max_health: float = 100.0
@@ -33,6 +38,11 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var maylinh_heal_radius: float = 4.5
 @export var maylinh_heal_amount: float = 28.0
 @export var maylinh_passive_max_charges: int = 2
+## Position/rotation de la dague tenue en main. Ajustables ici pour corriger
+## son orientation sans toucher au code.
+@export var maylinh_dagger_held_position: Vector3 = Vector3(0.5, 0.95, -0.05)
+@export var maylinh_dagger_held_rotation_degrees: Vector3 = Vector3(0.0, 0.0, -22.0)
+@export var maylinh_dagger_scale: float = 1.1
 
 @export_group("KAITHLYN")
 @export var kaithlyn_max_health: float = 100.0
@@ -79,6 +89,11 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var eren_nova_damage_tier2: int = 95
 @export var eren_nova_damage_tier3: int = 145
 @export var eren_passive_fury_max: int = 300
+## Position/rotation de l'épée tenue en main. Ajustables ici pour corriger
+## son orientation sans toucher au code.
+@export var eren_sword_held_position: Vector3 = Vector3(0.58, 1.0, -0.05)
+@export var eren_sword_held_rotation_degrees: Vector3 = Vector3(0.0, 0.0, -20.0)
+@export var eren_sword_scale: float = 1.2
 
 @export_group("Déplacement commun")
 @export var acceleration: float = 42.0
@@ -91,6 +106,9 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var eren_scene_path: String = "res://assets/kaykit/Knight.glb"
 @export var kaithlyn_axe_scene_path: String = "res://assets/kaykit/axe_1handed.gltf"
 @export var kaithlyn_shield_scene_path: String = "res://assets/kaykit/shield_round_barbarian.gltf"
+@export var aeris_staff_scene_path: String = "res://assets/kaykit/staff.gltf"
+@export var eren_sword_scene_path: String = "res://assets/kaykit/sword_1handed.gltf"
+@export var maylinh_dagger_scene_path: String = "res://assets/kaykit/dagger.gltf"
 @export var movement_anims_path: String = "res://assets/kaykit/Rig_Medium_MovementBasic.glb"
 @export var general_anims_path: String = "res://assets/kaykit/Rig_Medium_General.glb"
 @export var model_scale: float = 1.15
@@ -180,6 +198,7 @@ var _model_path: String = ""
 var _skeleton: Skeleton3D
 var _axe_weapon: Node3D
 var _shield_weapon: Node3D
+var _held_weapon: Node3D
 var _axe_bone_index: int = -1
 var _shield_bone_index: int = -1
 var _axe_attachment: BoneAttachment3D
@@ -241,7 +260,7 @@ func _physics_process(delta: float) -> void:
 			# logique serveur. Le rendu visible est interpolé séparément
 			# par VisualRoot dans Arena._update_network_visuals().
 			velocity = network_visual_velocity
-			_sync_kaithlyn_weapons()
+			_sync_held_weapons()
 			_update_animation()
 			return
 	else:
@@ -296,7 +315,7 @@ func _physics_process(delta: float) -> void:
 
 	# Le joueur reste au niveau du sol sans téléporter sa position X/Z.
 
-	_sync_kaithlyn_weapons()
+	_sync_held_weapons()
 	_update_animation()
 
 func _network_server_input(delta: float) -> void:
@@ -839,6 +858,12 @@ func _setup_model() -> void:
 
 	if hero_id == "KAITHLYN":
 		_create_kaithlyn_weapons_independent()
+	elif hero_id == "AERIS":
+		_held_weapon = _create_simple_held_weapon(aeris_staff_scene_path, "AerisStaff", aeris_staff_held_position, aeris_staff_held_rotation_degrees, aeris_staff_scale)
+	elif hero_id == "EREN":
+		_held_weapon = _create_simple_held_weapon(eren_sword_scene_path, "ErenSword", eren_sword_held_position, eren_sword_held_rotation_degrees, eren_sword_scale)
+	elif hero_id == "MAYLINH":
+		_held_weapon = _create_simple_held_weapon(maylinh_dagger_scene_path, "MaylinhDagger", maylinh_dagger_held_position, maylinh_dagger_held_rotation_degrees, maylinh_dagger_scale)
 
 	_animation_player = AnimationPlayer.new()
 	_animation_player.name = "AnimationPlayer"
@@ -937,17 +962,51 @@ func _load_weapon_or_fallback(scene_path: String, node_name: String, is_axe: boo
 		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	return weapon
 
-func _sync_kaithlyn_weapons() -> void:
-	if hero_id != "KAITHLYN":
+func _sync_held_weapons() -> void:
+	# Tant qu'une arme est tenue, elle reste à une position fixe proche de la
+	# main. Elle est volontairement indépendante du squelette pour rester
+	# fiable avec KayKit. Recalculer la position/rotation à chaque frame à
+	# partir des @export permet de voir l'effet immédiatement en jeu quand on
+	# les ajuste depuis l'inspecteur.
+	if hero_id == "KAITHLYN":
+		if _axe_weapon != null and is_instance_valid(_axe_weapon) and _axe_weapon.get_parent() == self:
+			_axe_weapon.position = kaithlyn_axe_held_position
+			_axe_weapon.rotation_degrees = kaithlyn_axe_held_rotation_degrees
+		if _shield_weapon != null and is_instance_valid(_shield_weapon) and _shield_weapon.get_parent() == self:
+			_shield_weapon.position = kaithlyn_shield_held_position
+			_shield_weapon.rotation_degrees = kaithlyn_shield_held_rotation_degrees
 		return
-	# Tant que la hache est tenue, elle reste à une position fixe proche de la main.
-	# Elle est volontairement indépendante du squelette pour rester fiable avec KayKit.
-	if _axe_weapon != null and is_instance_valid(_axe_weapon) and _axe_weapon.get_parent() == self:
-		_axe_weapon.position = kaithlyn_axe_held_position
-		_axe_weapon.rotation_degrees = kaithlyn_axe_held_rotation_degrees
-	if _shield_weapon != null and is_instance_valid(_shield_weapon) and _shield_weapon.get_parent() == self:
-		_shield_weapon.position = kaithlyn_shield_held_position
-		_shield_weapon.rotation_degrees = kaithlyn_shield_held_rotation_degrees
+	if _held_weapon == null or not is_instance_valid(_held_weapon):
+		return
+	if hero_id == "AERIS":
+		_held_weapon.position = aeris_staff_held_position
+		_held_weapon.rotation_degrees = aeris_staff_held_rotation_degrees
+	elif hero_id == "EREN":
+		_held_weapon.position = eren_sword_held_position
+		_held_weapon.rotation_degrees = eren_sword_held_rotation_degrees
+	elif hero_id == "MAYLINH":
+		_held_weapon.position = maylinh_dagger_held_position
+		_held_weapon.rotation_degrees = maylinh_dagger_held_rotation_degrees
+
+func _create_simple_held_weapon(scene_path: String, node_name: String, held_position: Vector3, held_rotation_degrees: Vector3, weapon_scale: float) -> Node3D:
+	var packed: PackedScene = load(scene_path) as PackedScene
+	if packed == null:
+		push_error("Arme introuvable : " + scene_path)
+		return null
+	var weapon: Node3D = packed.instantiate() as Node3D
+	if weapon == null:
+		return null
+	weapon.name = node_name
+	weapon.scale = Vector3.ONE * weapon_scale
+	weapon.position = held_position
+	weapon.rotation_degrees = held_rotation_degrees
+	weapon.visible = true
+	var mesh_node: MeshInstance3D = _find_mesh_instance(weapon)
+	if mesh_node != null:
+		mesh_node.visible = true
+		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	add_child(weapon)
+	return weapon
 
 func release_axe_for_throw() -> Node3D:
 	if _axe_weapon == null or not is_instance_valid(_axe_weapon):

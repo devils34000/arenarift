@@ -72,7 +72,7 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 ## bien orienté par l'artiste) : ces valeurs ne sont qu'un ajustement fin
 ## optionnel par-dessus, pas un positionnement absolu.
 @export var kaithlyn_axe_held_position: Vector3 = Vector3.ZERO
-@export var kaithlyn_axe_held_rotation_degrees: Vector3 = Vector3.ZERO
+@export var kaithlyn_axe_held_rotation_degrees: Vector3 = Vector3(0.0, 180.0, 0.0)
 @export var kaithlyn_axe_scale: float = 1.25
 @export var kaithlyn_shield_held_position: Vector3 = Vector3.ZERO
 @export var kaithlyn_shield_held_rotation_degrees: Vector3 = Vector3.ZERO
@@ -103,6 +103,9 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export_group("Déplacement commun")
 @export var acceleration: float = 42.0
 @export var deceleration: float = 55.0
+@export var jump_velocity: float = 9.5
+@export var gravity: float = 28.0
+@export var sprint_speed_multiplier: float = 1.35
 
 @export_group("Modèles 3D")
 @export var mage_scene_path: String = "res://assets/kaykit/Mage.glb"
@@ -131,7 +134,17 @@ func _hero_stat(aeris_value, maylinh_value, kaithlyn_value, eren_value):
 		_: return aeris_value
 
 func _current_speed() -> float:
-	return _hero_stat(aeris_speed, maylinh_speed, kaithlyn_speed, eren_speed)
+	var base_speed: float = _hero_stat(aeris_speed, maylinh_speed, kaithlyn_speed, eren_speed)
+	if _sprint_active:
+		return base_speed * sprint_speed_multiplier
+	return base_speed
+
+func _try_jump() -> void:
+	if not is_grounded or rooted_left > 0.0 or charge_left > 0.0:
+		return
+	is_grounded = false
+	vertical_velocity = jump_velocity
+	_jump_start_timer = 0.18
 
 var max_health: float = 100.0
 var health: float = 100.0
@@ -177,6 +190,13 @@ var charge_hit_done: bool = false
 var charge_vfx_timer: float = 0.0
 var recoil: Vector3 = Vector3.ZERO
 var aim_direction: Vector3 = Vector3(0.0, 0.0, -1.0)
+var vertical_velocity: float = 0.0
+var is_grounded: bool = true
+var network_jump_requested: bool = false
+var network_sprint_held: bool = false
+var _sprint_active: bool = false
+var _jump_buffer_left: float = 0.0
+var _jump_start_timer: float = 0.0
 
 # Contrôleur : états précédents pour garantir les "just pressed/released"
 # sans dépendre de l'InputMap.
@@ -196,6 +216,9 @@ var _animation_player: AnimationPlayer
 var _idle_anim: StringName = &"Idle_A"
 var _walk_anim: StringName = &"Walking_A"
 var _run_anim: StringName = &"Running_A"
+var _jump_start_anim: StringName = &""
+var _jump_air_anim: StringName = &"Idle_A"
+var _landing_anim: StringName = &"Idle_A"
 var _last_anim: StringName = &""
 var _bot_orb_timer: float = 0.0
 var _bot_nova_timer: float = 0.0
@@ -252,6 +275,8 @@ func _physics_process(delta: float) -> void:
 	rooted_left = maxf(0.0, rooted_left - delta)
 	flee_left = maxf(0.0, flee_left - delta)
 	invulnerable_left = maxf(0.0, invulnerable_left - delta)
+	_jump_start_timer = maxf(0.0, _jump_start_timer - delta)
+	_jump_buffer_left = maxf(0.0, _jump_buffer_left - delta)
 
 	if is_bot:
 		_bot_input(delta)
@@ -263,8 +288,12 @@ func _physics_process(delta: float) -> void:
 		else:
 			# Joueur distant : le CharacterBody est piloté par la position
 			# logique serveur. Le rendu visible est interpolé séparément
-			# par VisualRoot dans Arena._update_network_visuals().
+			# par VisualRoot dans Arena._update_network_visuals(), qui inclut
+			# déjà la hauteur Y (donc un saut distant est visible en position).
+			# On déduit juste l'état "en l'air" de cette même position pour
+			# choisir la bonne animation.
 			velocity = network_visual_velocity
+			is_grounded = network_target_position.y <= 0.05
 			_sync_held_weapons()
 			_update_animation()
 			return
@@ -294,15 +323,26 @@ func _physics_process(delta: float) -> void:
 
 	velocity += recoil
 	recoil = recoil.move_toward(Vector3.ZERO, 32.0 * delta)
+
+	if not is_grounded:
+		vertical_velocity -= gravity * delta
+	velocity.y = vertical_velocity
+
 	move_and_slide()
 
-	# Le serveur dédié n'a pas toujours de collision Terrain exploitable.
-	# L'arène actuelle est plane autour de Y=0 : on verrouille donc Y côté
-	# serveur pour empêcher toute chute sous la map. Le client garde son rendu
-	# et ses collisions normales.
-	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+	# L'arène actuelle est plane autour de Y=0. Le serveur dédié n'a pas
+	# toujours de collision Terrain exploitable : on ne bloque donc plus Y en
+	# permanence (ce qui empêchait tout saut), seulement quand le personnage
+	# atteint ou passe sous le niveau du sol, pour ne jamais tomber sous la map.
+	if global_position.y <= 0.0 and vertical_velocity <= 0.0:
 		global_position.y = 0.0
+		vertical_velocity = 0.0
 		velocity.y = 0.0
+		if not is_grounded:
+			is_grounded = true
+			_play_animation(_landing_anim)
+	elif multiplayer.has_multiplayer_peer() and multiplayer.is_server() and global_position.y < 0.0:
+		global_position.y = 0.0
 
 	if (hero_id == "KAITHLYN" or hero_id == "EREN") and charge_left > 0.0 and not charge_hit_done:
 		for node in get_tree().get_nodes_in_group("fighters"):
@@ -324,6 +364,10 @@ func _physics_process(delta: float) -> void:
 	_update_animation()
 
 func _network_server_input(delta: float) -> void:
+	_sprint_active = network_sprint_held
+	if network_jump_requested:
+		network_jump_requested = false
+		_try_jump()
 	var move_direction := network_move_direction
 	var current_speed: float = _current_speed() * (maylinh_flee_speed_multiplier if flee_left > 0.0 else 1.0)
 	var target_velocity: Vector3 = move_direction * current_speed
@@ -392,6 +436,14 @@ func _player_input(delta: float) -> void:
 	if move_direction.length_squared() > 1.0:
 		move_direction = move_direction.normalized()
 
+	_sprint_active = Input.is_key_pressed(KEY_SHIFT)
+	if Input.is_action_just_pressed("jump"):
+		# On tamponne l'appui un court instant : la commande de saut voyage sur
+		# un canal réseau non fiable (comme le déplacement), un seul paquet
+		# perdu ne doit donc pas faire "rater" le saut.
+		_jump_buffer_left = 0.15
+		_try_jump()
+
 	var current_speed: float = _current_speed() * (maylinh_flee_speed_multiplier if flee_left > 0.0 else 1.0)
 	var target_velocity: Vector3 = move_direction * current_speed
 	if move_direction.length_squared() > 0.001:
@@ -413,7 +465,7 @@ func _player_input(delta: float) -> void:
 		var network_node := get_node_or_null("/root/Network")
 		if network_node != null:
 			network_input_sequence += 1
-			network_node.arena_player_input.rpc_id(1, move_direction, aim_direction, network_input_sequence)
+			network_node.arena_player_input.rpc_id(1, move_direction, aim_direction, network_input_sequence, _jump_buffer_left > 0.0, _sprint_active)
 
 	var controller_dash_pressed := false
 	var controller_nova_pressed := false
@@ -1127,12 +1179,19 @@ func _find_best_animation_names() -> void:
 	_idle_anim = _find_animation(available, [&"Idle_A", &"Idle_B", &"Idle"])
 	_walk_anim = _find_animation(available, [&"Walking_A", &"Walking_B", &"Walking_C"])
 	_run_anim = _find_animation(available, [&"Running_A", &"Running_B"])
+	_jump_start_anim = _find_animation(available, [&"Jump_Start"])
+	_jump_air_anim = _find_animation(available, [&"Jump_Idle"])
+	_landing_anim = _find_animation(available, [&"Jump_Land"])
 	if _idle_anim == StringName() and not available.is_empty():
 		_idle_anim = available[0]
 	if _walk_anim == StringName():
 		_walk_anim = _idle_anim
 	if _run_anim == StringName():
 		_run_anim = _walk_anim
+	if _jump_air_anim == StringName():
+		_jump_air_anim = _idle_anim
+	if _landing_anim == StringName():
+		_landing_anim = _idle_anim
 
 func _find_animation(available: Array[StringName], candidates: Array[StringName]) -> StringName:
 	for candidate in candidates:
@@ -1149,6 +1208,12 @@ func _play_animation(animation_name: StringName) -> void:
 	_last_anim = animation_name
 
 func _update_animation() -> void:
+	if not is_grounded:
+		if _jump_start_timer > 0.0 and _jump_start_anim != StringName():
+			_play_animation(_jump_start_anim)
+		else:
+			_play_animation(_jump_air_anim)
+		return
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
 	if horizontal_speed < 0.15:
 		_play_animation(_idle_anim)

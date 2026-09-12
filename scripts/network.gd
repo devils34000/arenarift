@@ -77,7 +77,7 @@ func _get_network_arena() -> Node:
 	return arenas[0] as Node
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 0)
-func arena_player_input(move_direction: Vector3, aim_direction: Vector3, input_sequence: int = 0) -> void:
+func arena_player_input(move_direction: Vector3, aim_direction: Vector3, input_sequence: int = 0, jump_pressed: bool = false, sprint_held: bool = false) -> void:
 	if not multiplayer.is_server():
 		return
 	var sender := multiplayer.get_remote_sender_id()
@@ -85,7 +85,7 @@ func arena_player_input(move_direction: Vector3, aim_direction: Vector3, input_s
 		return
 	var arena := _get_network_arena()
 	if arena != null:
-		arena.call("_network_receive_player_input", sender, move_direction, aim_direction, input_sequence)
+		arena.call("_network_receive_player_input", sender, move_direction, aim_direction, input_sequence, jump_pressed, sprint_held)
 
 @rpc("any_peer", "call_remote", "reliable")
 func arena_ability_request(kind: String, direction: Vector3, value: float = 0.0, input_sequence: int = 0) -> void:

@@ -895,7 +895,7 @@ func _start_network_bots() -> void:
 		deathmatch_scores[bot] = 0
 		deathmatch_deaths[bot] = 0
 
-func _network_receive_player_input(peer_id: int, move_direction: Vector3, aim_direction: Vector3, input_sequence: int = 0) -> void:
+func _network_receive_player_input(peer_id: int, move_direction: Vector3, aim_direction: Vector3, input_sequence: int = 0, jump_pressed: bool = false, sprint_held: bool = false) -> void:
 	if not multiplayer.is_server() or peer_id <= 0:
 		return
 	var fighter := network_fighters.get(peer_id) as ArenaPlayer3D
@@ -911,6 +911,13 @@ func _network_receive_player_input(peer_id: int, move_direction: Vector3, aim_di
 	fighter.network_move_direction = move_direction
 	if aim_direction.length_squared() > 0.001:
 		fighter.network_aim_direction = aim_direction.normalized()
+	# "jump_pressed" est répété par le client tant que la touche est encore
+	# fraîchement pressée (voir _jump_buffer_left côté ArenaPlayer3D) : sur un
+	# canal "unreliable", un seul paquet isolé perdu ne doit pas faire rater
+	# le saut. Le serveur ne déclenche le saut qu'une fois (cf. _try_jump).
+	if jump_pressed:
+		fighter.network_jump_requested = true
+	fighter.network_sprint_held = sprint_held
 
 func _network_receive_ability_request(peer_id: int, kind: String, direction: Vector3, value: float = 0.0, input_sequence: int = 0) -> void:
 	if not multiplayer.is_server() or peer_id <= 0:

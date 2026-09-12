@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://ogna78o8bxf6"]
+
+[ext_resource type="PackedScene" uid="uid://dxq5rb1ig5xvk" path="res://assets/simpledongeon/Wall00.fbx" id="1_xefty"]
+
+[node name="Wall00" unique_id=775947013 instance=ExtResource("1_xefty")]

@@ -207,6 +207,14 @@ var charge_hit_done: bool = false
 var charge_vfx_timer: float = 0.0
 var recoil: Vector3 = Vector3.ZERO
 var aim_direction: Vector3 = Vector3(0.0, 0.0, -1.0)
+# Direction figée au moment du dash, comme charge_direction pour Kaithlyn/
+# Eren : aim_direction est resynchronisée en continu depuis le réseau
+# (network_aim_direction, basé caméra) à chaque frame côté serveur, ce qui
+# écrasait quasi aussitôt la direction voulue par try_dash() si on la
+# stockait dans aim_direction — le dash finissait presque toujours par
+# repartir selon la caméra au lieu de l'orientation du personnage au moment
+# de l'appui.
+var dash_direction: Vector3 = Vector3.ZERO
 var vertical_velocity: float = 0.0
 var is_grounded: bool = true
 var network_jump_requested: bool = false
@@ -330,8 +338,8 @@ func _physics_process(delta: float) -> void:
 			var trail_kind: String = "eren_charge_trail" if hero_id == "EREN" else "charge_trail"
 			spell_cast.emit(trail_kind, global_position + Vector3.UP * 0.02, charge_direction, self)
 	elif dash_left > 0.0:
-		velocity.x = aim_direction.x * aeris_dash_speed
-		velocity.z = aim_direction.z * aeris_dash_speed
+		velocity.x = dash_direction.x * aeris_dash_speed
+		velocity.z = dash_direction.z * aeris_dash_speed
 	else:
 		var horizontal: Vector2 = Vector2(velocity.x, velocity.z)
 		if horizontal.length() > _current_speed():
@@ -698,10 +706,10 @@ func try_dash(direction: Vector3) -> void:
 	direction.y = 0.0
 	if direction.length_squared() < 0.001:
 		direction = aim_direction
-	aim_direction = direction.normalized()
+	dash_direction = direction.normalized()
 	dash_left = aeris_dash_time
 	dash_cooldown = aeris_dash_cooldown
-	spell_cast.emit("dash", global_position + Vector3.UP * 0.05, aim_direction, self)
+	spell_cast.emit("dash", global_position + Vector3.UP * 0.05, dash_direction, self)
 
 ## Pour Aeris, les sorts partent du bout du bâton (accroché à la main) plutôt
 ## que d'un point fixe deviné sur le corps : plus précis avec la caméra et

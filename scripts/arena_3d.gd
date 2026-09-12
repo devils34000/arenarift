@@ -1331,10 +1331,13 @@ func _create_team_ring(fighter: ArenaPlayer3D) -> MeshInstance3D:
 	fighter.add_child(ring)
 	return ring
 
+const ENEMY_HEALTH_BAR_MAX_RANGE: float = 26.0
+
 ## Petite barre de vie flottante au-dessus de la tête de chaque ennemi
 ## (les alliés n'en ont pas besoin, ils ont déjà l'anneau au sol + leur
 ## propre HUD). Projection écran mise à jour chaque frame, cachée si
-## l'ennemi est mort, hors champ ou derrière la caméra.
+## l'ennemi est mort, hors champ, derrière la caméra, trop loin ou masqué
+## par un mur/obstacle (sinon elle se voyait à travers les murs).
 func _update_enemy_health_bars() -> void:
 	if hud == null or not is_instance_valid(hud) or player == null or not is_instance_valid(player):
 		return
@@ -1358,6 +1361,15 @@ func _update_enemy_health_bars() -> void:
 		seen[fighter] = true
 		var head_position: Vector3 = fighter.global_position + Vector3.UP * 2.15
 		if camera.is_position_behind(head_position):
+			bar.visible = false
+			continue
+		if camera.global_position.distance_to(head_position) > ENEMY_HEALTH_BAR_MAX_RANGE:
+			bar.visible = false
+			continue
+		if not _raycast_map_obstacle(camera.global_position, head_position, player).is_empty():
+			# Un mur/obstacle coupe la ligne de vue entre la caméra et
+			# l'ennemi : on cache la barre plutôt que de la laisser
+			# transparaître à travers le décor.
 			bar.visible = false
 			continue
 		var screen_pos: Vector2 = camera.unproject_position(head_position)

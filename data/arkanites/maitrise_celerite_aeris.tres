@@ -12,5 +12,6 @@ image_path = "res://assets/arkanite/Maitrise_arkanite_de_celerite.png"
 effect_text = "+8% vitesse de déplacement"
 flavor_text = "La vitesse ouvre des chemins que la force ne voit pas."
 is_equipable = true
+unlock_level = 5
 stat_field = "aeris_speed"
 stat_delta = 0.76

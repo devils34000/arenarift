@@ -12,4 +12,5 @@ image_path = "res://assets/arkanite/Invocation_arkanite_du_voile.png"
 effect_text = "Ajoute un pull court sur un ennemi proche"
 flavor_text = "Le tissu qui lie, plus sûrement que le fer."
 is_equipable = true
+unlock_level = 15
 unlocked_spell_id = "maylinh_pull"

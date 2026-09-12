@@ -1860,6 +1860,7 @@ func _show_duel_match_end(astral_wins: bool) -> void:
 	_show_match_results(player_won, winner, "BO3 : %d — %d" % [duel_astral_rounds, duel_arcane_rounds])
 
 func _show_match_results(player_won: bool, winner_name: String, score_text: String) -> void:
+	PlayerProgress.award_match_xp(player_won, kills)
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
 		round_end_label = null

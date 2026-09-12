@@ -2449,8 +2449,15 @@ func _show_arkanites() -> void:
 	_clear()
 	title.text = "ARKANITES"
 
+	var player_level: int = PlayerProgress.get_level()
+	var level_text: String = "NIVEAU MAX (%d)" % PlayerProgress.MAX_LEVEL
+	if player_level < PlayerProgress.MAX_LEVEL:
+		var player_xp: int = PlayerProgress.get_xp()
+		var xp_needed: int = PlayerProgress.xp_to_next_level(player_level)
+		level_text = "NIVEAU %d/%d  •  %d/%d XP" % [player_level, PlayerProgress.MAX_LEVEL, player_xp, xp_needed]
+
 	var subtitle := _label(
-		"FAÇONNE TON STYLE  •  HÉROS ACTUEL : %s" % selected_hero,
+		"FAÇONNE TON STYLE  •  HÉROS ACTUEL : %s  •  %s" % [selected_hero, level_text],
 		10,
 		Color("b8935a"),
 		Vector2(0, 44),
@@ -2528,12 +2535,18 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 	row.add_child(effect_label)
 
 	if card.is_equipable:
+		# Consommables (Éveil) toujours disponibles ; Maîtrise/Invocation se
+		# débloquent progressivement avec le niveau du joueur.
+		var unlocked: bool = PlayerProgress.get_level() >= card.unlock_level
 		var equipped: bool = bool(equipped_arkanites.get(card.id, false))
-		var toggle_button := _button("ÉQUIPÉE" if equipped else "ÉQUIPER", Vector2(120, 26), equipped)
+		var button_text: String = "ÉQUIPÉE" if equipped else "ÉQUIPER"
+		if not unlocked:
+			button_text = "NIVEAU %d REQUIS" % card.unlock_level
+		var toggle_button := _button(button_text, Vector2(120, 26), equipped)
 		toggle_button.position = Vector2(86, 92)
 		toggle_button.size = Vector2(120, 22)
-		toggle_button.add_theme_font_size_override("font_size", 9)
-		toggle_button.disabled = not relevant_to_selected_hero
+		toggle_button.add_theme_font_size_override("font_size", 9 if unlocked else 8)
+		toggle_button.disabled = not relevant_to_selected_hero or not unlocked
 		toggle_button.pressed.connect(func():
 			equipped_arkanites[card.id] = not bool(equipped_arkanites.get(card.id, false))
 			_show_arkanites_deferred()

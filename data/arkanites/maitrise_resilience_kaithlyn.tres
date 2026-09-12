@@ -12,5 +12,6 @@ image_path = "res://assets/arkanite/Maitrise_arkanite_de_resilience.png"
 effect_text = "+15 PV max"
 flavor_text = "La véritable force est de toujours se relever."
 is_equipable = true
+unlock_level = 5
 stat_field = "kaithlyn_max_health"
 stat_delta = 15.0

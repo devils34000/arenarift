@@ -20,6 +20,7 @@ run/main_scene.dedicated_server="res://scenes/dedicated_server.tscn"
 
 Network="*res://scripts/network.gd"
 SteamManager="*uid://bugi61jyvp8jf"
+PlayerProgress="*res://scripts/player_progress.gd"
 
 [display]
 

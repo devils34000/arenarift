@@ -6,7 +6,7 @@ signal session_joined
 signal session_failed(reason: String)
 signal peer_arrived(peer_id: int)
 signal peer_left(peer_id: int)
-signal arena_client_ready_signal(peer_id: int, hero: String, mode: String)
+signal arena_client_ready_signal(peer_id: int, hero: String, mode: String, team: String)
 signal arena_player_input_received(peer_id: int, move_direction: Vector3, aim_direction: Vector3)
 
 const DEFAULT_PORT := 2456
@@ -15,6 +15,10 @@ var peer: ENetMultiplayerPeer
 var match_mode := "DEATHMATCH"
 var selected_hero := "AERIS"
 var match_started: bool = false
+# Camp ("ASTRAL"/"ARCANE") choisi en Custom Game avant de rejoindre le
+# serveur, transmis au serveur via arena_client_ready. Vide pour tous les
+# autres modes, qui gardent l'assignation automatique par ordre de connexion.
+var pending_custom_team: String = ""
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(func(id):
@@ -99,11 +103,11 @@ func arena_ability_request(kind: String, direction: Vector3, value: float = 0.0,
 		arena.call("_network_receive_ability_request", sender, kind, direction, value, input_sequence)
 
 @rpc("any_peer", "call_remote", "reliable")
-func arena_client_ready(hero: String, mode: String) -> void:
+func arena_client_ready(hero: String, mode: String, team: String = "") -> void:
 	if not multiplayer.is_server():
 		return
 	var sender := multiplayer.get_remote_sender_id()
-	arena_client_ready_signal.emit(sender, hero, mode)
+	arena_client_ready_signal.emit(sender, hero, mode, team)
 
 @rpc("any_peer", "call_remote", "reliable")
 func arena_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool) -> void:

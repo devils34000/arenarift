@@ -846,9 +846,10 @@ func _send_network_ready() -> void:
 	var network_node := get_node_or_null("/root/Network")
 	if network_node == null or multiplayer.is_server():
 		return
-	network_node.arena_client_ready.rpc_id(1, selected_hero, str(network_node.get("match_mode")))
+	var team: String = str(network_node.get("pending_custom_team"))
+	network_node.arena_client_ready.rpc_id(1, selected_hero, str(network_node.get("match_mode")), team)
 
-func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String) -> void:
+func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String, requested_team: String = "") -> void:
 	if not multiplayer.is_server() or peer_id <= 0:
 		return
 	if network_fighters.has(peer_id):
@@ -873,7 +874,16 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 	fighter.is_bot = false
 	fighter.network_peer_id = peer_id
 	fighter.hero_id = selected_hero
-	fighter.team_color = Color("48a9ff") if network_fighters.is_empty() else Color("ff6276")
+	# En Custom Game, le camp est choisi par le joueur (ou tiré au sort côté
+	# host) avant la connexion et transmis ici. Les autres modes gardent
+	# l'ancienne assignation automatique : 1er connecté = ASTRAL, le reste
+	# ARCANE (les slots manquants étant comblés par des bots).
+	if requested_team == "ASTRAL":
+		fighter.team_color = Color("48a9ff")
+	elif requested_team == "ARCANE":
+		fighter.team_color = Color("ff6276")
+	else:
+		fighter.team_color = Color("48a9ff") if network_fighters.is_empty() else Color("ff6276")
 	fighter.set_multiplayer_authority(peer_id)
 	add_child(fighter)
 	fighter.global_position = _resolve_spawn_position(spawns[network_fighters.size() % spawns.size()], fighter)
@@ -1019,6 +1029,10 @@ func _start_network_bots() -> void:
 		bot_count = 3
 	elif mode_value == "3V3 RIVALRY":
 		bot_count = 5
+	elif mode_value == "CUSTOM GAME":
+		# Custom Game : uniquement des joueurs réels, jamais de bot pour
+		# compléter — le camp de chacun est déjà fixé avant la connexion.
+		bot_count = 0
 
 	var spawn_sets: Dictionary = _map_spawn_positions()
 	var spawns: Array[Vector3] = spawn_sets["deathmatch"]
@@ -1379,7 +1393,7 @@ func _is_duel_mode() -> bool:
 
 func _is_team_mode() -> bool:
 	var mode_value := mode_value_for_bots()
-	return mode_value == "2V2 CLASH" or mode_value == "3V3 RIVALRY"
+	return mode_value == "2V2 CLASH" or mode_value == "3V3 RIVALRY" or mode_value == "CUSTOM GAME"
 
 func _team_size() -> int:
 	return 2 if mode_value_for_bots() == "2V2 CLASH" else 3
@@ -3449,7 +3463,7 @@ func _build_hud() -> void:
 	top.name = "ControlTop"
 	hud.add_child(top)
 
-	subtitle_label = _label("", ("3V3 RIVALRY  •  BO3" if mode_value_for_bots() == "3V3 RIVALRY" else ("2V2 CLASH  •  BO3" if _is_team_mode() else "1V1 DUEL  •  BO3")), Vector2(10, 6), Vector2(400, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
+	subtitle_label = _label("", ("%s  •  BO3" % mode_value_for_bots() if _is_team_mode() else "1V1 DUEL  •  BO3"), Vector2(10, 6), Vector2(400, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
 	top.add_child(subtitle_label)
 
 	var astral_label := _label("", "ASTRAL", Vector2(16, 27), Vector2(120, 24), 16, Color("78cfff"), HORIZONTAL_ALIGNMENT_CENTER)

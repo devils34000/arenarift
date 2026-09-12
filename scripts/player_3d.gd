@@ -505,11 +505,11 @@ func _player_input(delta: float) -> void:
 		if hero_id == "MAYLINH":
 			try_flee()
 		elif hero_id == "KAITHLYN":
-			try_charge(move_direction if move_direction.length_squared() > 0.001 else aim_direction)
+			try_charge(_character_forward())
 		elif hero_id == "EREN":
-			try_eren_charge(move_direction if move_direction.length_squared() > 0.001 else aim_direction)
+			try_eren_charge(_character_forward())
 		else:
-			try_dash(move_direction if move_direction.length_squared() > 0.001 else aim_direction)
+			try_dash(_character_forward())
 
 	if hero_id == "KAITHLYN":
 		if Input.is_action_just_pressed("spell_orb") or controller_orb_pressed:
@@ -595,6 +595,14 @@ func _face_direction(direction: Vector3, delta: float) -> void:
 	aim_direction = direction.normalized()
 	var desired_angle: float = atan2(aim_direction.x, aim_direction.z)
 	rotation.y = lerp_angle(rotation.y, desired_angle, clampf(delta * 18.0, 0.0, 1.0))
+
+## Direction vers laquelle le PERSONNAGE (son modèle 3D, pas la caméra) est
+## actuellement tourné. Utilisée pour les dash/charges : avant ça, ils
+## partaient selon la direction d'entrée relative à la caméra (ou la caméra
+## elle-même à l'arrêt), ce qui ne correspondait pas forcément à l'endroit
+## où le personnage regardait visuellement, surtout en strafe.
+func _character_forward() -> Vector3:
+	return Vector3(sin(rotation.y), 0.0, cos(rotation.y))
 
 func _get_camera_attack_direction() -> Vector3:
 	var camera: Camera3D = get_viewport().get_camera_3d()

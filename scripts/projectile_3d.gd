@@ -57,6 +57,11 @@ func _physics_process(delta: float) -> void:
 		if fighter != null and fighter != owner_player and is_instance_valid(fighter):
 			global_position = collision.get("position", next_position) as Vector3
 			hit.emit(fighter, self)
+			# La copie visuelle diffusée aux autres clients (arena_3d.gd,
+			# _network_client_spell_visual) ne connecte jamais ce signal —
+			# sans ce queue_free, ce projectile continuait donc d'exister,
+			# figé sur la cible, jusqu'à expiration de sa durée de vie.
+			queue_free()
 			return
 
 		# Tout autre PhysicsBody3D est considéré comme décor/obstacle.
@@ -86,6 +91,7 @@ func _physics_process(delta: float) -> void:
 		var dz: float = fighter.global_position.z - global_position.z
 		if Vector2(dx, dz).length() < 0.85:
 			hit.emit(fighter, self)
+			queue_free()
 			return
 
 	if lifetime <= 0.0:

@@ -1855,7 +1855,7 @@ func _network_receive_spell_event(kind: String, origin: Vector3, direction: Vect
 			continue
 		network_node.arena_spell_visual.rpc_id(int(peer_id), kind, origin, direction, caster_id)
 
-func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vector3, caster_id: int) -> void:
+func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vector3, caster_id: int, value: float = 0.0) -> void:
 	var caster := network_fighters.get(caster_id) as ArenaPlayer3D
 	if caster == null or not is_instance_valid(caster):
 		return
@@ -1938,7 +1938,10 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		# (y compris au lanceur lui-même), mais personne ne le traitait ici.
 		# On rejoue donc le lancer localement, de façon purement visuelle
 		# (les dégâts restent gérés côté serveur, cf. _update_thrown_axes).
-		_spawn_thrown_axe(caster, direction)
+		# "value" porte le ratio de charge envoyé par le serveur : sans lui,
+		# cette copie locale utilisait l'ancienne distance de lancer connue
+		# du lanceur au lieu de la distance réellement choisie cette fois-ci.
+		_spawn_thrown_axe(caster, direction, value)
 
 func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: CharacterBody3D) -> void:
 	# En réseau, le client propriétaire ne simule jamais le gameplay du sort.
@@ -1970,8 +1973,19 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 			var caster_id: int = 0
 			if caster is ArenaPlayer3D:
 				caster_id = caster.network_peer_id
+			var visual_value: float = 0.0
+			if kind == "axe_throw" and caster is ArenaPlayer3D:
+				# La distance de lancer (dépend de la charge du joueur) n'était
+				# jamais transmise ici : les autres clients rejouaient donc le
+				# lancer avec la distance par défaut de leur copie locale du
+				# lanceur, au lieu de la distance réellement choisie.
+				visual_value = inverse_lerp(
+					caster.kaithlyn_axe_min_distance,
+					caster.kaithlyn_axe_max_distance,
+					caster.axe_last_throw_distance
+				)
 			for peer_id in multiplayer.get_peers():
-				network_node.arena_spell_visual.rpc_id(int(peer_id), kind, origin, direction, caster_id)
+				network_node.arena_spell_visual.rpc_id(int(peer_id), kind, origin, direction, caster_id, visual_value)
 
 	if kind == "orb":
 		_play_sfx(ORB_CAST_SFX, origin, -8.0)
@@ -1984,7 +1998,12 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		orb.velocity = direction.normalized() * 17.0
 		var hero: String = str(caster.get("hero_id"))
 		var aeris_empowered: bool = hero == "AERIS" and bool(caster.get("passive_active"))
-		orb.damage = 30 if hero == "EREN" else (27 if aeris_empowered else 18)
+		if hero == "EREN":
+			orb.damage = int(caster.get("eren_orb_damage"))
+		elif aeris_empowered:
+			orb.damage = int(caster.get("aeris_orb_damage_empowered"))
+		else:
+			orb.damage = int(caster.get("aeris_orb_damage"))
 		orb.owner_player = caster
 		orb.hit.connect(_on_projectile_hit)
 		if hero == "EREN":
@@ -2016,20 +2035,20 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		vfx_manager.spawn_dash(self, origin, direction)
 		vfx_manager.spawn_charge(self, origin, 0.32)
 	elif kind == "charge_hit":
-		_melee_attack(caster, 2.0, 30, 1.0, 10.0, "charge")
+		_melee_attack(caster, 2.0, int(caster.get("kaithlyn_charge_hit_damage")), 1.0, 10.0, "charge")
 
 	elif kind == "nova":
 		var attacker: ArenaPlayer3D = caster as ArenaPlayer3D
 		if attacker == null:
 			return
 		var fury: int = attacker.consume_eren_fury()
-		var nova_damage: int = 45
+		var nova_damage: int = attacker.eren_nova_damage_base
 		if fury >= 300:
-			nova_damage = 145
+			nova_damage = attacker.eren_nova_damage_tier3
 		elif fury >= 200:
-			nova_damage = 95
+			nova_damage = attacker.eren_nova_damage_tier2
 		elif fury >= 100:
-			nova_damage = 70
+			nova_damage = attacker.eren_nova_damage_tier1
 		vfx_manager.spawn_eren_fire_cast(self, attacker.global_position + Vector3.UP * 0.05, direction, 1.25)
 		vfx_manager.spawn_eren_fire_nova(self, attacker.global_position, 1.45, fury >= 300)
 		_play_sfx(DASH_SFX, attacker.global_position, -3.0)
@@ -2079,7 +2098,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 			if push_dir.length_squared() < 0.001:
 				push_dir = direction
 			push_dir = push_dir.normalized()
-			var killed: bool = bool(target_fighter.take_damage(25, push_dir * 7.0))
+			var killed: bool = bool(target_fighter.take_damage(attacker.eren_charge_hit_damage, push_dir * 7.0))
 			var dealt: int = int(round(target_fighter.last_damage_dealt))
 			if dealt > 0:
 				attacker.register_eren_damage(dealt)
@@ -2100,7 +2119,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		spirit.global_position = origin
 		spirit.velocity = direction.normalized() * 18.5
 		spirit.owner_player = caster
-		spirit.damage = 22
+		spirit.damage = int(caster.get("maylinh_spirit_damage"))
 		spirit.spirit_color = Color("55ff2e")
 		spirit.hit.connect(_on_projectile_hit)
 		vfx_manager.spawn_maylinh_elemental_projectile(spirit, direction)
@@ -2243,7 +2262,7 @@ func _safe_movement_destination(caster: CharacterBody3D, from_pos: Vector3, dire
 
 	return target
 
-func _spawn_thrown_axe(caster: CharacterBody3D, direction: Vector3) -> void:
+func _spawn_thrown_axe(caster: CharacterBody3D, direction: Vector3, throw_ratio: float = -1.0) -> void:
 	var owner_player: ArenaPlayer3D = caster as ArenaPlayer3D
 	if owner_player == null:
 		return
@@ -2253,7 +2272,13 @@ func _spawn_thrown_axe(caster: CharacterBody3D, direction: Vector3) -> void:
 	axe.reparent(self, true)
 	axe.global_position = caster.global_position + Vector3.UP * 0.95 + direction.normalized() * 0.65
 	axe.visible = true
-	var throw_distance: float = clampf(owner_player.axe_last_throw_distance, 3.5, 12.0)
+	var throw_distance: float
+	if throw_ratio >= 0.0:
+		# Rejeu visuel côté client à partir du ratio reçu du serveur, plutôt
+		# que de dépendre de la dernière distance connue localement.
+		throw_distance = lerpf(owner_player.kaithlyn_axe_min_distance, owner_player.kaithlyn_axe_max_distance, clampf(throw_ratio, 0.0, 1.0))
+	else:
+		throw_distance = clampf(owner_player.axe_last_throw_distance, 3.5, 12.0)
 	var state: Dictionary = {
 		"axe": axe,
 		"owner": owner_player,
@@ -2333,7 +2358,7 @@ func _update_thrown_axes(delta: float) -> void:
 						var is_authoritative: bool = not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
 						var killed: bool = false
 						if is_authoritative:
-							killed = bool(fighter.take_damage(45, push * 4.0))
+							killed = bool(fighter.take_damage(owner_player.kaithlyn_axe_damage, push * 4.0))
 						vfx_manager.spawn_axe_hit(self, fighter.global_position + Vector3.UP * 0.15, velocity_axe.normalized())
 						vfx_manager.spawn_damage_flash(self, fighter.global_position, velocity_axe.normalized())
 						_play_sfx(HIT_SFX, fighter.global_position, -5.0)
@@ -2354,6 +2379,16 @@ func _update_thrown_axes(delta: float) -> void:
 						break
 
 		if stuck and owner_player.global_position.distance_to(axe.global_position) < 1.25:
+			# Seul le serveur (ou une partie locale sans réseau) décide du moment
+			# où la hache est ramassée. Avant ce garde-fou, chaque client
+			# ramassait sa propre copie dès que SA simulation locale jugeait la
+			# distance suffisante, remettant le cooldown à zéro indépendamment
+			# du serveur : l'état "hache tenue en main" pouvait diverger d'un
+			# pair à l'autre. Les clients attendent maintenant la confirmation
+			# du serveur via arena_axe_recovered (cf. _network_client_axe_recovered).
+			var is_authoritative_pickup: bool = not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
+			if not is_authoritative_pickup:
+				continue
 			var pickup_fx: Node3D = state.get("pickup_fx") as Node3D
 			if pickup_fx != null and is_instance_valid(pickup_fx):
 				pickup_fx.queue_free()
@@ -2361,8 +2396,35 @@ func _update_thrown_axes(delta: float) -> void:
 			vfx_manager.spawn_explosion(self, owner_player.global_position + Vector3.UP * 0.2, 0.25)
 			_play_sfx(TELEPORT_SFX, owner_player.global_position, -8.0)
 			thrown_axes.remove_at(index)
+			if multiplayer.has_multiplayer_peer():
+				var network_node := get_node_or_null("/root/Network")
+				if network_node != null:
+					for peer_id in multiplayer.get_peers():
+						network_node.arena_axe_recovered.rpc_id(int(peer_id), owner_player.network_peer_id)
 			continue
 
+
+## Reçoit la confirmation serveur qu'une hache plantée vient d'être ramassée
+## par son propriétaire, et rejoue localement le même effet (cf. le garde-fou
+## d'autorité dans _update_thrown_axes).
+func _network_client_axe_recovered(caster_id: int) -> void:
+	var owner_player: ArenaPlayer3D = network_fighters.get(caster_id) as ArenaPlayer3D
+	if owner_player == null or not is_instance_valid(owner_player):
+		return
+	for index in range(thrown_axes.size() - 1, -1, -1):
+		var state: Dictionary = thrown_axes[index]
+		if state.get("owner") != owner_player:
+			continue
+		var axe: Node3D = state.get("axe") as Node3D
+		var pickup_fx: Node3D = state.get("pickup_fx") as Node3D
+		if pickup_fx != null and is_instance_valid(pickup_fx):
+			pickup_fx.queue_free()
+		if axe != null and is_instance_valid(axe):
+			owner_player.recover_axe(axe)
+		vfx_manager.spawn_explosion(self, owner_player.global_position + Vector3.UP * 0.2, 0.25)
+		_play_sfx(TELEPORT_SFX, owner_player.global_position, -8.0)
+		thrown_axes.remove_at(index)
+		break
 
 func _raycast_map_obstacle(from_pos: Vector3, to_pos: Vector3, owner_player: ArenaPlayer3D) -> Dictionary:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state

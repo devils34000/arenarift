@@ -55,6 +55,13 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var kaithlyn_rage_max: float = 100.0
 @export var kaithlyn_rage_duration: float = 5.0
 @export var kaithlyn_rage_on_damage_taken: float = 35.0
+## Position/rotation de la hache et du bouclier tenus en main. Ajustables ici
+## pour corriger leur orientation ("dans le bon sens") sans toucher au code :
+## la scène se met à jour en direct dans l'éditeur/en jeu.
+@export var kaithlyn_axe_held_position: Vector3 = Vector3(0.62, 1.02, -0.08)
+@export var kaithlyn_axe_held_rotation_degrees: Vector3 = Vector3(8.0, 0.0, -22.0)
+@export var kaithlyn_shield_held_position: Vector3 = Vector3(-0.52, 0.94, 0.03)
+@export var kaithlyn_shield_held_rotation_degrees: Vector3 = Vector3(8.0, 0.0, 14.0)
 
 @export_group("EREN")
 @export var eren_max_health: float = 100.0
@@ -88,12 +95,6 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var general_anims_path: String = "res://assets/kaykit/Rig_Medium_General.glb"
 @export var model_scale: float = 1.15
 
-## ------------------------------------------------------------------
-## NOTE : "eren_orb_damage", "eren_nova_damage_*", "eren_charge_hit_damage",
-## "aeris_orb_damage*", "maylinh_spirit_damage", "kaithlyn_axe_damage" et
-## "kaithlyn_charge_hit_damage" sont visibles ici mais les DÉGÂTS RÉELS sont
-## calculés dans arena_3d.gd (_on_spell_cast). Il faudra faire le lien
-## là-bas pour qu'ils prennent effet (voir la conversation précédente).
 ## ------------------------------------------------------------------
 ## FIN DES STATS ÉDITABLES. Le reste du fichier est la logique du jeu :
 ## ne pas modifier sauf si vous savez ce que vous faites.
@@ -852,15 +853,15 @@ func _create_kaithlyn_weapons_independent() -> void:
 	# Aucun BoneAttachment : elles ne dépendent donc plus de l'import du squelette.
 	_axe_weapon = _load_weapon_or_fallback(kaithlyn_axe_scene_path, "KaithlynAxe", true)
 	_axe_weapon.scale = Vector3.ONE * 1.25
-	_axe_weapon.position = Vector3(0.62, 1.02, -0.08)
-	_axe_weapon.rotation_degrees = Vector3(8.0, 0.0, -22.0)
+	_axe_weapon.position = kaithlyn_axe_held_position
+	_axe_weapon.rotation_degrees = kaithlyn_axe_held_rotation_degrees
 	_axe_weapon.visible = true
 	add_child(_axe_weapon)
 
 	_shield_weapon = _load_weapon_or_fallback(kaithlyn_shield_scene_path, "KaithlynShield", false)
 	_shield_weapon.scale = Vector3.ONE * 1.12
-	_shield_weapon.position = Vector3(-0.52, 0.94, 0.03)
-	_shield_weapon.rotation_degrees = Vector3(8.0, 0.0, 14.0)
+	_shield_weapon.position = kaithlyn_shield_held_position
+	_shield_weapon.rotation_degrees = kaithlyn_shield_held_rotation_degrees
 	_shield_weapon.visible = true
 	add_child(_shield_weapon)
 
@@ -942,11 +943,11 @@ func _sync_kaithlyn_weapons() -> void:
 	# Tant que la hache est tenue, elle reste à une position fixe proche de la main.
 	# Elle est volontairement indépendante du squelette pour rester fiable avec KayKit.
 	if _axe_weapon != null and is_instance_valid(_axe_weapon) and _axe_weapon.get_parent() == self:
-		_axe_weapon.position = Vector3(0.62, 1.02, -0.08)
-		_axe_weapon.rotation_degrees = Vector3(8.0, 0.0, -22.0)
+		_axe_weapon.position = kaithlyn_axe_held_position
+		_axe_weapon.rotation_degrees = kaithlyn_axe_held_rotation_degrees
 	if _shield_weapon != null and is_instance_valid(_shield_weapon) and _shield_weapon.get_parent() == self:
-		_shield_weapon.position = Vector3(-0.52, 0.94, 0.03)
-		_shield_weapon.rotation_degrees = Vector3(8.0, 0.0, 14.0)
+		_shield_weapon.position = kaithlyn_shield_held_position
+		_shield_weapon.rotation_degrees = kaithlyn_shield_held_rotation_degrees
 
 func release_axe_for_throw() -> Node3D:
 	if _axe_weapon == null or not is_instance_valid(_axe_weapon):
@@ -959,8 +960,8 @@ func recover_axe(axe: Node3D) -> void:
 	if axe == null or not is_instance_valid(axe) or hero_id != "KAITHLYN":
 		return
 	axe.reparent(self, true)
-	axe.position = Vector3(0.62, 1.02, -0.08)
-	axe.rotation_degrees = Vector3(8.0, 0.0, -22.0)
+	axe.position = kaithlyn_axe_held_position
+	axe.rotation_degrees = kaithlyn_axe_held_rotation_degrees
 	axe.scale = Vector3.ONE * 1.25
 	axe.visible = true
 	_axe_weapon = axe

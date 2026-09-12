@@ -142,12 +142,25 @@ func arena_spell_event(kind: String, origin: Vector3, direction: Vector3, caster
 		arena.call("_network_receive_spell_event", kind, origin, direction, caster_id)
 
 @rpc("authority", "call_remote", "reliable")
-func arena_spell_visual(kind: String, origin: Vector3, direction: Vector3, caster_id: int) -> void:
+func arena_spell_visual(kind: String, origin: Vector3, direction: Vector3, caster_id: int, value: float = 0.0) -> void:
 	if multiplayer.is_server():
 		return
 	var arena := _get_network_arena()
 	if arena != null:
-		arena.call("_network_client_spell_visual", kind, origin, direction, caster_id)
+		arena.call("_network_client_spell_visual", kind, origin, direction, caster_id, value)
+
+## Récupération de la hache de Kaithlyn : le serveur seul décide du moment
+## exact où la hache est ramassée (position/cooldown remis à zéro), et le
+## diffuse ici. Sans cette RPC, chaque client décidait indépendamment quand
+## ramasser sa propre copie de la hache d'après sa simulation locale, ce qui
+## pouvait désynchroniser son état (visible/tenue en main) entre pairs.
+@rpc("authority", "call_remote", "reliable")
+func arena_axe_recovered(caster_id: int) -> void:
+	if multiplayer.is_server():
+		return
+	var arena := _get_network_arena()
+	if arena != null:
+		arena.call("_network_client_axe_recovered", caster_id)
 
 @rpc("any_peer", "call_remote", "reliable")
 func arena_sync_request() -> void:

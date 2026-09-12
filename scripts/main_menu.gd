@@ -382,6 +382,11 @@ func _build_steam_profile() -> void:
 	level_panel.add_child(xp_label)
 
 	level_progress = ProgressBar.new()
+	# Sans ceci, la taille minimale par défaut du thème (bien plus grande que
+	# 164x8) l'emportait sur .size ci-dessous et la barre débordait largement
+	# du bloc (même bug que sur les boutons Arkanite : custom_minimum_size
+	# prime toujours sur .size quand il est plus grand).
+	level_progress.custom_minimum_size = Vector2(164, 8)
 	level_progress.position = Vector2(10, 45)
 	level_progress.size = Vector2(164, 8)
 	level_progress.show_percentage = false
@@ -389,12 +394,17 @@ func _build_steam_profile() -> void:
 	var progress_bg := StyleBoxFlat.new()
 	progress_bg.bg_color = Color("241a0d")
 	progress_bg.set_corner_radius_all(4)
+	progress_bg.content_margin_top = 0.0
+	progress_bg.content_margin_bottom = 0.0
 	var progress_fill := StyleBoxFlat.new()
 	progress_fill.bg_color = Color("e8b656")
 	progress_fill.set_corner_radius_all(4)
+	progress_fill.content_margin_top = 0.0
+	progress_fill.content_margin_bottom = 0.0
 	level_progress.add_theme_stylebox_override("background", progress_bg)
 	level_progress.add_theme_stylebox_override("fill", progress_fill)
 	level_panel.add_child(level_progress)
+	level_panel.clip_contents = true
 
 	_update_level_display()
 	if not PlayerProgress.xp_changed.is_connected(_on_player_xp_changed):

@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://d33ghht1u0ga2"]
+
+[ext_resource type="Script" uid="uid://b1fp8ulijig51" path="res://scripts/vfx/free_magic_circle.gd" id="1"]
+
+[node name="FreeMagicCircle" type="Node3D" unique_id=1388276658]
+script = ExtResource("1")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=660386885]
+transform = Transform3D(1, 0, 0, 0, 0.9269162, 0.3752684, 0, -0.3752684, 0.9269162, 0, 1.1575663, 2.6944754)

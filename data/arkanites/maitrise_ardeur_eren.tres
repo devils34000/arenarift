@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "maitrise_ardeur_eren"
+display_name = "Arkanite d'Ardeur"
+family = 1
+hero_id = "EREN"
+image_path = "res://assets/arkanite/Maitrise_arkanite_ardeur.png"
+effect_text = "-0,4s cooldown boule de feu"
+flavor_text = "Une flamme mieux maîtrisée brûle plus loin."
+is_equipable = true
+stat_field = "eren_orb_cooldown"
+stat_delta = -0.4
+unlocked_spell_id = ""

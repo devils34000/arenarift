@@ -1,0 +1,26 @@
+CONTENTS -- Low Poly Cemetery Tomb Pack
+Maciej EmacEArt
+================================================================
+
+OBJECT SCENES (total: 74)
+  Prefabs/Tomb/Composite (1)
+  Prefabs/Tomb/Covers (7)
+  Prefabs/Tomb/Decor (6)
+  Prefabs/Tomb/Doors (6)
+  Prefabs/Tomb/Entrances (15)
+  Prefabs/Tomb/Niches (21)
+  Prefabs/Tomb/Roofs (4)
+  Prefabs/Tomb/Ruined (6)
+  Prefabs/Tomb/Segments (8)
+
+ASSETS
+  Textures:       4
+  Source FBX:     73
+  Meshes:         222
+  Materials:      9
+  Shaders:        6
+  Demo scenes:    2
+
+TOTAL FILES IN PACK: 570
+
+================================================================

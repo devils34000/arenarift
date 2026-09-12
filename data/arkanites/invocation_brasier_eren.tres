@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" format=3 uid="uid://dby28ye2xkghv"]
+
+[ext_resource type="Script" uid="uid://g0opnlghe2b" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "invocation_brasier_eren"
+display_name = "Arkanite du Brasier"
+family = 2
+hero_id = "EREN"
+image_path = "res://assets/arkanite/Invocation_arkanite_du_brasier.png"
+effect_text = "Ajoute une explosion différée au point de charge"
+flavor_text = "La patience du feu est sa plus grande force."
+is_equipable = true
+unlocked_spell_id = "eren_delayed_explosion"

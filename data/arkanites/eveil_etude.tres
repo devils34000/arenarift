@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" format=3 uid="uid://byjd4xu87bexf"]
+
+[ext_resource type="Script" uid="uid://g0opnlghe2b" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eveil_etude"
+display_name = "Arkanite de l'Étude"
+image_path = "res://assets/arkanite/Eveil_arkanite_de_letude.png"
+effect_text = "+50% XP pendant 1h"
+flavor_text = "Le savoir est une arme."

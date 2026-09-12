@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://rdr0rmaxyqvd"]
+
+[ext_resource type="Script" uid="uid://cnxhs10scv8yn" path="res://scripts/arena_3d.gd" id="1_i0d4e"]
+
+[node name="Arena1v1SF" type="Node3D" unique_id=418335436]
+script = ExtResource("1_i0d4e")
+
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=1804120483]
+transform = Transform3D(-0.999992, 0, -0.0040012808, 0, 1, 0, 0.0040012808, 0, -0.999992, 6.9183946, 0, 0)
+
+[node name="Ally_Astral_01" type="Marker3D" parent="SpawnPoints" unique_id=538280700]
+transform = Transform3D(-0.7689098, 0, -0.63935727, 0, 1, 0, 0.63935727, 0, -0.7689098, 0.2970643, 0.2256198, 0.11205967)
+
+[node name="Enemy_Arcane_01" type="Marker3D" parent="SpawnPoints" unique_id=956688728]
+transform = Transform3D(-0.64847076, 0, 0.7612399, 0, 1, 0, -0.7612399, 0, -0.64847076, 13.428499, 0.24645424, 0.07902259)

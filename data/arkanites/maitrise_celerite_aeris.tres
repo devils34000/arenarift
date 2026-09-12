@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" format=3 uid="uid://b4lf7i84f0dxn"]
+
+[ext_resource type="Script" uid="uid://g0opnlghe2b" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "maitrise_celerite_aeris"
+display_name = "Arkanite de Célérité"
+family = 1
+hero_id = "AERIS"
+image_path = "res://assets/arkanite/Maitrise_arkanite_de_celerite.png"
+effect_text = "+8% vitesse de déplacement"
+flavor_text = "La vitesse ouvre des chemins que la force ne voit pas."
+is_equipable = true
+stat_field = "aeris_speed"
+stat_delta = 0.76

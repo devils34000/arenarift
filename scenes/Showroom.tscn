@@ -1,0 +1,451 @@
+[gd_scene load_steps=82 format=3]
+
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Composite/EA_Tomb_01_Comp_PRE.prefab.scn" id="1"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01a_PRE.prefab.scn" id="2"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01b_PRE.prefab.scn" id="3"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01c_PRE.prefab.scn" id="4"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01e_PRE.prefab.scn" id="5"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01f_PRE.prefab.scn" id="6"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01g_PRE.prefab.scn" id="7"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Covers/EA_Closer_Niche_Tomb_01h_PRE.prefab.scn" id="8"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Decor/EA_Decor_Chain_01a_PRE.prefab.scn" id="9"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Decor/EA_Decor_Chain_01b_PRE.prefab.scn" id="10"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Decor/EA_Decor_Handle_01a_PRE.prefab.scn" id="11"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Decor/EA_Decor_Knocker_01a_PRE.prefab.scn" id="12"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Decor/EA_Decor_Knocker_01b_PRE.prefab.scn" id="13"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Decor/EA_Decor_Ornament_01a_PRE.prefab.scn" id="14"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Doors/EA_Closer_Door_Tomb_01a_PRE.prefab.scn" id="15"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Doors/EA_Closer_Door_Tomb_01b_PRE.prefab.scn" id="16"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Doors/EA_Closer_Door_Tomb_01c_PRE.prefab.scn" id="17"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Doors/EA_Closer_Door_Tomb_01d_PRE.prefab.scn" id="18"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Doors/EA_Closer_Door_Tomb_01e_PRE.prefab.scn" id="19"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Doors/EA_Closer_Door_Tomb_01f_PRE.prefab.scn" id="20"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Clean_Class_A_01a_PRE.prefab.scn" id="21"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Clean_Class_A_01b_PRE.prefab.scn" id="22"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Clean_Class_A_01c_PRE.prefab.scn" id="23"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Moss_Class_B_01a_PRE.prefab.scn" id="24"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Moss_Class_B_01b_PRE.prefab.scn" id="25"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Moss_Class_B_01c_PRE.prefab.scn" id="26"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Moss_Class_C_01a_PRE.prefab.scn" id="27"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_Moss_Class_C_01b_PRE.prefab.scn" id="28"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_A_01a_PRE.prefab.scn" id="29"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_A_01b_PRE.prefab.scn" id="30"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_A_01c_PRE.prefab.scn" id="31"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_B_01b_PRE.prefab.scn" id="32"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_B_01c_PRE.prefab.scn" id="33"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_C_01a_PRE.prefab.scn" id="34"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Entrances/EA_Bld_Tomb_Entrance_White_Class_C_01b_PRE.prefab.scn" id="35"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_A_01a_PRE.prefab.scn" id="36"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_A_01b_PRE.prefab.scn" id="37"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_A_01c_PRE.prefab.scn" id="38"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_B_01a_PRE.prefab.scn" id="39"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_B_01b_PRE.prefab.scn" id="40"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_C_01a_PRE.prefab.scn" id="41"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Clean_Class_C_01b_PRE.prefab.scn" id="42"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_A_01a_PRE.prefab.scn" id="43"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_A_01b_PRE.prefab.scn" id="44"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_A_01c_PRE.prefab.scn" id="45"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_B_01a_PRE.prefab.scn" id="46"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_B_01b_PRE.prefab.scn" id="47"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_C_01a_PRE.prefab.scn" id="48"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_Mossy_Class_C_01b_PRE.prefab.scn" id="49"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_A_01a_PRE.prefab.scn" id="50"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_A_01b_PRE.prefab.scn" id="51"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_A_01c_PRE.prefab.scn" id="52"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_B_01a_PRE.prefab.scn" id="53"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_B_01b_PRE.prefab.scn" id="54"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_C_01a_PRE.prefab.scn" id="55"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Niches/EA_Bld_Tomb_Niche_White_Class_C_01b_PRE.prefab.scn" id="56"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Roofs/EA_Bld_Tomb_Roof_Clean_01a_PRE.prefab.scn" id="57"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Roofs/EA_Bld_Tomb_Roof_Clean_02a_PRE.prefab.scn" id="58"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Roofs/EA_Bld_Tomb_Roof_Moss_01b_PRE.prefab.scn" id="59"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Roofs/EA_Bld_Tomb_Roof_Moss_02a_PRE.prefab.scn" id="60"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Ruined/EA_Bld_Tomb_Mossy_Ruined_01a_PRE.prefab.scn" id="61"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Ruined/EA_Bld_Tomb_Mossy_Ruined_01b_PRE.prefab.scn" id="62"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Ruined/EA_Bld_Tomb_Mossy_Ruined_01c_PRE.prefab.scn" id="63"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Ruined/EA_Bld_Tomb_Mossy_Ruined_01d_PRE.prefab.scn" id="64"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Ruined/EA_Bld_Tomb_Mossy_Ruined_01e_PRE.prefab.scn" id="65"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Ruined/EA_Bld_Tomb_Mossy_Ruined_01f_PRE.prefab.scn" id="66"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Clean_1a_PRE.prefab.scn" id="67"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Clean_1b_PRE.prefab.scn" id="68"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Clean_1c_PRE.prefab.scn" id="69"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Clean_1d_PRE.prefab.scn" id="70"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Moss_1a_PRE.prefab.scn" id="71"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Moss_1b_PRE.prefab.scn" id="72"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Moss_1c_PRE.prefab.scn" id="73"]
+[ext_resource type="PackedScene" path="res://Prefabs/Tomb/Segments/EA_Bld_Tomb_Segment_Moss_1d_PRE.prefab.scn" id="74"]
+[ext_resource type="Shader" path="res://Shaders/EA_ShowroomFloor.gdshader" id="floor_sh"]
+[ext_resource type="Shader" path="res://Shaders/EA_ShowroomBackdrop.gdshader" id="back_sh"]
+
+[sub_resource type="ShaderMaterial" id="back_mat"]
+shader = ExtResource("back_sh")
+shader_parameter/top_color = Color(0.032, 0.033, 0.042, 1)
+shader_parameter/horizon_color = Color(0.135, 0.138, 0.162, 1)
+shader_parameter/bottom_color = Color(0.052, 0.054, 0.066, 1)
+shader_parameter/horizon_spread = 0.34
+shader_parameter/top_falloff = 1.15
+shader_parameter/pool_strength = 0.32
+shader_parameter/pool_width = 0.55
+shader_parameter/pool_dir = Vector3(0, 0.06, -1)
+
+[sub_resource type="Sky" id="backdrop"]
+sky_material = SubResource("back_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("backdrop")
+ambient_light_source = 2
+ambient_light_color = Color(0.56, 0.58, 0.66, 1)
+ambient_light_sky_contribution = 0.0
+ambient_light_energy = 1.02
+reflected_light_source = 0
+tonemap_mode = 2
+tonemap_exposure = 0.9
+tonemap_white = 6.0
+ssao_enabled = true
+ssao_radius = 2.6
+ssao_intensity = 0.8
+ssao_power = 1.2
+ssao_light_affect = 0.25
+ssao_ao_channel_affect = 0.15
+glow_enabled = true
+glow_levels/3 = 1.0
+glow_levels/4 = 1.0
+glow_levels/5 = 0.6
+glow_intensity = 0.2
+glow_strength = 0.9
+glow_bloom = 0.04
+glow_blend_mode = 0
+glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_mode = 1
+fog_light_color = Color(0.135, 0.138, 0.162, 1)
+fog_light_energy = 1.0
+fog_density = 1.0
+fog_depth_begin = 95.0
+fog_depth_end = 210.0
+fog_depth_curve = 1.25
+fog_aerial_perspective = 0.15
+fog_sky_affect = 0.0
+volumetric_fog_enabled = false
+volumetric_fog_density = 0.008
+volumetric_fog_albedo = Color(0.42, 0.52, 0.66, 1)
+volumetric_fog_emission = Color(0.03, 0.05, 0.08, 1)
+volumetric_fog_emission_energy = 0.3
+volumetric_fog_length = 220.0
+volumetric_fog_ambient_inject = 0.3
+volumetric_fog_sky_affect = 0.0
+adjustment_enabled = true
+adjustment_brightness = 1.02
+adjustment_contrast = 1.02
+adjustment_saturation = 1.06
+
+[sub_resource type="PlaneMesh" id="floor"]
+size = Vector2(130, 110)
+
+[sub_resource type="ShaderMaterial" id="floor_mat"]
+shader = ExtResource("floor_sh")
+shader_parameter/pool_center = Vector2(0.5, 0.46)
+shader_parameter/pool_radius = 0.40
+shader_parameter/pool_falloff = 1.9
+shader_parameter/pool_color = Color(0.34, 0.34, 0.365, 1)
+shader_parameter/edge_color = Color(0.138, 0.141, 0.166, 1)
+shader_parameter/grain_amount = 0.06
+shader_parameter/grain_scale = 11.0
+
+[node name="Showroom" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Key" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.88295, 0.26253, -0.38921, 0, 0.82904, 0.55919, 0.46947, -0.49374, 0.732, 0, 40, 0)
+light_color = Color(1, 0.985, 0.96, 1)
+light_energy = 1.5
+light_specular = 0.22
+light_angular_distance = 8.0
+shadow_enabled = true
+shadow_bias = 0.03
+shadow_normal_bias = 1.0
+shadow_blur = 1.9
+directional_shadow_max_distance = 260.0
+
+[node name="RimBack" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.92718, -0.077885, 0.36642, 0, 0.97815, 0.20791, -0.37461, 0.19277, -0.90692, 0, 40, 0)
+light_color = Color(0.58, 0.68, 0.86, 1)
+light_energy = 0.5
+light_specular = 0.3
+light_angular_distance = 3.0
+shadow_enabled = false
+
+[node name="RimSide" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.27564, -0.29705, 0.91421, 0, 0.95106, 0.30902, -0.96126, -0.085177, 0.26215, 0, 40, 0)
+light_color = Color(0.52, 0.6, 0.75, 1)
+light_energy = 0.34
+light_specular = 0.2
+light_angular_distance = 3.0
+shadow_enabled = false
+
+[node name="Floor_Massive" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, -10)
+mesh = SubResource("floor")
+material_override = SubResource("floor_mat")
+
+[node name="Floor_Medium" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 140, -0.05, -10)
+mesh = SubResource("floor")
+material_override = SubResource("floor_mat")
+
+[node name="Floor_Small" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 250, -0.05, -10)
+mesh = SubResource("floor")
+material_override = SubResource("floor_mat")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.96696, 0.25493, 0, -0.25493, 0.96696, 134, 34, 96)
+fov = 58.0
+far = 900.0
+current = true
+
+[node name="Cam_Massive" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.99508, 0.099073, 0, -0.099073, 0.99508, 0, 12.085, 51.606)
+fov = 52.0
+far = 900.0
+
+[node name="Cam_Medium" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.99475, 0.10231, 0, -0.10231, 0.99475, 140, 9.4746, 43.093)
+fov = 52.0
+far = 900.0
+
+[node name="Cam_Small" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.98813, 0.15364, 0, -0.15364, 0.98813, 250, 8.1044, 29.601)
+fov = 52.0
+far = 900.0
+
+[node name="Massive" type="Node3D" parent="."]
+
+[node name="EA_Tomb_01_Comp" parent="Massive" instance=ExtResource("1")]
+transform = Transform3D(0.83781, 0, -0.54596, 0, 1, 0, 0.54596, 0, 0.83781, -14.205, -0.11, 2.5566)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_B_01a" parent="Massive" instance=ExtResource("46")]
+transform = Transform3D(0.94861, 0, -0.31645, 0, 1, 0, 0.31645, 0, 0.94861, -3.31, -0.11, 0.13881)
+
+[node name="EA_Bld_Tomb_Entrance_Clean_Class_A_01b" parent="Massive" instance=ExtResource("22")]
+transform = Transform3D(0.99401, 0, -0.10926, 0, 1, 0, 0.10926, 0, 0.99401, 5.75, -0.11, 0.4189)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_A_01b" parent="Massive" instance=ExtResource("30")]
+transform = Transform3D(0.99132, 0, 0.1315, 0, 1, 0, -0.1315, 0, 0.99132, 16.04, -0.11, 3.2598)
+
+[node name="EA_Bld_Tomb_Entrance_Moss_Class_B_01a" parent="Massive" instance=ExtResource("24")]
+transform = Transform3D(0.80072, 0, -0.59903, 0, 1, 0, 0.59903, 0, 0.80072, -14.055, -0.11, -3.6929)
+
+[node name="EA_Bld_Tomb_Roof_Clean_02a" parent="Massive" instance=ExtResource("58")]
+transform = Transform3D(0.91081, 0, -0.41282, 0, 1, 0, 0.41282, 0, 0.91081, -6.4, -0.11, -6.5838)
+
+[node name="EA_Bld_Tomb_Roof_Moss_02a" parent="Massive" instance=ExtResource("60")]
+transform = Transform3D(0.98136, 0, -0.19218, 0, 1, 0, 0.19218, 0, 0.98136, 1.8, -0.11, -7.2802)
+
+[node name="EA_Bld_Tomb_Entrance_Clean_Class_A_01a" parent="Massive" instance=ExtResource("21")]
+transform = Transform3D(0.99609, 0, 0.088364, 0, 1, 0, -0.088364, 0, 0.99609, 11.755, -0.11, -4.7889)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_A_01a" parent="Massive" instance=ExtResource("29")]
+transform = Transform3D(0.82058, 0, -0.57153, 0, 1, 0, 0.57153, 0, 0.82058, -16.075, -0.11, -11.053)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_A_01a" parent="Massive" instance=ExtResource("43")]
+transform = Transform3D(0.93511, 0, -0.35435, 0, 1, 0, 0.35435, 0, 0.93511, -5.205, -0.11, -13.785)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_A_01b" parent="Massive" instance=ExtResource("37")]
+transform = Transform3D(0.99239, 0, -0.12311, 0, 1, 0, 0.12311, 0, 0.99239, 5.34, -0.11, -13.768)
+
+[node name="EA_Bld_Tomb_Niche_White_Class_A_01b" parent="Massive" instance=ExtResource("51")]
+transform = Transform3D(0.99194, 0, 0.1267, 0, 1, 0, -0.1267, 0, 0.99194, 16.4, -0.11, -10.929)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_A_01b" parent="Massive" instance=ExtResource("44")]
+transform = Transform3D(0.81831, 0, -0.57478, 0, 1, 0, 0.57478, 0, 0.81831, -15.93, -0.11, -16.011)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_B_01a" parent="Massive" instance=ExtResource("39")]
+transform = Transform3D(0.92381, 0, -0.38285, 0, 1, 0, 0.38285, 0, 0.92381, -6.43, -0.11, -18.622)
+
+[node name="EA_Bld_Tomb_Niche_White_Class_B_01a" parent="Massive" instance=ExtResource("53")]
+transform = Transform3D(0.97771, 0, -0.20997, 0, 1, 0, 0.20997, 0, 0.97771, 1.42, -0.11, -19.105)
+
+[node name="EA_Bld_Tomb_Entrance_Moss_Class_B_01c" parent="Massive" instance=ExtResource("26")]
+transform = Transform3D(0.99962, 0, -0.027544, 0, 1, 0, 0.027544, 0, 0.99962, 9.385, -0.11, -18.048)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_B_01c" parent="Massive" instance=ExtResource("33")]
+transform = Transform3D(0.98737, 0, 0.15843, 0, 1, 0, -0.15843, 0, 0.98737, 17.465, -0.11, -15.381)
+
+[node name="EA_Bld_Tomb_Mossy_Ruined_01c" parent="Massive" instance=ExtResource("63")]
+transform = Transform3D(0.85074, 0, -0.52558, 0, 1, 0, 0.52558, 0, 0.85074, -11.905, -0.11, -20.875)
+
+[node name="EA_Bld_Tomb_Mossy_Ruined_01b" parent="Massive" instance=ExtResource("62")]
+transform = Transform3D(0.9696, 0, -0.24469, 0, 1, 0, 0.24469, 0, 0.9696, -0.11, -0.11, -23.075)
+
+[node name="EA_Bld_Tomb_Entrance_Moss_Class_C_01a" parent="Massive" instance=ExtResource("27")]
+transform = Transform3D(0.99942, 0, -0.033936, 0, 1, 0, 0.033936, 0, 0.99942, 8.105, -0.11, -22.055)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_C_01a" parent="Massive" instance=ExtResource("34")]
+transform = Transform3D(0.9876, 0, 0.15699, 0, 1, 0, -0.15699, 0, 0.9876, 15.485, -0.11, -19.354)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_B_01b" parent="Massive" instance=ExtResource("47")]
+transform = Transform3D(0.82974, 0, -0.55815, 0, 1, 0, 0.55815, 0, 0.82974, -8.665, -0.11, -25.519)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_A_01c" parent="Massive" instance=ExtResource("45")]
+transform = Transform3D(0.96976, 0, -0.24406, 0, 1, 0, 0.24406, 0, 0.96976, -0.055, -0.11, -28.305)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_B_01b" parent="Massive" instance=ExtResource("40")]
+transform = Transform3D(0.99488, 0, 0.10108, 0, 1, 0, -0.10108, 0, 0.99488, 8.61, -0.11, -25.554)
+
+[node name="Medium" type="Node3D" parent="."]
+
+[node name="EA_Bld_Tomb_Niche_White_Class_B_01b" parent="Medium" instance=ExtResource("54")]
+transform = Transform3D(0.8075, 0, -0.58986, 0, 1, 0, 0.58986, 0, 0.8075, 126.51, -0.11, 3.441)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_A_01a" parent="Medium" instance=ExtResource("36")]
+transform = Transform3D(0.93066, 0, -0.36588, 0, 1, 0, 0.36588, 0, 0.93066, 135.46, -0.11, 0.3906)
+
+[node name="EA_Bld_Tomb_Entrance_Clean_Class_A_01c" parent="Medium" instance=ExtResource("23")]
+transform = Transform3D(0.99404, 0, -0.10903, 0, 1, 0, 0.10903, 0, 0.99404, 144.72, -0.11, 0.42036)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_A_01c" parent="Medium" instance=ExtResource("31")]
+transform = Transform3D(0.99115, 0, 0.13278, 0, 1, 0, -0.13278, 0, 0.99115, 153.18, -0.11, 3.2822)
+
+[node name="EA_Bld_Tomb_Niche_White_Class_A_01a" parent="Medium" instance=ExtResource("50")]
+transform = Transform3D(0.82958, 0, -0.55839, 0, 1, 0, 0.55839, 0, 0.82958, 128.45, -0.11, -2.5944)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_A_01c" parent="Medium" instance=ExtResource("38")]
+transform = Transform3D(0.95213, 0, -0.30568, 0, 1, 0, 0.30568, 0, 0.95213, 137.8, -0.11, -5.2838)
+
+[node name="EA_Bld_Tomb_Niche_White_Class_A_01c" parent="Medium" instance=ExtResource("52")]
+transform = Transform3D(0.99878, 0, -0.049331, 0, 1, 0, 0.049331, 0, 0.99878, 146.47, -0.11, -4.5093)
+
+[node name="EA_Bld_Tomb_Entrance_Moss_Class_C_01b" parent="Medium" instance=ExtResource("28")]
+transform = Transform3D(0.98591, 0, 0.16731, 0, 1, 0, -0.16731, 0, 0.98591, 153.69, -0.11, -1.4674)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_C_01b" parent="Medium" instance=ExtResource("35")]
+transform = Transform3D(0.79167, 0, -0.61095, 0, 1, 0, 0.61095, 0, 0.79167, 126.22, -0.11, -6.0885)
+
+[node name="EA_Bld_Tomb_Mossy_Ruined_01a" parent="Medium" instance=ExtResource("61")]
+transform = Transform3D(0.90156, 0, -0.43265, 0, 1, 0, 0.43265, 0, 0.90156, 133.22, -0.11, -9.0652)
+
+[node name="EA_Bld_Tomb_Roof_Clean_01a" parent="Medium" instance=ExtResource("57")]
+transform = Transform3D(0.98399, 0, -0.17824, 0, 1, 0, 0.17824, 0, 0.98399, 142.18, -0.11, -9.9173)
+
+[node name="EA_Bld_Tomb_Roof_Moss_01b" parent="Medium" instance=ExtResource("59")]
+transform = Transform3D(0.99394, 0, 0.10993, 0, 1, 0, -0.10993, 0, 0.99394, 151.84, -0.11, -7.1208)
+
+[node name="EA_Bld_Tomb_Mossy_Ruined_01d" parent="Medium" instance=ExtResource("64")]
+transform = Transform3D(0.81458, 0, -0.58005, 0, 1, 0, 0.58005, 0, 0.81458, 125.88, -0.11, -11.481)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_C_01b" parent="Medium" instance=ExtResource("42")]
+transform = Transform3D(0.91952, 0, -0.39303, 0, 1, 0, 0.39303, 0, 0.91952, 133.98, -0.11, -14.123)
+
+[node name="EA_Bld_Tomb_Niche_White_Class_C_01b" parent="Medium" instance=ExtResource("56")]
+transform = Transform3D(0.97562, 0, -0.21948, 0, 1, 0, 0.21948, 0, 0.97562, 140.87, -0.11, -14.698)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_C_01b" parent="Medium" instance=ExtResource("49")]
+transform = Transform3D(0.99952, 0, -0.030944, 0, 1, 0, 0.030944, 0, 0.99952, 148.05, -0.11, -13.661)
+
+[node name="EA_Bld_Tomb_Entrance_Moss_Class_B_01b" parent="Medium" instance=ExtResource("25")]
+transform = Transform3D(0.98709, 0, 0.16015, 0, 1, 0, -0.16015, 0, 0.98709, 155.28, -0.11, -10.929)
+
+[node name="EA_Bld_Tomb_Entrance_White_Class_B_01b" parent="Medium" instance=ExtResource("32")]
+transform = Transform3D(0.80323, 0, -0.59567, 0, 1, 0, 0.59567, 0, 0.80323, 126.94, -0.11, -16.379)
+
+[node name="EA_Bld_Tomb_Niche_Clean_Class_C_01a" parent="Medium" instance=ExtResource("41")]
+transform = Transform3D(0.90452, 0, -0.42643, 0, 1, 0, 0.42643, 0, 0.90452, 133.49, -0.11, -19.063)
+
+[node name="EA_Bld_Tomb_Niche_White_Class_C_01a" parent="Medium" instance=ExtResource("55")]
+transform = Transform3D(0.96731, 0, -0.2536, 0, 1, 0, 0.2536, 0, 0.96731, 139.6, -0.11, -19.947)
+
+[node name="EA_Bld_Tomb_Niche_Mossy_Class_C_01a" parent="Medium" instance=ExtResource("48")]
+transform = Transform3D(0.99739, 0, -0.072194, 0, 1, 0, 0.072194, 0, 0.99739, 145.71, -0.11, -19.268)
+
+[node name="EA_Bld_Tomb_Mossy_Ruined_01f" parent="Medium" instance=ExtResource("66")]
+transform = Transform3D(0.99058, 0, 0.13692, 0, 1, 0, -0.13692, 0, 0.99058, 152.66, -0.11, -16.595)
+
+[node name="EA_Bld_Tomb_Mossy_Ruined_01e" parent="Medium" instance=ExtResource("65")]
+transform = Transform3D(0.84841, 0, -0.52933, 0, 1, 0, 0.52933, 0, 0.84841, 132.54, -0.11, -22.927)
+
+[node name="EA_Bld_Tomb_Segment_Clean_1b" parent="Medium" instance=ExtResource("68")]
+transform = Transform3D(0.96631, 0, -0.25738, 0, 1, 0, 0.25738, 0, 0.96631, 139.62, -0.11, -25.184)
+
+[node name="EA_Bld_Tomb_Segment_Moss_1b" parent="Medium" instance=ExtResource("72")]
+transform = Transform3D(0.99898, 0, -0.045156, 0, 1, 0, 0.045156, 0, 0.99898, 144.74, -0.11, -24.276)
+
+[node name="EA_Bld_Tomb_Segment_Clean_1c" parent="Medium" instance=ExtResource("69")]
+transform = Transform3D(0.98711, 0, 0.16004, 0, 1, 0, -0.16004, 0, 0.98711, 149.64, -0.11, -21.411)
+
+[node name="Small" type="Node3D" parent="."]
+
+[node name="EA_Bld_Tomb_Segment_Moss_1c" parent="Small" instance=ExtResource("73")]
+transform = Transform3D(0.80853, 0, -0.58845, 0, 1, 0, 0.58845, 0, 0.80853, 242.63, -0.11, 3.4099)
+
+[node name="EA_Bld_Tomb_Segment_Clean_1d" parent="Small" instance=ExtResource("70")]
+transform = Transform3D(0.93008, 0, -0.36737, 0, 1, 0, 0.36737, 0, 0.93008, 247.47, -0.11, 0.40025)
+
+[node name="EA_Bld_Tomb_Segment_Moss_1d" parent="Small" instance=ExtResource("74")]
+transform = Transform3D(0.99344, 0, -0.11435, 0, 1, 0, 0.11435, 0, 0.99344, 252.49, -0.11, 0.38767)
+
+[node name="EA_Bld_Tomb_Segment_Clean_1a" parent="Small" instance=ExtResource("67")]
+transform = Transform3D(0.9903, 0, 0.13895, 0, 1, 0, -0.13895, 0, 0.9903, 257.35, -0.11, 3.3915)
+
+[node name="EA_Bld_Tomb_Segment_Moss_1a" parent="Small" instance=ExtResource("71")]
+transform = Transform3D(0.79885, 0, -0.60153, 0, 1, 0, 0.60153, 0, 0.79885, 240.8, -0.11, 0.13448)
+
+[node name="EA_Closer_Door_Tomb_01d" parent="Small" instance=ExtResource("18")]
+transform = Transform3D(0.90078, 0, -0.43428, 0, 1, 0, 0.43428, 0, 0.90078, 245.3, -0.11, -2.6032)
+
+[node name="EA_Closer_Door_Tomb_01e" parent="Small" instance=ExtResource("19")]
+transform = Transform3D(0.96205, 0, -0.27288, 0, 1, 0, 0.27288, 0, 0.96205, 249.26, -0.11, -3.5464)
+
+[node name="EA_Closer_Door_Tomb_01b" parent="Small" instance=ExtResource("16")]
+transform = Transform3D(0.9929, 0, -0.11895, 0, 1, 0, 0.11895, 0, 0.9929, 252.87, -0.11, -3.2095)
+
+[node name="EA_Closer_Door_Tomb_01a" parent="Small" instance=ExtResource("15")]
+transform = Transform3D(0.99933, 0, 0.036611, 0, 1, 0, -0.036611, 0, 0.99933, 256.44, -0.11, -1.752)
+
+[node name="EA_Closer_Door_Tomb_01f" parent="Small" instance=ExtResource("20")]
+transform = Transform3D(0.98252, 0, 0.18615, 0, 1, 0, -0.18615, 0, 0.98252, 259.9, -0.11, 0.71965)
+
+[node name="EA_Closer_Door_Tomb_01c" parent="Small" instance=ExtResource("17")]
+transform = Transform3D(0.77757, 0, -0.62879, 0, 1, 0, 0.62879, 0, 0.77757, 240.8, -0.11, -2.234)
+
+[node name="EA_Closer_Niche_Tomb_01e" parent="Small" instance=ExtResource("5")]
+transform = Transform3D(0.87112, 0, -0.49107, 0, 1, 0, 0.49107, 0, 0.87112, 244.32, -0.11, -4.9389)
+
+[node name="EA_Closer_Niche_Tomb_01c" parent="Small" instance=ExtResource("4")]
+transform = Transform3D(0.94815, 0, -0.31782, 0, 1, 0, 0.31782, 0, 0.94815, 248.33, -0.11, -6.461)
+
+[node name="EA_Closer_Niche_Tomb_01g" parent="Small" instance=ExtResource("7")]
+transform = Transform3D(0.98897, 0, -0.14814, 0, 1, 0, 0.14814, 0, 0.98897, 252.02, -0.11, -6.3943)
+
+[node name="EA_Closer_Niche_Tomb_01a" parent="Small" instance=ExtResource("2")]
+transform = Transform3D(0.99989, 0, 0.015153, 0, 1, 0, -0.015153, 0, 0.99989, 255.48, -0.11, -5.0542)
+
+[node name="EA_Closer_Niche_Tomb_01h" parent="Small" instance=ExtResource("8")]
+transform = Transform3D(0.98402, 0, 0.17804, 0, 1, 0, -0.17804, 0, 0.98402, 258.94, -0.11, -2.4776)
+
+[node name="EA_Closer_Niche_Tomb_01f" parent="Small" instance=ExtResource("6")]
+transform = Transform3D(0.80887, 0, -0.58798, 0, 1, 0, 0.58798, 0, 0.80887, 244.93, -0.11, -5.7253)
+
+[node name="EA_Closer_Niche_Tomb_01b" parent="Small" instance=ExtResource("3")]
+transform = Transform3D(0.93025, 0, -0.36692, 0, 1, 0, 0.36692, 0, 0.93025, 248.26, -0.11, -8.7277)
+
+[node name="EA_Decor_Chain_01b" parent="Small" instance=ExtResource("10")]
+transform = Transform3D(0.9771, 0, -0.2128, 0, 1, 0, 0.2128, 0, 0.9771, 250.4, -0.11, -9.1044)
+
+[node name="EA_Decor_Ornament_01a" parent="Small" instance=ExtResource("14")]
+transform = Transform3D(0.99256, 0, -0.12178, 0, 1, 0, 0.12178, 0, 0.99256, 251.62, -0.11, -8.7807)
+
+[node name="EA_Decor_Chain_01a" parent="Small" instance=ExtResource("9")]
+transform = Transform3D(0.9997, 0, -0.024413, 0, 1, 0, 0.024413, 0, 0.9997, 252.91, -0.11, -8.0111)
+
+[node name="EA_Decor_Knocker_01b" parent="Small" instance=ExtResource("13")]
+transform = Transform3D(0.99822, 0, 0.059584, 0, 1, 0, -0.059584, 0, 0.99822, 254.01, -0.11, -6.9971)
+
+[node name="EA_Decor_Knocker_01a" parent="Small" instance=ExtResource("12")]
+transform = Transform3D(0.9897, 0, 0.14316, 0, 1, 0, -0.14316, 0, 0.9897, 255.12, -0.11, -5.658)
+
+[node name="EA_Decor_Handle_01a" parent="Small" instance=ExtResource("11")]
+transform = Transform3D(0.97376, 0, 0.22757, 0, 1, 0, -0.22757, 0, 0.97376, 256.26, -0.11, -3.9523)

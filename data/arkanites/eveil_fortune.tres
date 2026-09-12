@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" format=3 uid="uid://deg1maqroe5qs"]
+
+[ext_resource type="Script" uid="uid://g0opnlghe2b" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eveil_fortune"
+display_name = "Arkanite de Fortune"
+image_path = "res://assets/arkanite/Eveil_arkanite_de_fortune.png"
+effect_text = "+15% de chances d'obtenir une Arkanite rare en fin de match, pendant 24h"
+flavor_text = "La chance sourit aux audacieux."

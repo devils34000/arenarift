@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://w708o1ah7mtr"]
+
+[ext_resource type="Script" uid="uid://pbp8pitrmfp" path="res://scripts/player_3d.gd" id="1_52vux"]
+
+[node name="Player3d" type="CharacterBody3D" unique_id=141486491]
+script = ExtResource("1_52vux")
+maylinh_spirit_damage = 45
+maylinh_heal_cooldown = 5.0
+maylinh_heal_radius = 6.5
+maylinh_heal_amount = 30.0

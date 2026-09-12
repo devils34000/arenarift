@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cqf80roh3qege"]
+
+[ext_resource type="Script" uid="uid://chf61edt2rshg" path="res://scripts/arena_3d_camera_test.gd" id="1"]
+
+[node name="Arena3DCameraTest" type="Node3D" unique_id=2108912197]
+script = ExtResource("1")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" format=3 uid="uid://bp2hqw5ae5xhm"]
+
+[ext_resource type="Script" uid="uid://g0opnlghe2b" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "invocation_voile_maylinh"
+display_name = "Arkanite du Voile"
+family = 2
+hero_id = "MAYLINH"
+image_path = "res://assets/arkanite/Invocation_arkanite_du_voile.png"
+effect_text = "Ajoute un pull court sur un ennemi proche"
+flavor_text = "Le tissu qui lie, plus sûrement que le fer."
+is_equipable = true
+unlocked_spell_id = "maylinh_pull"

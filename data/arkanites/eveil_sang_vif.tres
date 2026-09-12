@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArkaniteCard" format=3 uid="uid://bpamt5m0k6hro"]
+
+[ext_resource type="Script" uid="uid://g0opnlghe2b" path="res://scripts/arkanite_card.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eveil_sang_vif"
+display_name = "Arkanite du Sang Vif"
+image_path = "res://assets/arkanite/Eveil_akanite_du_sang_vif.png"
+effect_text = "Régénération de vie +20% pendant 3 matchs"
+flavor_text = "Le combat nourrit les vivants."

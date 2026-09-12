@@ -104,10 +104,10 @@ adjustment_enabled = true
 adjustment_saturation = 1.16
 
 [sub_resource type="BoxShape3D" id="WallCollisionX"]
-size = Vector3(42, 5, 0.8)
+size = Vector3(94.2055212, 13.538332, 1.9442952)
 
 [sub_resource type="BoxShape3D" id="WallCollisionZ"]
-size = Vector3(0.8, 5, 34)
+size = Vector3(1.79439088, 13.538332, 82.632546)
 
 [node name="Arena1v1" type="Node3D" unique_id=418335436]
 script = ExtResource("49_arena3d")
@@ -291,22 +291,6 @@ omni_attenuation = -0.227
 
 [node name="wall" type="StaticBody3D" parent="Maps" unique_id=593245286]
 
-[node name="CollisionNorth" type="CollisionShape3D" parent="Maps/wall" unique_id=1386546962]
-transform = Transform3D(1, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999998, 0, 2.5, -9.569578)
-shape = SubResource("WallCollisionX")
-
-[node name="CollisionSouth" type="CollisionShape3D" parent="Maps/wall" unique_id=27097285]
-transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.9999999, 0, 2.5, 9.147915)
-shape = SubResource("WallCollisionX")
-
-[node name="CollisionWest" type="CollisionShape3D" parent="Maps/wall" unique_id=662183653]
-transform = Transform3D(1, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999998, -8.0929985, 2.5, -3.842327)
-shape = SubResource("WallCollisionZ")
-
-[node name="CollisionEast" type="CollisionShape3D" parent="Maps/wall" unique_id=1013169752]
-transform = Transform3D(1, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999998, 8.036011, 2.5, -7.0692086)
-shape = SubResource("WallCollisionZ")
-
 [node name="Wall00" parent="Maps/wall" unique_id=951824624 instance=ExtResource("5_7mn7a")]
 transform = Transform3D(-0.014925922, 0, -0.9998885, 0, 0.9999999, 0, 0.999888, 0, -0.014925912, -8.237153, -0.027978979, -0.061201055)
 
@@ -363,6 +347,26 @@ transform = Transform3D(0.99999464, 0, 0.0030714879, 0, 0.9999999, 0, -0.0030714
 
 [node name="Wall01" parent="Maps/wall/Wall00" unique_id=1699843243 instance=ExtResource("5_7mn7a")]
 transform = Transform3D(-0.99999523, 0, -0.002982648, 0, 0.99999994, 0, 0.0029826239, 0, -0.9999965, -0.049275763, -0.008658357, 0.01249218)
+
+[node name="MapBoundary" type="StaticBody3D" parent="." unique_id=593245287]
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionNorth" type="CollisionShape3D" parent="MapBoundary" unique_id=1386546963]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769166, -23.257556)
+shape = SubResource("WallCollisionX")
+
+[node name="CollisionSouth" type="CollisionShape3D" parent="MapBoundary" unique_id=27097286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769166, 22.232837)
+shape = SubResource("WallCollisionX")
+
+[node name="CollisionWest" type="CollisionShape3D" parent="MapBoundary" unique_id=662183654]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.15250, 6.769166, -9.338277)
+shape = SubResource("WallCollisionZ")
+
+[node name="CollisionEast" type="CollisionShape3D" parent="MapBoundary" unique_id=1013169753]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.024676, 6.769166, -17.180781)
+shape = SubResource("WallCollisionZ")
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1804120483]
 transform = Transform3D(-0.999992, 0, -0.0040012808, 0, 1, 0, 0.0040012808, 0, -0.999992, 6.9183946, 0, 0)

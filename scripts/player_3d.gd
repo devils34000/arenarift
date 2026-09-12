@@ -160,6 +160,10 @@ func _try_jump() -> void:
 var max_health: float = 100.0
 var health: float = 100.0
 var last_damage_dealt: float = 0.0
+## Total des dégâts infligés par CE fighter depuis le début de la partie
+## (remis à zéro à chaque nouveau match) : sert au tableau de score de fin
+## de partie.
+var match_damage_dealt: float = 0.0
 var is_bot: bool = false
 
 # Multiplayer V2 : le serveur simule les joueurs et les bots.

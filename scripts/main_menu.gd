@@ -15,6 +15,8 @@ var steam_avatar: TextureRect
 var steam_avatar_fallback: Label
 var steam_name_label: Label
 var steam_status_label: Label
+var level_label: Label
+var level_progress: ProgressBar
 
 var party_panel: Panel
 var party_title_label: Label
@@ -335,7 +337,7 @@ func _build_ember_particles() -> void:
 
 
 func _build_steam_profile() -> void:
-	steam_profile = _panel(Vector2(1050, 24), Vector2(206, 62), Color("140f09eb"), Color("6b4a24"), 12)
+	steam_profile = _panel(Vector2(1050, 24), Vector2(206, 88), Color("140f09eb"), Color("6b4a24"), 12)
 	steam_profile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(steam_profile)
 
@@ -360,6 +362,48 @@ func _build_steam_profile() -> void:
 	steam_profile.add_child(steam_name_label)
 	steam_status_label = _label("STEAM  •  EN LIGNE", 9, Color("6fb88a"), Vector2(64, 31), Vector2(134, 16))
 	steam_profile.add_child(steam_status_label)
+
+	level_label = _label("NIVEAU 1/50", 9, Color("e8b656"), Vector2(8, 60), Vector2(190, 14))
+	steam_profile.add_child(level_label)
+
+	level_progress = ProgressBar.new()
+	level_progress.position = Vector2(8, 75)
+	level_progress.size = Vector2(190, 8)
+	level_progress.show_percentage = false
+	level_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var progress_bg := StyleBoxFlat.new()
+	progress_bg.bg_color = Color("241a0d")
+	progress_bg.set_corner_radius_all(4)
+	var progress_fill := StyleBoxFlat.new()
+	progress_fill.bg_color = Color("e8b656")
+	progress_fill.set_corner_radius_all(4)
+	level_progress.add_theme_stylebox_override("background", progress_bg)
+	level_progress.add_theme_stylebox_override("fill", progress_fill)
+	steam_profile.add_child(level_progress)
+
+	_update_level_display()
+	if not PlayerProgress.xp_changed.is_connected(_on_player_xp_changed):
+		PlayerProgress.xp_changed.connect(_on_player_xp_changed)
+
+
+func _on_player_xp_changed(_xp: int, _level: int) -> void:
+	_update_level_display()
+
+
+func _update_level_display() -> void:
+	if level_label == null or not is_instance_valid(level_label):
+		return
+	var current_level: int = PlayerProgress.get_level()
+	level_label.text = "NIVEAU %d/%d" % [current_level, PlayerProgress.MAX_LEVEL]
+	if level_progress == null or not is_instance_valid(level_progress):
+		return
+	if current_level >= PlayerProgress.MAX_LEVEL:
+		level_progress.max_value = 1.0
+		level_progress.value = 1.0
+		return
+	var xp_needed: int = PlayerProgress.xp_to_next_level(current_level)
+	level_progress.max_value = float(maxi(1, xp_needed))
+	level_progress.value = float(PlayerProgress.get_xp())
 
 
 func _setup_steam_profile() -> void:
@@ -2542,9 +2586,9 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 		var button_text: String = "ÉQUIPÉE" if equipped else "ÉQUIPER"
 		if not unlocked:
 			button_text = "NIVEAU %d REQUIS" % card.unlock_level
-		var toggle_button := _button(button_text, Vector2(120, 26), equipped)
-		toggle_button.position = Vector2(86, 92)
-		toggle_button.size = Vector2(120, 22)
+		var toggle_button := _button(button_text, Vector2(120, 22), equipped)
+		toggle_button.position = Vector2(86, 88)
+		toggle_button.clip_text = true
 		toggle_button.add_theme_font_size_override("font_size", 9 if unlocked else 8)
 		toggle_button.disabled = not relevant_to_selected_hero or not unlocked
 		toggle_button.pressed.connect(func():
@@ -2553,9 +2597,9 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 		)
 		row.add_child(toggle_button)
 	else:
-		var use_button := _button("UTILISER", Vector2(120, 26), false)
-		use_button.position = Vector2(86, 92)
-		use_button.size = Vector2(120, 22)
+		var use_button := _button("UTILISER", Vector2(120, 22), false)
+		use_button.position = Vector2(86, 88)
+		use_button.clip_text = true
 		use_button.add_theme_font_size_override("font_size", 9)
 		use_button.pressed.connect(func():
 			print("ARENA RIFT : Arkanite consommée -> ", card.id)

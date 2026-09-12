@@ -1860,7 +1860,8 @@ func _show_duel_match_end(astral_wins: bool) -> void:
 	_show_match_results(player_won, winner, "BO3 : %d — %d" % [duel_astral_rounds, duel_arcane_rounds])
 
 func _show_match_results(player_won: bool, winner_name: String, score_text: String) -> void:
-	PlayerProgress.award_match_xp(player_won, kills)
+	var xp_gained: int = PlayerProgress.award_match_xp(player_won, kills)
+	var damage_dealt: int = int(round(player.match_damage_dealt)) if player != null and is_instance_valid(player) else 0
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
 		round_end_label = null
@@ -1878,40 +1879,51 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	overlay.add_child(backdrop)
 
 	var panel := Panel.new()
-	panel.position = Vector2(340, 190)
-	panel.size = Vector2(600, 340)
+	panel.position = Vector2(340, 150)
+	panel.size = Vector2(600, 420)
 	panel.add_theme_stylebox_override("panel", _box(Color("071221f5"), Color("4b8dcc"), 24, 2))
 	overlay.add_child(panel)
 
 	var result := Label.new()
-	result.position = Vector2(40, 42)
-	result.size = Vector2(520, 58)
+	result.position = Vector2(40, 30)
+	result.size = Vector2(520, 52)
 	result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	result.text = "VICTOIRE" if player_won else "DÉFAITE"
-	result.add_theme_font_size_override("font_size", 46)
+	result.add_theme_font_size_override("font_size", 42)
 	result.add_theme_color_override("font_color", Color("62e6a7") if player_won else Color("ff6276"))
 	panel.add_child(result)
 
 	var winner_label := Label.new()
-	winner_label.position = Vector2(40, 112)
-	winner_label.size = Vector2(520, 38)
+	winner_label.position = Vector2(40, 88)
+	winner_label.size = Vector2(520, 32)
 	winner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	winner_label.text = ("JOUEUR VAINQUEUR : %s" if mode_value_for_bots() == "DEATHMATCH" else "ÉQUIPE VAINQUEUR : %s") % winner_name
-	winner_label.add_theme_font_size_override("font_size", 22)
+	winner_label.add_theme_font_size_override("font_size", 18)
 	winner_label.add_theme_color_override("font_color", Color("eef7ff"))
 	panel.add_child(winner_label)
 
 	var score_label_result := Label.new()
-	score_label_result.position = Vector2(40, 157)
-	score_label_result.size = Vector2(520, 30)
+	score_label_result.position = Vector2(40, 122)
+	score_label_result.size = Vector2(520, 26)
 	score_label_result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	score_label_result.text = score_text
-	score_label_result.add_theme_font_size_override("font_size", 17)
+	score_label_result.add_theme_font_size_override("font_size", 15)
 	score_label_result.add_theme_color_override("font_color", Color("8fb0d2"))
 	panel.add_child(score_label_result)
 
+	# Tableau de score personnel : kills, dégâts infligés, XP gagnée.
+	var stats_panel := Panel.new()
+	stats_panel.position = Vector2(70, 160)
+	stats_panel.size = Vector2(460, 90)
+	stats_panel.add_theme_stylebox_override("panel", _box(Color("0a1a2ecc"), Color("2c5a82"), 14, 1))
+	panel.add_child(stats_panel)
+
+	_add_match_stat_column(stats_panel, Vector2(10, 0), "ÉLIMINATIONS", str(maxi(0, kills)), Color("ffd166"))
+	_add_match_stat_column(stats_panel, Vector2(163, 0), "DÉGÂTS INFLIGÉS", str(damage_dealt), Color("ff8f6b"))
+	_add_match_stat_column(stats_panel, Vector2(316, 0), "XP GAGNÉE", "+%d" % xp_gained, Color("62e6a7"))
+
 	var return_button := Button.new()
-	return_button.position = Vector2(145, 225)
+	return_button.position = Vector2(145, 300)
 	return_button.size = Vector2(310, 62)
 	return_button.text = "RETOUR AU MENU"
 	return_button.add_theme_font_size_override("font_size", 18)
@@ -1921,6 +1933,26 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	panel.add_child(return_button)
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+## Une colonne du tableau de score de fin de partie ("ÉLIMINATIONS", valeur, etc).
+func _add_match_stat_column(parent: Control, pos: Vector2, label_text: String, value_text: String, accent: Color) -> void:
+	var label := Label.new()
+	label.position = pos + Vector2(0, 10)
+	label.size = Vector2(150, 20)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.text = label_text
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color("8fb0d2"))
+	parent.add_child(label)
+
+	var value := Label.new()
+	value.position = pos + Vector2(0, 32)
+	value.size = Vector2(150, 40)
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value.text = value_text
+	value.add_theme_font_size_override("font_size", 26)
+	value.add_theme_color_override("font_color", accent)
+	parent.add_child(value)
 
 func _return_to_menu() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -2169,6 +2201,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 			var dealt: int = int(round(fighter.last_damage_dealt))
 			if dealt > 0:
 				attacker.register_eren_damage(dealt)
+				attacker.match_damage_dealt += dealt
 			vfx_manager.spawn_eren_fire_impact(self, fighter.global_position, 0.7 if nova_damage < 100 else 1.0)
 			if killed:
 				_handle_combat_death(fighter, attacker)
@@ -2202,6 +2235,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 			var dealt: int = int(round(target_fighter.last_damage_dealt))
 			if dealt > 0:
 				attacker.register_eren_damage(dealt)
+				attacker.match_damage_dealt += dealt
 			vfx_manager.spawn_eren_fire_impact(self, target_position, 0.75)
 			if killed:
 				_handle_combat_death(target_fighter, attacker)
@@ -2459,6 +2493,7 @@ func _update_thrown_axes(delta: float) -> void:
 						var killed: bool = false
 						if is_authoritative:
 							killed = bool(fighter.take_damage(owner_player.kaithlyn_axe_damage, push * 4.0))
+							owner_player.match_damage_dealt += fighter.last_damage_dealt
 						vfx_manager.spawn_axe_hit(self, fighter.global_position + Vector3.UP * 0.15, velocity_axe.normalized())
 						vfx_manager.spawn_damage_flash(self, fighter.global_position, velocity_axe.normalized())
 						_play_sfx(HIT_SFX, fighter.global_position, -5.0)
@@ -2593,6 +2628,7 @@ func _update_thrown_daggers(delta: float) -> void:
 						var killed: bool = false
 						if is_authoritative:
 							killed = bool(fighter.take_damage(owner_player.maylinh_dagger_damage, push * 3.5))
+							owner_player.match_damage_dealt += fighter.last_damage_dealt
 						vfx_manager.spawn_axe_hit(self, fighter.global_position + Vector3.UP * 0.15, velocity_dagger.normalized())
 						vfx_manager.spawn_damage_flash(self, fighter.global_position, velocity_dagger.normalized())
 						_play_sfx(HIT_SFX, fighter.global_position, -5.0)
@@ -2789,6 +2825,7 @@ func _melee_attack(caster: CharacterBody3D, range_value: float, damage: int, stu
 	else:
 		vfx_manager.spawn_charge(self, best.global_position + Vector3.UP * 0.1, 0.55)
 	var killed: bool = bool(best.take_damage(damage, force_direction * knockback))
+	attacker.match_damage_dealt += best.last_damage_dealt
 	_broadcast_damage_vfx("damage", best.global_position, force_direction)
 	if stun > 0.0:
 		best.apply_root(stun)
@@ -2885,6 +2922,8 @@ func _on_projectile_hit(target: CharacterBody3D, orb: Area3D) -> void:
 			push
 		)
 	)
+	if owner_player != null:
+		owner_player.match_damage_dealt += target.last_damage_dealt
 
 	_broadcast_damage_vfx(
 		"damage",
@@ -2961,6 +3000,7 @@ func _update_eren_fire_trails(delta: float) -> void:
 		var dealt: int = int(round(fighter.last_damage_dealt))
 		if dealt > 0:
 			best_owner.register_eren_damage(dealt)
+			best_owner.match_damage_dealt += dealt
 		eren_trail_hit_cooldowns[id] = 0.4
 		vfx_manager.spawn_eren_fire_impact(self, fighter.global_position, 0.38)
 		if killed:

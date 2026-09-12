@@ -69,13 +69,15 @@ func add_xp(amount: int) -> void:
 
 
 ## XP attribuée en fin de partie : une base pour avoir joué, un bonus de
-## victoire, et un petit bonus par élimination.
-func award_match_xp(player_won: bool, kills: int) -> void:
+## victoire, et un petit bonus par élimination. Retourne le montant accordé
+## (affiché ensuite dans le tableau de score de fin de partie).
+func award_match_xp(player_won: bool, kills: int) -> int:
 	var amount: int = 40
 	if player_won:
 		amount += 60
 	amount += maxi(0, kills) * 5
 	add_xp(amount)
+	return amount
 
 
 func _load() -> void:

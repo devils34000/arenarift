@@ -189,12 +189,12 @@ func arena_round_reset(fighter_id: int, pos: Vector3, rot_y: float, health_value
 		arena.call("_network_client_round_reset", fighter_id, pos, rot_y, health_value, round_number, state_sequence)
 
 @rpc("authority", "call_remote", "unreliable_ordered", 2)
-func arena_match_state(time_left: float, kills: int, deaths: int, astral_kills: int, arcane_kills: int, team_astral: int, team_arcane: int, round_serial: int) -> void:
+func arena_match_state(time_left: float, kills: int, deaths: int, astral_kills: int, arcane_kills: int, team_astral: int, team_arcane: int, round_serial: int, sudden_death: bool = false) -> void:
 	if multiplayer.is_server():
 		return
 	var arena := _get_network_arena()
 	if arena != null:
-		arena.call("_network_client_match_state", time_left, kills, deaths, astral_kills, arcane_kills, team_astral, team_arcane, round_serial)
+		arena.call("_network_client_match_state", time_left, kills, deaths, astral_kills, arcane_kills, team_astral, team_arcane, round_serial, sudden_death)
 
 @rpc("authority", "call_remote", "unreliable_ordered", 3)
 func arena_damage_vfx(kind: String, position: Vector3, direction: Vector3) -> void:

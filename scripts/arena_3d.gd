@@ -102,6 +102,9 @@ var team_arcane_kills: int = 0
 var team_respawn_timers: Dictionary = {}
 var team_round_transition_left: float = 0.0
 var team_sudden_death: bool = false
+var duel_sudden_death_active: bool = false
+var sudden_death_label: Label
+var network_sudden_death_active: bool = false
 
 var wards: Array[Vector3] = [
 	Vector3(-5.5, 0.0, -3.0),
@@ -823,10 +826,57 @@ func _begin_network_matchplay() -> void:
 	print("ARENA NETWORK V3 : GAMEPLAY DEMARRE")
 
 
+## Panneau réutilisé pour toutes les grandes bannières au centre de l'écran
+## (compte à rebours, fin de round, mort subite) : fond arrondi semi-
+## transparent avec liseré coloré au lieu d'un simple texte flottant.
+func _style_banner_label(label: Label, accent: Color, font_size: int) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.04, 0.07, 0.78)
+	style.border_color = accent
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(20)
+	style.content_margin_left = 24.0
+	style.content_margin_right = 24.0
+	style.content_margin_top = 14.0
+	style.content_margin_bottom = 14.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
+	style.shadow_size = 16
+	label.add_theme_stylebox_override("normal", style)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", accent)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+	label.add_theme_constant_override("outline_size", 6)
+	label.add_theme_constant_override("line_spacing", 6)
+
+## Bannière "MORT SUBITE" : temps écoulé sans départager les deux camps, le
+## prochain fighter tué fait perdre le round à son équipe. Reste affichée
+## tant que la phase est active (contrairement au panneau de fin de round,
+## qui n'apparaît qu'entre deux rounds).
+func _show_sudden_death_banner() -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	if sudden_death_label != null and is_instance_valid(sudden_death_label):
+		return
+	sudden_death_label = Label.new()
+	sudden_death_label.name = "SuddenDeathBanner"
+	sudden_death_label.position = Vector2(390, 110)
+	sudden_death_label.size = Vector2(500, 90)
+	_style_banner_label(sudden_death_label, Color("ff3b3b"), 30)
+	sudden_death_label.text = "MORT SUBITE"
+	hud.add_child(sudden_death_label)
+
+func _hide_sudden_death_banner() -> void:
+	if sudden_death_label != null and is_instance_valid(sudden_death_label):
+		sudden_death_label.queue_free()
+	sudden_death_label = null
+
 func _update_network_countdown_display(seconds_left: float) -> void:
 	if network_countdown_display == null or not is_instance_valid(network_countdown_display):
 		return
-	network_countdown_display.text = "LA PARTIE COMMENCE DANS %d" % maxi(0, int(ceil(seconds_left)))
+	var seconds: int = maxi(0, int(ceil(seconds_left)))
+	network_countdown_display.text = "LA PARTIE COMMENCE DANS\n%d" % seconds
 
 func _create_network_countdown_display() -> void:
 	if hud == null or not is_instance_valid(hud):
@@ -835,11 +885,9 @@ func _create_network_countdown_display() -> void:
 		return
 	network_countdown_display = Label.new()
 	network_countdown_display.name = "NetworkCountdown"
-	network_countdown_display.position = Vector2(0, 205)
-	network_countdown_display.size = Vector2(1280, 70)
-	network_countdown_display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	network_countdown_display.add_theme_font_size_override("font_size", 28)
-	network_countdown_display.add_theme_color_override("font_color", Color("fff1b8"))
+	network_countdown_display.position = Vector2(390, 175)
+	network_countdown_display.size = Vector2(500, 130)
+	_style_banner_label(network_countdown_display, Color("fff1b8"), 26)
 	network_countdown_display.visible = false
 	hud.add_child(network_countdown_display)
 
@@ -1088,7 +1136,7 @@ func _network_client_hard_correction(fighter_id: int, pos: Vector3, rot_y: float
 		visual_root.position = Vector3.ZERO
 		visual_root.rotation = Vector3.ZERO
 
-func _network_client_match_state(time_left: float, local_kills: int, local_deaths: int, astral_kills: int, arcane_kills: int, team_astral: int, team_arcane: int, serial: int) -> void:
+func _network_client_match_state(time_left: float, local_kills: int, local_deaths: int, astral_kills: int, arcane_kills: int, team_astral: int, team_arcane: int, serial: int, sudden_death: bool = false) -> void:
 	if serial < network_round_serial:
 		return
 	network_round_serial = serial
@@ -1099,6 +1147,12 @@ func _network_client_match_state(time_left: float, local_kills: int, local_death
 	duel_arcane_kills = arcane_kills
 	team_astral_kills = team_astral
 	team_arcane_kills = team_arcane
+	if sudden_death != network_sudden_death_active:
+		network_sudden_death_active = sudden_death
+		if sudden_death:
+			_show_sudden_death_banner()
+		else:
+			_hide_sudden_death_banner()
 	_update_hud()
 
 func _network_client_damage_vfx(kind: String, position: Vector3, direction: Vector3) -> void:
@@ -1145,7 +1199,7 @@ func _broadcast_network_state() -> void:
 		# son vrai score, tous les autres voyaient CELUI DU PREMIER JOUEUR.
 		var fighter_kills: int = int(deathmatch_scores.get(fighter, 0))
 		var fighter_deaths: int = int(deathmatch_deaths.get(fighter, 0))
-		network_node.arena_match_state.rpc_id(int(id), round_time, fighter_kills, fighter_deaths, duel_astral_kills, duel_arcane_kills, team_astral_kills, team_arcane_kills, network_round_serial)
+		network_node.arena_match_state.rpc_id(int(id), round_time, fighter_kills, fighter_deaths, duel_astral_kills, duel_arcane_kills, team_astral_kills, team_arcane_kills, network_round_serial, duel_sudden_death_active or team_sudden_death)
 
 func _build_fighters() -> void:
 	player = PlayerScene.new()
@@ -1272,6 +1326,7 @@ func _start_team_round() -> void:
 	team_arcane_kills = 0
 	round_time = TEAM_ROUND_DURATION
 	team_sudden_death = false
+	_hide_sudden_death_banner()
 	team_respawn_timers.clear()
 	team_round_transition_left = 0.0
 	if round_end_label != null and is_instance_valid(round_end_label):
@@ -1376,6 +1431,8 @@ func _check_team_elimination() -> void:
 func _finish_team_round(astral_wins: bool) -> void:
 	if team_round_transition_left > 0.0 or game_over:
 		return
+	team_sudden_death = false
+	_hide_sudden_death_banner()
 	if astral_wins:
 		team_astral_rounds += 1
 	else:
@@ -1395,11 +1452,10 @@ func _show_team_round_winner(astral_wins: bool) -> void:
 		round_end_label.queue_free()
 
 	round_end_label = Label.new()
-	round_end_label.position = Vector2(350, 260)
-	round_end_label.size = Vector2(580, 150)
-	round_end_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	round_end_label.add_theme_font_size_override("font_size", 34)
-	round_end_label.add_theme_color_override("font_color", Color("fff1b8"))
+	round_end_label.position = Vector2(340, 240)
+	round_end_label.size = Vector2(600, 190)
+	var team_accent: Color = Color("48a9ff") if astral_wins else Color("ff6276")
+	_style_banner_label(round_end_label, team_accent, 30)
 	round_end_label.text = "%s GAGNE LE ROUND\nBO3 : %d — %d\n\nPROCHAIN ROUND DANS %d" % [("ASTRAL" if astral_wins else "ARCANE"), team_astral_rounds, team_arcane_rounds, int(ROUND_BREAK_DURATION)]
 	hud.add_child(round_end_label)
 
@@ -1470,6 +1526,10 @@ func _update_team_mode(delta: float) -> void:
 		return
 	round_time = maxf(0.0, round_time - delta)
 	team_sudden_death = round_time <= 30.0
+	if team_sudden_death:
+		_show_sudden_death_banner()
+	else:
+		_hide_sudden_death_banner()
 	var ready_respawns: Array[ArenaPlayer3D] = []
 	for key in team_respawn_timers.keys():
 		team_respawn_timers[key] = maxf(0.0, float(team_respawn_timers[key]) - delta)
@@ -1548,8 +1608,19 @@ func _update_duel(delta: float) -> void:
 		duel_respawn_timers.erase(fighter)
 		_respawn_duel_fighter(fighter)
 
-	if kills >= DUEL_KILL_LIMIT or duel_arcane_kills >= DUEL_KILL_LIMIT or round_time <= 0.0:
+	if kills >= DUEL_KILL_LIMIT or duel_arcane_kills >= DUEL_KILL_LIMIT:
 		_finish_duel_round()
+	elif round_time <= 0.0:
+		if duel_astral_kills != duel_arcane_kills:
+			_finish_duel_round()
+		elif not duel_sudden_death_active:
+			# Avant : un round à égalité à 0:00 (0-0 la plupart du temps) ne
+			# désignait aucun vainqueur et recommençait silencieusement. La
+			# mort subite tranche désormais : le prochain fighter tué fait
+			# perdre le round à son équipe (cf. _handle_duel_death).
+			duel_sudden_death_active = true
+			_show_sudden_death_banner()
+			_broadcast_network_state()
 
 func _start_duel_round() -> void:
 	network_round_serial += 1
@@ -1562,6 +1633,8 @@ func _start_duel_round() -> void:
 	game_over = false
 	duel_respawn_timers.clear()
 	duel_round_transition_left = 0.0
+	duel_sudden_death_active = false
+	_hide_sudden_death_banner()
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
 		round_end_label = null
@@ -1711,6 +1784,15 @@ func _handle_duel_death(victim: ArenaPlayer3D, killer: ArenaPlayer3D) -> void:
 	victim.collision_layer = 0
 	victim.collision_mask = 0
 	victim.velocity = Vector3.ZERO
+
+	if duel_sudden_death_active:
+		# En mort subite, la première mort tranche immédiatement le round :
+		# pas de respawn, on ne repasse pas par le décompte normal.
+		_broadcast_fighter_death(victim, -1.0)
+		_hide_sudden_death_banner()
+		_finish_duel_round()
+		return
+
 	duel_respawn_timers[victim] = DUEL_RESPAWN_DELAY
 	_broadcast_fighter_death(victim, DUEL_RESPAWN_DELAY)
 
@@ -1728,6 +1810,8 @@ func _respawn_duel_fighter(fighter: ArenaPlayer3D) -> void:
 func _finish_duel_round() -> void:
 	if duel_round_transition_left > 0.0 or game_over:
 		return
+	duel_sudden_death_active = false
+	_hide_sudden_death_banner()
 	var astral_wins := duel_astral_kills > duel_arcane_kills
 	if duel_astral_kills == duel_arcane_kills:
 		# En cas d'égalité à 1:30, aucun round n'est accordé.
@@ -1751,12 +1835,11 @@ func _show_duel_round_winner(astral_wins: bool) -> void:
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
 	round_end_label = Label.new()
-	round_end_label.position = Vector2(360, 270)
-	round_end_label.size = Vector2(560, 130)
-	round_end_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	round_end_label.add_theme_font_size_override("font_size", 34)
-	round_end_label.add_theme_color_override("font_color", Color("fff1b8"))
+	round_end_label.position = Vector2(340, 240)
+	round_end_label.size = Vector2(600, 190)
 	var winner := "ASTRAL" if astral_wins else "ARCANE"
+	var duel_accent: Color = Color("48a9ff") if astral_wins else Color("ff6276")
+	_style_banner_label(round_end_label, duel_accent, 30)
 	round_end_label.text = "%s GAGNE LE ROUND\nBO3 : %d — %d\n\nPROCHAIN ROUND DANS %d" % [winner, duel_astral_rounds, duel_arcane_rounds, int(ROUND_BREAK_DURATION)]
 	hud.add_child(round_end_label)
 

@@ -20,11 +20,11 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var aeris_orb_damage_empowered: int = 27
 @export var aeris_teleport_cooldown: float = 4.0
 @export var aeris_passive_max_charges: int = 3
-## Position/rotation du bâton tenu en main. Ajustables ici pour corriger son
-## orientation sans toucher au code.
-@export var aeris_staff_held_position: Vector3 = Vector3(0.55, 1.0, -0.05)
-@export var aeris_staff_held_rotation_degrees: Vector3 = Vector3(0.0, 0.0, -18.0)
-@export var aeris_staff_scale: float = 1.15
+## Le bâton est accroché à l'os "handslot.r" du squelette (déjà bien orienté
+## par l'artiste) : ces valeurs ne sont qu'un ajustement fin optionnel.
+@export var aeris_staff_held_position: Vector3 = Vector3.ZERO
+@export var aeris_staff_held_rotation_degrees: Vector3 = Vector3.ZERO
+@export var aeris_staff_scale: float = 1.0
 
 @export_group("MAYLINH")
 @export var maylinh_max_health: float = 100.0
@@ -38,11 +38,11 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var maylinh_heal_radius: float = 4.5
 @export var maylinh_heal_amount: float = 28.0
 @export var maylinh_passive_max_charges: int = 2
-## Position/rotation de la dague tenue en main. Ajustables ici pour corriger
-## son orientation sans toucher au code.
-@export var maylinh_dagger_held_position: Vector3 = Vector3(0.5, 0.95, -0.05)
-@export var maylinh_dagger_held_rotation_degrees: Vector3 = Vector3(0.0, 0.0, -22.0)
-@export var maylinh_dagger_scale: float = 1.1
+## La dague est accrochée à l'os "handslot.r" du squelette (déjà bien
+## orienté par l'artiste) : ces valeurs ne sont qu'un ajustement fin optionnel.
+@export var maylinh_dagger_held_position: Vector3 = Vector3.ZERO
+@export var maylinh_dagger_held_rotation_degrees: Vector3 = Vector3.ZERO
+@export var maylinh_dagger_scale: float = 1.0
 
 @export_group("KAITHLYN")
 @export var kaithlyn_max_health: float = 100.0
@@ -68,10 +68,15 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 ## Position/rotation de la hache et du bouclier tenus en main. Ajustables ici
 ## pour corriger leur orientation ("dans le bon sens") sans toucher au code :
 ## la scène se met à jour en direct dans l'éditeur/en jeu.
-@export var kaithlyn_axe_held_position: Vector3 = Vector3(0.62, 1.02, -0.08)
-@export var kaithlyn_axe_held_rotation_degrees: Vector3 = Vector3(8.0, 0.0, -22.0)
-@export var kaithlyn_shield_held_position: Vector3 = Vector3(-0.52, 0.94, 0.03)
-@export var kaithlyn_shield_held_rotation_degrees: Vector3 = Vector3(8.0, 0.0, 14.0)
+## L'arme est accrochée à l'os "handslot.r"/"handslot.l" du squelette (déjà
+## bien orienté par l'artiste) : ces valeurs ne sont qu'un ajustement fin
+## optionnel par-dessus, pas un positionnement absolu.
+@export var kaithlyn_axe_held_position: Vector3 = Vector3.ZERO
+@export var kaithlyn_axe_held_rotation_degrees: Vector3 = Vector3.ZERO
+@export var kaithlyn_axe_scale: float = 1.25
+@export var kaithlyn_shield_held_position: Vector3 = Vector3.ZERO
+@export var kaithlyn_shield_held_rotation_degrees: Vector3 = Vector3.ZERO
+@export var kaithlyn_shield_scale: float = 1.12
 
 @export_group("EREN")
 @export var eren_max_health: float = 100.0
@@ -89,11 +94,11 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var eren_nova_damage_tier2: int = 95
 @export var eren_nova_damage_tier3: int = 145
 @export var eren_passive_fury_max: int = 300
-## Position/rotation de l'épée tenue en main. Ajustables ici pour corriger
-## son orientation sans toucher au code.
-@export var eren_sword_held_position: Vector3 = Vector3(0.58, 1.0, -0.05)
-@export var eren_sword_held_rotation_degrees: Vector3 = Vector3(0.0, 0.0, -20.0)
-@export var eren_sword_scale: float = 1.2
+## L'épée est accrochée à l'os "handslot.r" du squelette (déjà bien orienté
+## par l'artiste) : ces valeurs ne sont qu'un ajustement fin optionnel.
+@export var eren_sword_held_position: Vector3 = Vector3.ZERO
+@export var eren_sword_held_rotation_degrees: Vector3 = Vector3.ZERO
+@export var eren_sword_scale: float = 1.0
 
 @export_group("Déplacement commun")
 @export var acceleration: float = 42.0
@@ -855,6 +860,13 @@ func _setup_model() -> void:
 	_model.rotation = Vector3.ZERO
 	_model.top_level = false
 	_visual_root.add_child(_model)
+	# Les rigs KayKit ont des os dédiés "handslot.r"/"handslot.l" prévus par
+	# l'artiste pour porter exactement ce genre d'objet, avec la bonne
+	# orientation déjà intégrée. On les utilise pour que les armes suivent la
+	# vraie main du personnage (y compris pendant les animations) au lieu
+	# d'un simple décalage fixe deviné à la main, qui les faisait apparaître
+	# dans le dos ou sur le bras selon les personnages.
+	_skeleton = _find_skeleton(_model)
 
 	if hero_id == "KAITHLYN":
 		_create_kaithlyn_weapons_independent()
@@ -874,21 +886,47 @@ func _setup_model() -> void:
 	_import_animation_libraries(general_anims_path)
 
 func _create_kaithlyn_weapons_independent() -> void:
-	# Les armes sont de vrais objets 3D enfants du CharacterBody3D.
-	# Aucun BoneAttachment : elles ne dépendent donc plus de l'import du squelette.
 	_axe_weapon = _load_weapon_or_fallback(kaithlyn_axe_scene_path, "KaithlynAxe", true)
-	_axe_weapon.scale = Vector3.ONE * 1.25
-	_axe_weapon.position = kaithlyn_axe_held_position
-	_axe_weapon.rotation_degrees = kaithlyn_axe_held_rotation_degrees
-	_axe_weapon.visible = true
-	add_child(_axe_weapon)
+	_axe_weapon.scale = Vector3.ONE * kaithlyn_axe_scale
+	_axe_attachment = _attach_weapon_node(_axe_weapon, "handslot.r", kaithlyn_axe_held_position, kaithlyn_axe_held_rotation_degrees)
 
 	_shield_weapon = _load_weapon_or_fallback(kaithlyn_shield_scene_path, "KaithlynShield", false)
-	_shield_weapon.scale = Vector3.ONE * 1.12
-	_shield_weapon.position = kaithlyn_shield_held_position
-	_shield_weapon.rotation_degrees = kaithlyn_shield_held_rotation_degrees
-	_shield_weapon.visible = true
-	add_child(_shield_weapon)
+	_shield_weapon.scale = Vector3.ONE * kaithlyn_shield_scale
+	_shield_attachment = _attach_weapon_node(_shield_weapon, "handslot.l", kaithlyn_shield_held_position, kaithlyn_shield_held_rotation_degrees)
+
+func _find_skeleton(root: Node) -> Skeleton3D:
+	if root is Skeleton3D:
+		return root as Skeleton3D
+	for child in root.get_children():
+		var found: Skeleton3D = _find_skeleton(child)
+		if found != null:
+			return found
+	return null
+
+## Accroche une arme déjà instanciée au socle de main du squelette KayKit
+## ("handslot.r"/"handslot.l"), pensé par l'artiste pour porter ce genre
+## d'objet avec la bonne orientation. Si le squelette ou le socle sont
+## introuvables (modèle sans rig, ou nom d'os différent), on retombe sur un
+## simple enfant du corps avec le décalage manuel fourni, pour ne jamais
+## faire disparaître l'arme.
+func _attach_weapon_node(weapon: Node3D, socket_bone_name: String, position_offset: Vector3, rotation_offset_degrees: Vector3) -> BoneAttachment3D:
+	if weapon == null:
+		return null
+	weapon.position = position_offset
+	weapon.rotation_degrees = rotation_offset_degrees
+	weapon.visible = true
+	var bone_index: int = -1
+	if _skeleton != null and is_instance_valid(_skeleton):
+		bone_index = _skeleton.find_bone(socket_bone_name)
+	if _skeleton == null or bone_index < 0:
+		add_child(weapon)
+		return null
+	var attachment := BoneAttachment3D.new()
+	attachment.name = weapon.name + "Socket"
+	_skeleton.add_child(attachment)
+	attachment.bone_name = socket_bone_name
+	attachment.add_child(weapon)
+	return attachment
 
 func _find_mesh_instance(root: Node) -> MeshInstance3D:
 	if root is MeshInstance3D:
@@ -963,16 +1001,20 @@ func _load_weapon_or_fallback(scene_path: String, node_name: String, is_axe: boo
 	return weapon
 
 func _sync_held_weapons() -> void:
-	# Tant qu'une arme est tenue, elle reste à une position fixe proche de la
-	# main. Elle est volontairement indépendante du squelette pour rester
-	# fiable avec KayKit. Recalculer la position/rotation à chaque frame à
-	# partir des @export permet de voir l'effet immédiatement en jeu quand on
-	# les ajuste depuis l'inspecteur.
+	# L'arme suit désormais la main réelle du squelette (BoneAttachment3D sur
+	# "handslot.r"/"handslot.l"), y compris pendant les animations : il n'y a
+	# donc plus besoin de la repositionner nous-mêmes chaque frame. On ne
+	# réapplique ici que l'ajustement fin optionnel (@export), pour pouvoir
+	# le régler en direct depuis l'inspecteur pendant que le jeu tourne.
 	if hero_id == "KAITHLYN":
-		if _axe_weapon != null and is_instance_valid(_axe_weapon) and _axe_weapon.get_parent() == self:
+		# La hache n'est repositionnée ici que tant qu'elle est réellement
+		# tenue (parent = son BoneAttachment3D). Une fois lancée, elle est
+		# reparentée à l'arène et pilotée par _update_thrown_axes : il ne
+		# faut surtout pas écraser sa position de vol ici.
+		if _axe_weapon != null and is_instance_valid(_axe_weapon) and _axe_attachment != null and _axe_weapon.get_parent() == _axe_attachment:
 			_axe_weapon.position = kaithlyn_axe_held_position
 			_axe_weapon.rotation_degrees = kaithlyn_axe_held_rotation_degrees
-		if _shield_weapon != null and is_instance_valid(_shield_weapon) and _shield_weapon.get_parent() == self:
+		if _shield_weapon != null and is_instance_valid(_shield_weapon):
 			_shield_weapon.position = kaithlyn_shield_held_position
 			_shield_weapon.rotation_degrees = kaithlyn_shield_held_rotation_degrees
 		return
@@ -998,14 +1040,11 @@ func _create_simple_held_weapon(scene_path: String, node_name: String, held_posi
 		return null
 	weapon.name = node_name
 	weapon.scale = Vector3.ONE * weapon_scale
-	weapon.position = held_position
-	weapon.rotation_degrees = held_rotation_degrees
-	weapon.visible = true
 	var mesh_node: MeshInstance3D = _find_mesh_instance(weapon)
 	if mesh_node != null:
 		mesh_node.visible = true
 		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	add_child(weapon)
+	_attach_weapon_node(weapon, "handslot.r", held_position, held_rotation_degrees)
 	return weapon
 
 func release_axe_for_throw() -> Node3D:
@@ -1018,10 +1057,13 @@ func release_axe_for_throw() -> Node3D:
 func recover_axe(axe: Node3D) -> void:
 	if axe == null or not is_instance_valid(axe) or hero_id != "KAITHLYN":
 		return
-	axe.reparent(self, true)
+	if _axe_attachment != null and is_instance_valid(_axe_attachment):
+		axe.reparent(_axe_attachment, false)
+	else:
+		axe.reparent(self, true)
 	axe.position = kaithlyn_axe_held_position
 	axe.rotation_degrees = kaithlyn_axe_held_rotation_degrees
-	axe.scale = Vector3.ONE * 1.25
+	axe.scale = Vector3.ONE * kaithlyn_axe_scale
 	axe.visible = true
 	_axe_weapon = axe
 	axe_cooldown = 0.0

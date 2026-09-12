@@ -1101,7 +1101,7 @@ func _network_receive_ability_request(peer_id: int, kind: String, direction: Vec
 	fighter.network_aim_direction = direction if direction.length_squared() > 0.001 else fighter.network_aim_direction
 	match kind:
 		"dash": fighter.try_dash(direction)
-		"teleport": fighter.try_teleport()
+		"teleport": fighter.try_teleport(direction)
 		"orb": fighter.try_orb(direction)
 		"nova": fighter.try_nova()
 		"flee": fighter.try_flee()

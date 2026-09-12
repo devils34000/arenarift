@@ -540,7 +540,7 @@ func _player_input(delta: float) -> void:
 		elif hero_id == "EREN":
 			try_nova()
 		else:
-			try_teleport()
+			try_teleport(_character_forward())
 
 func _get_controller_device() -> int:
 	var pads := Input.get_connected_joypads()
@@ -811,13 +811,17 @@ func apply_root(duration: float) -> void:
 	velocity.x = 0.0
 	velocity.z = 0.0
 
-func try_teleport() -> void:
+func try_teleport(direction: Vector3 = Vector3.ZERO) -> void:
 	if teleport_cooldown > 0.0:
 		return
 	teleport_cooldown = aeris_teleport_cooldown
-	var direction := aim_direction.normalized()
+	direction.y = 0.0
+	if direction.length_squared() < 0.001:
+		direction = aim_direction
+	direction.y = 0.0
 	if direction.length_squared() < 0.001:
 		direction = Vector3(0.0, 0.0, -1.0)
+	direction = direction.normalized()
 	var origin: Vector3 = _aeris_spell_origin(global_position + Vector3.UP * 0.05)
 	spell_cast.emit("teleport", origin, direction, self)
 

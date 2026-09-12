@@ -16,6 +16,7 @@ var steam_avatar_fallback: Label
 var steam_name_label: Label
 var steam_status_label: Label
 var level_label: Label
+var xp_label: Label
 var level_progress: ProgressBar
 
 var party_panel: Panel
@@ -363,11 +364,14 @@ func _build_steam_profile() -> void:
 	steam_status_label = _label("STEAM  •  EN LIGNE", 9, Color("6fb88a"), Vector2(64, 31), Vector2(134, 16))
 	steam_profile.add_child(steam_status_label)
 
-	level_label = _label("NIVEAU 1/50", 9, Color("e8b656"), Vector2(8, 60), Vector2(190, 14))
+	level_label = _label("NIVEAU 1", 10, Color("e8b656"), Vector2(8, 58), Vector2(100, 14))
 	steam_profile.add_child(level_label)
 
+	xp_label = _label("0 / 100 XP", 8, Color("c9a877"), Vector2(98, 60), Vector2(100, 12), HORIZONTAL_ALIGNMENT_RIGHT)
+	steam_profile.add_child(xp_label)
+
 	level_progress = ProgressBar.new()
-	level_progress.position = Vector2(8, 75)
+	level_progress.position = Vector2(8, 74)
 	level_progress.size = Vector2(190, 8)
 	level_progress.show_percentage = false
 	level_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -394,7 +398,12 @@ func _update_level_display() -> void:
 	if level_label == null or not is_instance_valid(level_label):
 		return
 	var current_level: int = PlayerProgress.get_level()
-	level_label.text = "NIVEAU %d/%d" % [current_level, PlayerProgress.MAX_LEVEL]
+	level_label.text = "NIVEAU %d" % current_level
+	if xp_label != null and is_instance_valid(xp_label):
+		if current_level >= PlayerProgress.MAX_LEVEL:
+			xp_label.text = "MAX"
+		else:
+			xp_label.text = "%d / %d XP" % [PlayerProgress.get_xp(), PlayerProgress.xp_to_next_level(current_level)]
 	if level_progress == null or not is_instance_valid(level_progress):
 		return
 	if current_level >= PlayerProgress.MAX_LEVEL:

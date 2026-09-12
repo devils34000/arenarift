@@ -139,6 +139,7 @@ var respawn_countdown_label: Label
 # arena_fighter_death, cf. _network_client_fighter_death).
 var network_local_respawn_left: float = -1.0
 var team_ring_materials: Dictionary = {}
+var enemy_health_bars: Dictionary = {}
 var vfx_manager: ArenaVFXManager
 var thrown_axes: Array[Dictionary] = []
 var thrown_daggers: Array[Dictionary] = []
@@ -292,6 +293,7 @@ func _process(delta: float) -> void:
 		_update_thrown_daggers(delta)
 		_update_axe_preview()
 		_update_team_rings()
+		_update_enemy_health_bars()
 		_update_hud()
 		return
 
@@ -310,6 +312,7 @@ func _process(delta: float) -> void:
 	_update_eren_fire_trails(delta)
 	_update_axe_preview()
 	_update_team_rings()
+	_update_enemy_health_bars()
 	if _is_duel_mode():
 		_update_duel(delta)
 	elif _is_team_mode():
@@ -1327,6 +1330,89 @@ func _create_team_ring(fighter: ArenaPlayer3D) -> MeshInstance3D:
 
 	fighter.add_child(ring)
 	return ring
+
+## Petite barre de vie flottante au-dessus de la tête de chaque ennemi
+## (les alliés n'en ont pas besoin, ils ont déjà l'anneau au sol + leur
+## propre HUD). Projection écran mise à jour chaque frame, cachée si
+## l'ennemi est mort, hors champ ou derrière la caméra.
+func _update_enemy_health_bars() -> void:
+	if hud == null or not is_instance_valid(hud) or player == null or not is_instance_valid(player):
+		return
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var seen: Dictionary = {}
+	for fighter_node in get_tree().get_nodes_in_group("fighters"):
+		var fighter := fighter_node as ArenaPlayer3D
+		if fighter == null or not is_instance_valid(fighter) or fighter == player:
+			continue
+		if fighter.team_color == player.team_color:
+			continue
+		var bar := enemy_health_bars.get(fighter) as Control
+		if fighter.process_mode == Node.PROCESS_MODE_DISABLED or fighter.health <= 0.0 or camera == null:
+			if bar != null and is_instance_valid(bar):
+				bar.visible = false
+			continue
+		if bar == null or not is_instance_valid(bar):
+			bar = _create_enemy_health_bar()
+			enemy_health_bars[fighter] = bar
+		seen[fighter] = true
+		var head_position: Vector3 = fighter.global_position + Vector3.UP * 2.15
+		if camera.is_position_behind(head_position):
+			bar.visible = false
+			continue
+		var screen_pos: Vector2 = camera.unproject_position(head_position)
+		if screen_pos.x < -50.0 or screen_pos.x > viewport_size.x + 50.0 or screen_pos.y < -50.0 or screen_pos.y > viewport_size.y + 50.0:
+			bar.visible = false
+			continue
+		bar.visible = true
+		bar.position = screen_pos - Vector2(32.0, 6.0)
+		var fill := bar.get_node("Fill") as ColorRect
+		var ratio: float = clampf(fighter.health / maxf(1.0, fighter.max_health), 0.0, 1.0)
+		fill.size.x = 60.0 * ratio
+		fill.color = Color("62e6a7") if ratio > 0.5 else (Color("ffcc55") if ratio > 0.25 else Color("ff5c5c"))
+	for fighter in enemy_health_bars.keys():
+		if seen.has(fighter):
+			continue
+		var stale_fighter := fighter as ArenaPlayer3D
+		if stale_fighter == null or not is_instance_valid(stale_fighter):
+			var bar: Control = enemy_health_bars[fighter]
+			if bar != null and is_instance_valid(bar):
+				bar.queue_free()
+			enemy_health_bars.erase(fighter)
+
+func _create_enemy_health_bar() -> Control:
+	var container := Control.new()
+	container.name = "EnemyHealthBar"
+	container.size = Vector2(64, 8)
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.z_index = 10
+
+	var background := ColorRect.new()
+	background.name = "Background"
+	background.size = Vector2(64, 8)
+	background.color = Color(0.05, 0.03, 0.02, 0.85)
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(background)
+
+	var border := ColorRect.new()
+	border.name = "Border"
+	border.position = Vector2(-1, -1)
+	border.size = Vector2(66, 10)
+	border.color = Color(0.0, 0.0, 0.0, 0.6)
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	border.z_index = -1
+	container.add_child(border)
+
+	var fill := ColorRect.new()
+	fill.name = "Fill"
+	fill.position = Vector2(2, 2)
+	fill.size = Vector2(60, 4)
+	fill.color = Color("62e6a7")
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(fill)
+
+	hud.add_child(container)
+	return container
 
 func _start_team_round() -> void:
 	if player == null or not is_instance_valid(player):
@@ -3320,35 +3406,41 @@ func _build_hud() -> void:
 	var accent := Color("ff7138") if selected_hero == "EREN" else (Color("ffad55") if selected_hero == "KAITHLYN" else (Color("54e1a7") if selected_hero == "MAYLINH" else Color("58cfff")))
 
 	# Profil compact : pas de gros panneau, lecture immédiate.
-	var hero_panel := _panel(Vector2(20, 645), Vector2(340, 62), Color("07111ff2"), Color("294b70"), 13)
+	var hero_panel := _panel(Vector2(20, 633), Vector2(340, 74), Color("07111ff2"), accent.darkened(0.35), 13)
 	bottom.add_child(hero_panel)
 
-	var portrait := _panel(Vector2(7, 7), Vector2(48, 48), Color("101e32"), accent.darkened(0.25), 24)
+	var portrait := _panel(Vector2(7, 7), Vector2(58, 58), Color("101e32"), accent, 24)
 	hero_panel.add_child(portrait)
-	portrait.add_child(_label("", hero_name.substr(0, 1), Vector2(0, 4), Vector2(48, 38), 24, accent, HORIZONTAL_ALIGNMENT_CENTER))
+	portrait.add_child(_label("", hero_name.substr(0, 1), Vector2(0, 8), Vector2(58, 44), 28, accent, HORIZONTAL_ALIGNMENT_CENTER))
 
-	hero_panel.add_child(_label("", hero_name, Vector2(65, 7), Vector2(115, 16), 11, Color("f3f8ff")))
-	hero_panel.add_child(_label("", hero_role, Vector2(65, 23), Vector2(160, 11), 7, Color("718eaf")))
+	hero_panel.add_child(_label("", hero_name, Vector2(75, 7), Vector2(160, 16), 12, Color("f3f8ff")))
+	hero_panel.add_child(_label("", hero_role, Vector2(75, 23), Vector2(160, 11), 7, Color("718eaf")))
 
-	var heart := _label("", "♥", Vector2(64, 38), Vector2(18, 16), 12, Color("ff6682"), HORIZONTAL_ALIGNMENT_CENTER)
+	var heart := _label("", "♥", Vector2(74, 39), Vector2(18, 16), 13, Color("ff6682"), HORIZONTAL_ALIGNMENT_CENTER)
 	hero_panel.add_child(heart)
 
 	health_bar = ProgressBar.new()
 	health_bar.name = "Health"
-	health_bar.position = Vector2(87, 40)
-	health_bar.size = Vector2(185, 8)
+	health_bar.position = Vector2(96, 40)
+	health_bar.size = Vector2(234, 13)
 	health_bar.max_value = 100
 	health_bar.show_percentage = false
 	health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	health_bar.add_theme_stylebox_override("background", _box(Color("14243a"), Color("294b70"), 4, 1))
-	health_bar.add_theme_stylebox_override("fill", _box(Color("31d795"), Color("8dffd2"), 4, 0))
+	health_bar.add_theme_stylebox_override("background", _box(Color("0c1626"), accent.darkened(0.5), 6, 1))
+	health_bar.add_theme_stylebox_override("fill", _box(Color("31d795"), Color("8dffd2"), 6, 0))
 	hero_panel.add_child(health_bar)
 
-	health_text = _label("", "100 / 100", Vector2(278, 37), Vector2(55, 14), 8, Color("d4eee4"), HORIZONTAL_ALIGNMENT_RIGHT)
+	health_text = _label("", "100 / 100", Vector2(96, 40), Vector2(234, 13), 8, Color("eafff5"), HORIZONTAL_ALIGNMENT_CENTER)
+	health_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hero_panel.add_child(health_text)
 
-	passive_label = _label("", "PASSIF", Vector2(65, 51), Vector2(245, 10), 7, Color("ffd36a"), HORIZONTAL_ALIGNMENT_LEFT)
-	hero_panel.add_child(passive_label)
+	# Puce du passif : un petit fond distinct plutôt qu'un simple texte qui se
+	# fondait avec le reste du panneau, pour bien voir "prêt" vs "en charge".
+	var passive_chip := _panel(Vector2(75, 57), Vector2(255, 14), accent.darkened(0.55), accent, 7)
+	hero_panel.add_child(passive_chip)
+	passive_label = _label("", "PASSIF", Vector2(6, 1), Vector2(243, 12), 8, Color("ffe6a3"), HORIZONTAL_ALIGNMENT_CENTER)
+	passive_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	passive_chip.add_child(passive_label)
 
 	# Sorts : uniquement les icônes. Les touches LMB/RMB/SPACE sont volontairement retirées.
 	var skill_y := 644.0

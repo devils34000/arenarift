@@ -338,7 +338,11 @@ func _build_ember_particles() -> void:
 
 
 func _build_steam_profile() -> void:
-	steam_profile = _panel(Vector2(1050, 24), Vector2(206, 88), Color("140f09eb"), Color("6b4a24"), 12)
+	# Carte Steam : taille d'origine. Le cadre principal ("MainFrame", ajouté
+	# juste après dans _build_shell) est plus haut en z-order et recouvre
+	# tout ce qui dépasserait de cette carte au-delà de y=88 — d'où la carte
+	# "Niveau" séparée juste à côté plutôt que d'agrandir celle-ci vers le bas.
+	steam_profile = _panel(Vector2(1050, 24), Vector2(206, 62), Color("140f09eb"), Color("6b4a24"), 12)
 	steam_profile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(steam_profile)
 
@@ -364,15 +368,22 @@ func _build_steam_profile() -> void:
 	steam_status_label = _label("STEAM  •  EN LIGNE", 9, Color("6fb88a"), Vector2(64, 31), Vector2(134, 16))
 	steam_profile.add_child(steam_status_label)
 
-	level_label = _label("NIVEAU 1", 10, Color("e8b656"), Vector2(8, 58), Vector2(100, 14))
-	steam_profile.add_child(level_label)
+	# Carte "Niveau" séparée, juste à gauche de la carte Steam, sur la même
+	# rangée (même y, même hauteur) pour ne jamais empiéter sur le cadre
+	# principal en dessous.
+	var level_panel := _panel(Vector2(858, 24), Vector2(184, 62), Color("140f09eb"), Color("6b4a24"), 12)
+	level_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(level_panel)
 
-	xp_label = _label("0 / 100 XP", 8, Color("c9a877"), Vector2(98, 60), Vector2(100, 12), HORIZONTAL_ALIGNMENT_RIGHT)
-	steam_profile.add_child(xp_label)
+	level_label = _label("NIVEAU 1", 12, Color("e8b656"), Vector2(10, 8), Vector2(100, 18))
+	level_panel.add_child(level_label)
+
+	xp_label = _label("0 / 100 XP", 9, Color("c9a877"), Vector2(10, 27), Vector2(164, 14))
+	level_panel.add_child(xp_label)
 
 	level_progress = ProgressBar.new()
-	level_progress.position = Vector2(8, 74)
-	level_progress.size = Vector2(190, 8)
+	level_progress.position = Vector2(10, 45)
+	level_progress.size = Vector2(164, 8)
 	level_progress.show_percentage = false
 	level_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var progress_bg := StyleBoxFlat.new()
@@ -383,7 +394,7 @@ func _build_steam_profile() -> void:
 	progress_fill.set_corner_radius_all(4)
 	level_progress.add_theme_stylebox_override("background", progress_bg)
 	level_progress.add_theme_stylebox_override("fill", progress_fill)
-	steam_profile.add_child(level_progress)
+	level_panel.add_child(level_progress)
 
 	_update_level_display()
 	if not PlayerProgress.xp_changed.is_connected(_on_player_xp_changed):

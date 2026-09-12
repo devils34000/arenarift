@@ -287,7 +287,7 @@ func set_my_team(team: String) -> void:
 func get_member_team(member_steam_id: int) -> String:
 	if not steam_online or current_lobby_id == 0:
 		return ""
-	return str(Steam.getLobbyMemberData(current_lobby_id, "team", member_steam_id))
+	return str(Steam.getLobbyMemberData(current_lobby_id, member_steam_id, "team"))
 
 
 func get_my_team() -> String:

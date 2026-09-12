@@ -593,18 +593,34 @@ func _rebake_scaled_wall_collisions(root: Node) -> void:
 		return
 	var bodies: Array[StaticBody3D] = []
 	_collect_rebakeable_static_bodies(root, bodies)
+	print("ARENA RIFT : REBAKE : ", bodies.size(), " StaticBody3D trouvés sous la map.")
 	if bodies.is_empty():
 		return
 	var baked_root := Node3D.new()
 	baked_root.name = "BakedWallCollisions"
 	add_child(baked_root)
+	var baked_count: int = 0
+	var skipped_count: int = 0
 	for body in bodies:
+		var shape_children: Array[CollisionShape3D] = []
 		for child in body.get_children():
-			var shape_node := child as CollisionShape3D
-			if shape_node == null or shape_node.shape == null or shape_node.disabled:
+			if child is CollisionShape3D:
+				shape_children.append(child as CollisionShape3D)
+		if shape_children.is_empty():
+			print("ARENA RIFT : REBAKE : ", body.get_path(), " (", body.name, ") n'a AUCUN CollisionShape3D enfant.")
+		for shape_node in shape_children:
+			if shape_node.shape == null:
+				print("ARENA RIFT : REBAKE : ", shape_node.get_path(), " a un CollisionShape3D sans shape assignée.")
+				skipped_count += 1
+				continue
+			if shape_node.disabled:
+				print("ARENA RIFT : REBAKE : ", shape_node.get_path(), " est désactivée (disabled=true), ignorée.")
+				skipped_count += 1
 				continue
 			var world_shape: Shape3D = _bake_shape_to_world(shape_node)
 			if world_shape == null:
+				print("ARENA RIFT : REBAKE : type de shape non géré (", shape_node.shape.get_class(), ") sur ", shape_node.get_path())
+				skipped_count += 1
 				continue
 			var new_body := StaticBody3D.new()
 			new_body.collision_layer = 1
@@ -613,8 +629,10 @@ func _rebake_scaled_wall_collisions(root: Node) -> void:
 			new_shape.shape = world_shape
 			new_body.add_child(new_shape)
 			baked_root.add_child(new_body)
+			baked_count += 1
 		body.collision_layer = 0
 		body.collision_mask = 0
+	print("ARENA RIFT : REBAKE : ", baked_count, " collisions reconstruites, ", skipped_count, " ignorées.")
 
 func _collect_rebakeable_static_bodies(node: Node, out_list: Array[StaticBody3D]) -> void:
 	for child in node.get_children():

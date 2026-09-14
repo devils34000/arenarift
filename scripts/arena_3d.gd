@@ -1029,9 +1029,9 @@ func _start_network_bots() -> void:
 		bot_count = 3
 	elif mode_value == "3V3 RIVALRY":
 		bot_count = 5
-	elif mode_value == "CUSTOM GAME":
-		# Custom Game : uniquement des joueurs réels, jamais de bot pour
-		# compléter — le camp de chacun est déjà fixé avant la connexion.
+	elif mode_value == "CUSTOM GAME" or mode_value == "CUSTOM DEATHMATCH":
+		# Custom Game (équipes ou FFA) : uniquement des joueurs réels, jamais
+		# de bot pour compléter.
 		bot_count = 0
 
 	var spawn_sets: Dictionary = _map_spawn_positions()

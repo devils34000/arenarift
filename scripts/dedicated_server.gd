@@ -5,6 +5,7 @@ const MAX_PLAYERS := 8
 
 const ARENA_DEFAULT := "res://scenes/arena.tscn"
 const ARENA_1V1 := "res://scenes/Arena1v1.tscn"
+const ARENA_LABYRINTH := "res://scenes/ArenaLabyrinth.tscn"
 
 const DEFAULT_MATCHMAKING_URL := "http://149.202.91.92:8080"
 # Délai max d'attente d'une réponse du matchmaking avant de quitter quand
@@ -95,6 +96,9 @@ func _get_arena_path(mode: String) -> String:
 	match mode:
 		"1v1":
 			return ARENA_1V1
+
+		"labyrinth":
+			return ARENA_LABYRINTH
 
 		"default":
 			return ARENA_DEFAULT

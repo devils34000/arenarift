@@ -27,20 +27,31 @@ var party_members_box: VBoxContainer
 var party_invite_button: Button
 var party_leave_button: Button
 
-var custom_members_box: VBoxContainer
-var custom_status_label: Label
-var custom_map_buttons: Dictionary = {}
-var custom_random_button: Button
-var custom_launch_button: Button
-var _custom_random_teams: bool = false
-# Empêche de relancer _connect_to_game_server plusieurs fois si
-# party_data_changed se déclenche plusieurs fois pendant la connexion.
-var _custom_connect_triggered: bool = false
-# Non vide pendant l'attente que le serveur dédié spawné pour la Custom Game
-# passe "online" (réutilise le même timer/HTTPRequest que le polling de
-# ticket classique, cf. _poll_matchmaking_status).
-var _custom_pending_match_id: String = ""
-var _custom_pending_teams: Dictionary = {}
+## CUSTOM GAME : salon à code façon Among Us (aucun lien avec les lobbies
+## Steam ci-dessus — n'importe qui peut rejoindre avec le code, ami Steam ou
+## non). custom_room_state est la dernière réponse connue du serveur pour
+## ce salon (membres, camps, map, mode, état du serveur dédié une fois
+## lancé), rafraîchie par polling continu tant qu'on est dans le salon.
+var custom_room_code: String = ""
+var custom_room_state: Dictionary = {}
+var custom_room_http: HTTPRequest
+var custom_room_poll_http: HTTPRequest
+var custom_room_poll_timer: Timer
+var custom_room_join_input: LineEdit
+var custom_room_home_status_label: Label
+var custom_room_panel: Panel
+var custom_room_status_label: Label
+var custom_room_map_option: OptionButton
+var custom_room_mode_option: OptionButton
+var custom_room_random_button: Button
+var custom_room_astral_box: VBoxContainer
+var custom_room_arcane_box: VBoxContainer
+var custom_room_unassigned_box: VBoxContainer
+var custom_room_launch_button: Button
+var custom_room_pending_action: String = ""
+var _custom_room_connect_triggered: bool = false
+const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"]]
+const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"]]
 
 var matchmaking_action_http: HTTPRequest
 var matchmaking_poll_http: HTTPRequest
@@ -112,6 +123,23 @@ func _ready() -> void:
 	matchmaking_poll_timer.one_shot = false
 	add_child(matchmaking_poll_timer)
 	matchmaking_poll_timer.timeout.connect(_poll_matchmaking_status)
+
+	custom_room_http = HTTPRequest.new()
+	custom_room_http.name = "CustomRoomActionHTTP"
+	add_child(custom_room_http)
+	custom_room_http.request_completed.connect(_on_custom_room_action_completed)
+
+	custom_room_poll_http = HTTPRequest.new()
+	custom_room_poll_http.name = "CustomRoomPollHTTP"
+	add_child(custom_room_poll_http)
+	custom_room_poll_http.request_completed.connect(_on_custom_room_poll_completed)
+
+	custom_room_poll_timer = Timer.new()
+	custom_room_poll_timer.name = "CustomRoomPollTimer"
+	custom_room_poll_timer.wait_time = 1.0
+	custom_room_poll_timer.one_shot = false
+	add_child(custom_room_poll_timer)
+	custom_room_poll_timer.timeout.connect(_poll_custom_room)
 
 	var network_node: Node = get_node_or_null("/root/Network")
 	if network_node != null:
@@ -594,10 +622,13 @@ func _show_home() -> void:
 	side.add_child(_label("CURRENT LOADOUT", 9, Color("7a6a4a"), Vector2(18, 245), Vector2(150, 18)))
 	side.add_child(_label(_hero_spells(selected_hero), 10, Color("c4b394"), Vector2(18, 270), Vector2(250, 42)))
 
-	var launch := _button("CRÉER LA PARTY", Vector2(280, 48), true)
+	var launch := _button("SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY", Vector2(280, 48), true)
 	launch.position = Vector2(18, 310)
 	launch.size = Vector2(254, 40)
-	launch.pressed.connect(_create_party)
+	if selected_mode == "CUSTOM GAME":
+		launch.pressed.connect(_show_custom_game_home)
+	else:
+		launch.pressed.connect(_create_party)
 	side.add_child(launch)
 
 	content.add_child(_label("MODE ACTIF  •  %s     |     LOCAL / PRACTICE" % selected_mode, 10, Color("6b5a3a"), Vector2.ZERO, Vector2(850, 20)))
@@ -626,8 +657,6 @@ func _create_party() -> void:
 			max_members = 3
 		"1V1 DUEL":
 			max_members = 1
-		"CUSTOM GAME":
-			max_members = 8
 		_:
 			max_members = 4
 
@@ -648,42 +677,22 @@ func _connect_party_signals() -> void:
 		steam_manager.party_members_changed.connect(_on_party_members_changed)
 	if steam_manager.has_signal("party_failed") and not steam_manager.party_failed.is_connected(_on_party_failed):
 		steam_manager.party_failed.connect(_on_party_failed)
-	if steam_manager.has_signal("party_data_changed") and not steam_manager.party_data_changed.is_connected(_on_party_data_changed):
-		steam_manager.party_data_changed.connect(_on_party_data_changed)
 
 
 func _on_party_created(_lobby_id: int) -> void:
-	if selected_mode == "CUSTOM GAME":
-		_show_custom_lobby()
-	else:
-		_show_party()
+	_show_party()
 
 
 func _on_party_joined(_lobby_id: int) -> void:
 	var steam_manager: Node = get_node_or_null("/root/SteamManager")
 	if steam_manager != null:
 		selected_mode = str(steam_manager.get("pending_party_mode"))
-	if selected_mode == "CUSTOM GAME":
-		_show_custom_lobby()
-	else:
-		_show_party()
+	_show_party()
 
 
 func _on_party_members_changed() -> void:
 	if party_members_box != null and is_instance_valid(party_members_box):
 		_refresh_party_members()
-	if custom_members_box != null and is_instance_valid(custom_members_box):
-		_refresh_custom_members()
-
-
-## Déclenché pour tout changement de donnée de lobby : camp choisi par un
-## membre, map, case "aléatoire", ou arrivée du serveur Custom Game. Ce
-## dernier cas doit déclencher la connexion chez TOUS les membres (host
-## compris), pas seulement rafraîchir l'affichage.
-func _on_party_data_changed() -> void:
-	if custom_members_box != null and is_instance_valid(custom_members_box):
-		_refresh_custom_members()
-	_check_custom_server_ready()
 
 
 func _on_party_failed(reason: String) -> void:
@@ -832,333 +841,505 @@ func _refresh_party_members() -> void:
 		))
 		
 # =========================================================
-# CUSTOM GAME
+# CUSTOM GAME : salon à code (façon Among Us)
 # =========================================================
 
-func _show_custom_lobby() -> void:
+func _my_steam_id_str() -> String:
+	var steam_manager: Node = get_node_or_null("/root/SteamManager")
+	if steam_manager == null:
+		return ""
+	return str(int(steam_manager.get("steam_id")))
+
+
+func _my_steam_name() -> String:
+	var steam_manager: Node = get_node_or_null("/root/SteamManager")
+	if steam_manager == null:
+		return "Joueur"
+	var name: String = str(steam_manager.get("steam_username"))
+	return name if name != "" else "Joueur"
+
+
+func _show_custom_game_home() -> void:
 	_clear()
 	title.text = "CUSTOM GAME"
 
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
-		content.add_child(_label("STEAM MANAGER INTROUVABLE", 18, Color("ff6f7d")))
+	var wrapper := VBoxContainer.new()
+	wrapper.custom_minimum_size = Vector2(560, 360)
+	wrapper.add_theme_constant_override("separation", 14)
+	content.add_child(wrapper)
+
+	var panel := _panel(Vector2.ZERO, Vector2(560, 340), Color("140f09eb"), Color("6b4a24"), 16)
+	panel.custom_minimum_size = Vector2(560, 340)
+	wrapper.add_child(panel)
+
+	panel.add_child(_label("CUSTOM GAME", 22, Color("f3e6c8"), Vector2(24, 20), Vector2(400, 32)))
+	panel.add_child(_label(
+		"Crée un salon et partage son code, ou entre le code d'un ami — comme dans Among Us, pas besoin d'être amis Steam.",
+		10, Color("8a7550"), Vector2(24, 55), Vector2(510, 34)
+	))
+
+	custom_room_home_status_label = _label("", 10, Color("ff9d9d"), Vector2(24, 92), Vector2(510, 20))
+	panel.add_child(custom_room_home_status_label)
+
+	var create_btn := _button("CRÉER UN SALON", Vector2(510, 48), true)
+	create_btn.position = Vector2(24, 120)
+	create_btn.pressed.connect(_create_custom_room)
+	panel.add_child(create_btn)
+
+	panel.add_child(_label("— OU —", 10, Color("7a6a4a"), Vector2(24, 182), Vector2(510, 18), HORIZONTAL_ALIGNMENT_CENTER))
+
+	custom_room_join_input = LineEdit.new()
+	custom_room_join_input.position = Vector2(24, 208)
+	custom_room_join_input.size = Vector2(300, 44)
+	custom_room_join_input.placeholder_text = "CODE DU SALON"
+	custom_room_join_input.max_length = 5
+	custom_room_join_input.add_theme_font_size_override("font_size", 18)
+	panel.add_child(custom_room_join_input)
+
+	var join_btn := _button("REJOINDRE", Vector2(200, 44), true)
+	join_btn.position = Vector2(334, 208)
+	join_btn.pressed.connect(_join_custom_room)
+	panel.add_child(join_btn)
+
+	var back_btn := _button("RETOUR", Vector2(510, 40), false)
+	back_btn.position = Vector2(24, 272)
+	back_btn.pressed.connect(_show_home_deferred)
+	panel.add_child(back_btn)
+
+
+func _create_custom_room() -> void:
+	if custom_room_http == null:
+		return
+	custom_room_pending_action = "create_room"
+	var payload := {"steam_id": _my_steam_id_str(), "name": _my_steam_name()}
+	var error := custom_room_http.request(
+		MATCHMAKING_BASE_URL + "/rooms",
+		PackedStringArray(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST,
+		JSON.stringify(payload)
+	)
+	if error != OK:
+		custom_room_pending_action = ""
+		_set_custom_room_home_error("ERREUR RÉSEAU : %s" % error)
+
+
+func _join_custom_room() -> void:
+	if custom_room_http == null or custom_room_join_input == null:
+		return
+	var code := custom_room_join_input.text.strip_edges().to_upper()
+	if code.length() < 4:
+		_set_custom_room_home_error("CODE INVALIDE")
+		return
+	custom_room_pending_action = "join_room"
+	var payload := {"steam_id": _my_steam_id_str(), "name": _my_steam_name()}
+	var error := custom_room_http.request(
+		MATCHMAKING_BASE_URL + "/rooms/" + code + "/join",
+		PackedStringArray(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST,
+		JSON.stringify(payload)
+	)
+	if error != OK:
+		custom_room_pending_action = ""
+		_set_custom_room_home_error("ERREUR RÉSEAU : %s" % error)
+
+
+func _set_custom_room_home_error(text: String) -> void:
+	if custom_room_home_status_label != null and is_instance_valid(custom_room_home_status_label):
+		custom_room_home_status_label.text = text
+
+
+func _on_custom_room_action_completed(
+	result: int,
+	response_code: int,
+	_headers: PackedStringArray,
+	body: PackedByteArray
+) -> void:
+	var action := custom_room_pending_action
+	custom_room_pending_action = ""
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+
+	if action == "create_room" or action == "join_room":
+		if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_DICTIONARY:
+			var detail := ""
+			if typeof(parsed) == TYPE_DICTIONARY:
+				detail = str(parsed.get("detail", ""))
+			_set_custom_room_home_error(detail if detail != "" else "SALON INTROUVABLE OU SERVEUR INJOIGNABLE")
+			return
+		custom_room_state = parsed as Dictionary
+		custom_room_code = str(custom_room_state.get("code", ""))
+		_custom_room_connect_triggered = false
+		_show_custom_room_lobby()
+		if custom_room_poll_timer != null and custom_room_poll_timer.is_stopped():
+			custom_room_poll_timer.start()
 		return
 
-	_custom_connect_triggered = false
+	# "room_settings" / "room_team" / "room_start" : best-effort, le polling
+	# continu resynchronise de toute façon l'état réel juste après.
+	if typeof(parsed) == TYPE_DICTIONARY and result == HTTPRequest.RESULT_SUCCESS and response_code >= 200 and response_code < 300:
+		custom_room_state = parsed as Dictionary
+		_refresh_custom_room_lobby_ui()
+
+
+func _poll_custom_room() -> void:
+	if custom_room_code == "" or custom_room_poll_http == null:
+		return
+	if custom_room_poll_http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		return
+	custom_room_poll_http.request(MATCHMAKING_BASE_URL + "/rooms/" + custom_room_code)
+
+
+func _on_custom_room_poll_completed(
+	result: int,
+	response_code: int,
+	_headers: PackedStringArray,
+	body: PackedByteArray
+) -> void:
+	if custom_room_code == "":
+		return
+	if result != HTTPRequest.RESULT_SUCCESS:
+		return
+	if response_code == 404:
+		# Salon expiré/fermé côté serveur : on ne laisse personne planté à
+		# poller un salon mort.
+		_leave_custom_room_local_only()
+		_show_custom_game_home()
+		_set_custom_room_home_error("LE SALON A ÉTÉ FERMÉ")
+		return
+	if response_code < 200 or response_code >= 300:
+		return
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	custom_room_state = parsed as Dictionary
+	_refresh_custom_room_lobby_ui()
+	_check_custom_room_server_ready()
+
+
+func _is_custom_room_host() -> bool:
+	return str(custom_room_state.get("host_steam_id", "")) == _my_steam_id_str()
+
+
+func _show_custom_room_lobby() -> void:
+	_clear()
+	title.text = "CUSTOM GAME"
 
 	var wrapper := VBoxContainer.new()
-	wrapper.custom_minimum_size = Vector2(946, 560)
+	wrapper.custom_minimum_size = Vector2(980, 560)
 	wrapper.add_theme_constant_override("separation", 12)
 	content.add_child(wrapper)
 
-	party_panel = _panel(Vector2.ZERO, Vector2(946, 510), Color("140f09eb"), Color("6b4a24"), 16)
-	party_panel.custom_minimum_size = Vector2(946, 510)
-	wrapper.add_child(party_panel)
+	custom_room_panel = _panel(Vector2.ZERO, Vector2(980, 520), Color("140f09eb"), Color("6b4a24"), 16)
+	custom_room_panel.custom_minimum_size = Vector2(980, 520)
+	wrapper.add_child(custom_room_panel)
 
-	party_title_label = _label("CUSTOM GAME • STEAM", 22, Color("f3e6c8"), Vector2(24, 20), Vector2(430, 32))
-	party_panel.add_child(party_title_label)
+	custom_room_panel.add_child(_label("SALON", 9, Color("7a6a4a"), Vector2(24, 18), Vector2(200, 16)))
+	custom_room_panel.add_child(_label(custom_room_code, 30, Color("f4c977"), Vector2(24, 34), Vector2(220, 40)))
 
-	custom_status_label = _label("", 10, Color("6fb88a"), Vector2(24, 55), Vector2(600, 20))
-	party_panel.add_child(custom_status_label)
+	var copy_btn := _button("COPIER LE CODE", Vector2(150, 32), false)
+	copy_btn.position = Vector2(24, 78)
+	copy_btn.pressed.connect(func(): DisplayServer.clipboard_set(custom_room_code))
+	custom_room_panel.add_child(copy_btn)
 
-	var is_host: bool = bool(steam_manager.call("is_party_leader"))
+	custom_room_status_label = _label("", 10, Color("6fb88a"), Vector2(210, 22), Vector2(400, 20))
+	custom_room_panel.add_child(custom_room_status_label)
 
-	# --- Sélection de la map (host uniquement) ---
-	party_panel.add_child(_label("MAP", 9, Color("7a6a4a"), Vector2(24, 100), Vector2(200, 18)))
-	var current_map: String = str(steam_manager.call("get_custom_map"))
-	custom_map_buttons.clear()
-	var map_defs := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"]]
-	var map_x := 24
-	for map_def in map_defs:
-		var map_key: String = map_def[0]
-		var map_label: String = map_def[1]
-		var map_btn := _button(map_label, Vector2(180, 34), map_key == current_map)
-		map_btn.position = Vector2(map_x, 122)
-		map_btn.disabled = not is_host
-		if is_host:
-			map_btn.pressed.connect(func(): _pick_custom_map(map_key))
-		party_panel.add_child(map_btn)
-		custom_map_buttons[map_key] = map_btn
-		map_x += 190
+	var is_host := _is_custom_room_host()
 
-	# --- Case "répartition aléatoire" (host uniquement) ---
-	_custom_random_teams = bool(steam_manager.call("get_custom_random_teams"))
-	custom_random_button = _button(
-		"☑ RÉPARTITION ALÉATOIRE" if _custom_random_teams else "☐ RÉPARTITION ALÉATOIRE",
-		Vector2(230, 34),
-		_custom_random_teams
-	)
-	custom_random_button.position = Vector2(410, 122)
-	custom_random_button.disabled = not is_host
+	custom_room_panel.add_child(_label("MAP", 9, Color("7a6a4a"), Vector2(230, 60), Vector2(150, 16)))
+	custom_room_map_option = OptionButton.new()
+	custom_room_map_option.position = Vector2(230, 78)
+	custom_room_map_option.size = Vector2(240, 34)
+	for map_def in CUSTOM_ROOM_MAPS:
+		custom_room_map_option.add_item(map_def[1])
+	custom_room_map_option.disabled = not is_host
+	custom_room_map_option.item_selected.connect(_on_custom_room_map_selected)
+	custom_room_panel.add_child(custom_room_map_option)
+
+	custom_room_panel.add_child(_label("MODE", 9, Color("7a6a4a"), Vector2(490, 60), Vector2(150, 16)))
+	custom_room_mode_option = OptionButton.new()
+	custom_room_mode_option.position = Vector2(490, 78)
+	custom_room_mode_option.size = Vector2(280, 34)
+	for mode_def in CUSTOM_ROOM_MODES:
+		custom_room_mode_option.add_item(mode_def[1])
+	custom_room_mode_option.disabled = not is_host
+	custom_room_mode_option.item_selected.connect(_on_custom_room_mode_selected)
+	custom_room_panel.add_child(custom_room_mode_option)
+
+	custom_room_random_button = _button("☐ RÉPARTITION ALÉATOIRE", Vector2(280, 34), false)
+	custom_room_random_button.position = Vector2(24, 122)
+	custom_room_random_button.disabled = not is_host
+	custom_room_random_button.pressed.connect(_toggle_custom_room_random)
+	custom_room_panel.add_child(custom_room_random_button)
+
+	# --- Les deux blocs d'équipe, façon Among Us : ASTRAL à gauche, ARCANE
+	# à droite, chacun listant les joueurs qui l'ont rejoint. ---
+	var astral_panel := _panel(Vector2(24, 170), Vector2(455, 260), Color("101b26"), Color("2f6f9c"), 12)
+	custom_room_panel.add_child(astral_panel)
+	astral_panel.add_child(_label("ASTRAL", 16, Color("78cfff"), Vector2(16, 12), Vector2(200, 26)))
+	var astral_join_btn := _button("REJOINDRE", Vector2(140, 32), false)
+	astral_join_btn.position = Vector2(299, 12)
+	astral_join_btn.pressed.connect(func(): _pick_custom_room_team("ASTRAL"))
+	astral_panel.add_child(astral_join_btn)
+	custom_room_astral_box = VBoxContainer.new()
+	custom_room_astral_box.position = Vector2(16, 52)
+	custom_room_astral_box.size = Vector2(423, 200)
+	custom_room_astral_box.add_theme_constant_override("separation", 6)
+	astral_panel.add_child(custom_room_astral_box)
+
+	var arcane_panel := _panel(Vector2(501, 170), Vector2(455, 260), Color("1f1226"), Color("8a4fae"), 12)
+	custom_room_panel.add_child(arcane_panel)
+	arcane_panel.add_child(_label("ARCANE", 16, Color("d29cff"), Vector2(16, 12), Vector2(200, 26)))
+	var arcane_join_btn := _button("REJOINDRE", Vector2(140, 32), false)
+	arcane_join_btn.position = Vector2(299, 12)
+	arcane_join_btn.pressed.connect(func(): _pick_custom_room_team("ARCANE"))
+	arcane_panel.add_child(arcane_join_btn)
+	custom_room_arcane_box = VBoxContainer.new()
+	custom_room_arcane_box.position = Vector2(16, 52)
+	custom_room_arcane_box.size = Vector2(423, 200)
+	custom_room_arcane_box.add_theme_constant_override("separation", 6)
+	arcane_panel.add_child(custom_room_arcane_box)
+
+	custom_room_panel.add_child(_label("SANS ÉQUIPE", 9, Color("7a6a4a"), Vector2(24, 436), Vector2(200, 16)))
+	custom_room_unassigned_box = VBoxContainer.new()
+	custom_room_unassigned_box.position = Vector2(24, 454)
+	custom_room_unassigned_box.size = Vector2(700, 40)
+	custom_room_unassigned_box.add_theme_constant_override("separation", 6)
+	custom_room_panel.add_child(custom_room_unassigned_box)
+
 	if is_host:
-		custom_random_button.pressed.connect(_toggle_custom_random)
-	party_panel.add_child(custom_random_button)
-
-	party_panel.add_child(_label("MEMBRES  •  CHOISIS TON CAMP", 9, Color("7a6a4a"), Vector2(24, 172), Vector2(300, 18)))
-
-	custom_members_box = VBoxContainer.new()
-	custom_members_box.position = Vector2(24, 198)
-	custom_members_box.size = Vector2(600, 260)
-	custom_members_box.add_theme_constant_override("separation", 8)
-	party_panel.add_child(custom_members_box)
-
-	party_invite_button = _button("INVITER DES AMIS", Vector2(230, 48), true)
-	party_invite_button.position = Vector2(660, 198)
-	party_invite_button.pressed.connect(_invite_party_members)
-	party_panel.add_child(party_invite_button)
-
-	if is_host:
-		custom_launch_button = _button("LANCER LA PARTIE", Vector2(230, 48), true)
-		custom_launch_button.position = Vector2(660, 258)
-		custom_launch_button.pressed.connect(_start_custom_game)
-		party_panel.add_child(custom_launch_button)
+		custom_room_launch_button = _button("LANCER LA PARTIE", Vector2(220, 44), true)
+		custom_room_launch_button.position = Vector2(740, 440)
+		custom_room_launch_button.pressed.connect(_start_custom_room)
+		custom_room_panel.add_child(custom_room_launch_button)
 	else:
-		party_panel.add_child(_label(
+		custom_room_panel.add_child(_label(
 			"En attente que le host lance la partie...",
-			10,
-			Color("8a7550"),
-			Vector2(660, 258),
-			Vector2(250, 40)
+			10, Color("8a7550"), Vector2(740, 440), Vector2(220, 40)
 		))
 
-	party_leave_button = _button("QUITTER LA PARTY", Vector2(230, 42), false)
-	party_leave_button.position = Vector2(660, 330)
-	party_leave_button.pressed.connect(_leave_party)
-	party_panel.add_child(party_leave_button)
+	var leave_btn := _button("QUITTER LE SALON", Vector2(220, 36), false)
+	leave_btn.position = Vector2(740, 486)
+	leave_btn.pressed.connect(_leave_custom_room)
+	custom_room_panel.add_child(leave_btn)
 
-	_refresh_custom_members()
-
-
-func _pick_custom_map(map_key: String) -> void:
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
-		return
-	steam_manager.call("set_custom_map", map_key)
-	for key in custom_map_buttons.keys():
-		var btn := custom_map_buttons[key] as Button
-		if btn != null and is_instance_valid(btn):
-			# Ré-applique juste le style "actif" : on ne peut pas réutiliser
-			# _button() sans perdre la connexion du signal déjà en place.
-			btn.add_theme_color_override("font_color", Color("fff2d4") if key == map_key else Color("a89878"))
+	_refresh_custom_room_lobby_ui()
 
 
-func _toggle_custom_random() -> void:
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
-		return
-	_custom_random_teams = not _custom_random_teams
-	steam_manager.call("set_custom_random_teams", _custom_random_teams)
-	if custom_random_button != null and is_instance_valid(custom_random_button):
-		custom_random_button.text = "☑ RÉPARTITION ALÉATOIRE" if _custom_random_teams else "☐ RÉPARTITION ALÉATOIRE"
-	_refresh_custom_members()
-
-
-func _pick_my_team(team: String) -> void:
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
-		return
-	steam_manager.call("set_my_team", team)
-	_refresh_custom_members()
-
-
-func _refresh_custom_members() -> void:
-	if custom_members_box == null or not is_instance_valid(custom_members_box):
+func _refresh_custom_room_lobby_ui() -> void:
+	if custom_room_panel == null or not is_instance_valid(custom_room_panel):
 		return
 
-	for child in custom_members_box.get_children():
-		child.queue_free()
+	var members: Array = custom_room_state.get("members", [])
+	var mode: String = str(custom_room_state.get("mode", "TEAM"))
+	var map_key: String = str(custom_room_state.get("map", "default"))
+	var random_teams: bool = bool(custom_room_state.get("random_teams", false))
+	var is_host := _is_custom_room_host()
 
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
+	if custom_room_status_label != null and is_instance_valid(custom_room_status_label):
+		custom_room_status_label.text = "%d JOUEUR(S)" % members.size()
+
+	if custom_room_map_option != null and is_instance_valid(custom_room_map_option):
+		for i in CUSTOM_ROOM_MAPS.size():
+			if CUSTOM_ROOM_MAPS[i][0] == map_key:
+				custom_room_map_option.select(i)
+				break
+		custom_room_map_option.disabled = not is_host
+
+	if custom_room_mode_option != null and is_instance_valid(custom_room_mode_option):
+		for i in CUSTOM_ROOM_MODES.size():
+			if CUSTOM_ROOM_MODES[i][0] == mode:
+				custom_room_mode_option.select(i)
+				break
+		custom_room_mode_option.disabled = not is_host
+
+	var team_mode := mode == "TEAM"
+	if custom_room_random_button != null and is_instance_valid(custom_room_random_button):
+		custom_room_random_button.visible = team_mode
+		custom_room_random_button.text = "☑ RÉPARTITION ALÉATOIRE" if random_teams else "☐ RÉPARTITION ALÉATOIRE"
+		custom_room_random_button.disabled = not is_host
+
+	for box in [custom_room_astral_box, custom_room_arcane_box, custom_room_unassigned_box]:
+		if box != null and is_instance_valid(box):
+			box.visible = team_mode
+			for child in box.get_children():
+				child.queue_free()
+
+	if custom_room_launch_button != null and is_instance_valid(custom_room_launch_button):
+		var status := str(custom_room_state.get("status", "open"))
+		custom_room_launch_button.disabled = status != "open"
+		custom_room_launch_button.text = "DÉMARRAGE..." if status != "open" else "LANCER LA PARTIE"
+
+	if not team_mode:
+		# Mode FFA : une seule liste à plat, pas de camp à choisir.
+		var flat_box := VBoxContainer.new()
+		flat_box.position = Vector2(24, 170)
+		flat_box.size = Vector2(932, 250)
+		flat_box.add_theme_constant_override("separation", 6)
+		flat_box.name = "FFAList"
+		var previous := custom_room_panel.get_node_or_null("FFAList")
+		if previous != null:
+			previous.queue_free()
+		for member in members:
+			flat_box.add_child(_custom_room_member_row(member))
+		custom_room_panel.add_child(flat_box)
 		return
-
-	_custom_random_teams = bool(steam_manager.call("get_custom_random_teams"))
-	var my_steam_id: int = int(steam_manager.get("steam_id"))
-	var members: Array = steam_manager.call("get_party_members")
-
-	if custom_status_label != null and is_instance_valid(custom_status_label):
-		custom_status_label.text = "%d / %d JOUEURS  •  STEAM" % [members.size(), int(steam_manager.get("party_max_members"))]
+	else:
+		var previous_flat := custom_room_panel.get_node_or_null("FFAList")
+		if previous_flat != null:
+			previous_flat.queue_free()
 
 	for member in members:
-		var member_id: int = int(member.get("steam_id"))
-		var row := _panel(Vector2.ZERO, Vector2(600, 42), Color("1a140b"), Color("4a3018"), 8)
-		row.custom_minimum_size = Vector2(600, 42)
-		custom_members_box.add_child(row)
-
-		row.add_child(_label(
-			str(member.get("name", "STEAM")),
-			12,
-			Color("f3e6c8"),
-			Vector2(14, 12),
-			Vector2(240, 20)
-		))
-
-		var team: String = str(steam_manager.call("get_member_team", member_id))
-		if _custom_random_teams:
-			row.add_child(_label(
-				"TIRÉ AU SORT AU LANCEMENT",
-				9,
-				Color("8a7a5a"),
-				Vector2(270, 14),
-				Vector2(320, 18)
-			))
-			continue
-
-		var astral_btn := _button("ASTRAL", Vector2(90, 30), team == "ASTRAL")
-		astral_btn.position = Vector2(280, 6)
-		var arcane_btn := _button("ARCANE", Vector2(90, 30), team == "ARCANE")
-		arcane_btn.position = Vector2(380, 6)
-
-		if member_id == my_steam_id:
-			astral_btn.pressed.connect(func(): _pick_my_team("ASTRAL"))
-			arcane_btn.pressed.connect(func(): _pick_my_team("ARCANE"))
-		else:
-			astral_btn.disabled = true
-			arcane_btn.disabled = true
-
-		row.add_child(astral_btn)
-		row.add_child(arcane_btn)
+		var team: String = str(member.get("team", ""))
+		var row := _custom_room_member_row(member)
+		if team == "ASTRAL" and custom_room_astral_box != null and is_instance_valid(custom_room_astral_box):
+			custom_room_astral_box.add_child(row)
+		elif team == "ARCANE" and custom_room_arcane_box != null and is_instance_valid(custom_room_arcane_box):
+			custom_room_arcane_box.add_child(row)
+		elif custom_room_unassigned_box != null and is_instance_valid(custom_room_unassigned_box):
+			custom_room_unassigned_box.add_child(row)
 
 
-## Lancement par le host : construit l'assignation finale des camps (tirage
-## au sort si la case est cochée, sinon les choix individuels — un membre qui
-## n'a rien choisi part sur ASTRAL par défaut plutôt que de bloquer le
-## lancement) puis démarre un serveur dédié directement, sans recherche
-## d'adversaire (contrairement au matchmaking classique).
-func _start_custom_game() -> void:
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
-		push_error("Autoload 'SteamManager' introuvable.")
+func _custom_room_member_row(member: Dictionary) -> Control:
+	var row := _panel(Vector2.ZERO, Vector2(420, 32), Color("1a140b"), Color("4a3018"), 6)
+	row.custom_minimum_size = Vector2(420, 32)
+	var is_me := str(member.get("steam_id", "")) == _my_steam_id_str()
+	var is_room_host := str(member.get("steam_id", "")) == str(custom_room_state.get("host_steam_id", ""))
+	var display_name: String = str(member.get("name", "Joueur"))
+	if is_room_host:
+		display_name += "  •  HOST"
+	row.add_child(_label(
+		display_name, 11,
+		Color("f4c977") if is_me else Color("f3e6c8"),
+		Vector2(12, 6), Vector2(400, 20)
+	))
+	return row
+
+
+func _on_custom_room_map_selected(index: int) -> void:
+	if not _is_custom_room_host() or index < 0 or index >= CUSTOM_ROOM_MAPS.size():
 		return
-	if matchmaking_action_http == null:
-		push_error("HTTPRequest de matchmaking introuvable.")
+	_send_custom_room_settings({"map": CUSTOM_ROOM_MAPS[index][0]})
+
+
+func _on_custom_room_mode_selected(index: int) -> void:
+	if not _is_custom_room_host() or index < 0 or index >= CUSTOM_ROOM_MODES.size():
 		return
-	if not bool(steam_manager.call("is_party_leader")):
+	_send_custom_room_settings({"mode": CUSTOM_ROOM_MODES[index][0]})
+
+
+func _toggle_custom_room_random() -> void:
+	if not _is_custom_room_host():
 		return
+	var current := bool(custom_room_state.get("random_teams", false))
+	_send_custom_room_settings({"random_teams": not current})
 
-	var members: Array = steam_manager.call("get_party_members")
-	if members.is_empty():
+
+func _send_custom_room_settings(fields: Dictionary) -> void:
+	if custom_room_http == null or custom_room_code == "":
 		return
-
-	var team_assignments: Dictionary = {}
-	if _custom_random_teams:
-		var shuffled := members.duplicate()
-		shuffled.shuffle()
-		for i in shuffled.size():
-			var steam_id_str := str(int(shuffled[i].get("steam_id")))
-			team_assignments[steam_id_str] = "ASTRAL" if i % 2 == 0 else "ARCANE"
-	else:
-		for member in members:
-			var steam_id_str := str(int(member.get("steam_id")))
-			var team: String = str(steam_manager.call("get_member_team", int(member.get("steam_id"))))
-			team_assignments[steam_id_str] = team if team in ["ASTRAL", "ARCANE"] else "ASTRAL"
-
-	var payload: Dictionary = {
-		"game": "ARENA_RIFT",
-		"lobby_id": str(steam_manager.get("current_lobby_id")),
-		"map": str(steam_manager.call("get_custom_map")),
-		"members": members,
-		"teams": team_assignments,
-	}
-
-	if custom_launch_button != null and is_instance_valid(custom_launch_button):
-		custom_launch_button.disabled = true
-		custom_launch_button.text = "DÉMARRAGE DU SERVEUR..."
-	if custom_status_label != null and is_instance_valid(custom_status_label):
-		custom_status_label.text = "DÉMARRAGE DU SERVEUR..."
-
-	matchmaking_pending_action = "custom_start"
-	var error := matchmaking_action_http.request(
-		MATCHMAKING_BASE_URL + "/custom-game/start",
+	var payload := {"steam_id": _my_steam_id_str()}
+	for key in fields.keys():
+		payload[key] = fields[key]
+	custom_room_pending_action = "room_settings"
+	custom_room_http.request(
+		MATCHMAKING_BASE_URL + "/rooms/" + custom_room_code + "/settings",
 		PackedStringArray(["Content-Type: application/json"]),
 		HTTPClient.METHOD_POST,
 		JSON.stringify(payload)
 	)
 
-	if error != OK:
-		matchmaking_pending_action = ""
-		if custom_launch_button != null and is_instance_valid(custom_launch_button):
-			custom_launch_button.disabled = false
-			custom_launch_button.text = "LANCER LA PARTIE"
-		if custom_status_label != null and is_instance_valid(custom_status_label):
-			custom_status_label.text = "ERREUR RÉSEAU : %s" % error
 
-
-func _handle_custom_game_start_response(response: Dictionary) -> void:
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
+func _pick_custom_room_team(team: String) -> void:
+	if custom_room_http == null or custom_room_code == "":
 		return
+	custom_room_pending_action = "room_team"
+	var payload := {"steam_id": _my_steam_id_str(), "team": team}
+	custom_room_http.request(
+		MATCHMAKING_BASE_URL + "/rooms/" + custom_room_code + "/team",
+		PackedStringArray(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST,
+		JSON.stringify(payload)
+	)
 
-	var status := str(response.get("status", ""))
-	if status == "error":
-		if custom_launch_button != null and is_instance_valid(custom_launch_button):
-			custom_launch_button.disabled = false
-			custom_launch_button.text = "LANCER LA PARTIE"
-		if custom_status_label != null and is_instance_valid(custom_status_label):
-			custom_status_label.text = "ERREUR : %s" % str(response.get("error", "inconnue"))
+
+## Lancement par le host : l'assignation finale des camps (aléatoire ou
+## choix individuels) est calculée côté service de matchmaking (source de
+## vérité partagée par tout le monde), pas ici — on se contente de demander
+## le lancement et de laisser le polling détecter le serveur une fois prêt.
+func _start_custom_room() -> void:
+	if not _is_custom_room_host() or custom_room_http == null or custom_room_code == "":
 		return
+	custom_room_pending_action = "room_start"
+	var payload := {"steam_id": _my_steam_id_str()}
+	custom_room_http.request(
+		MATCHMAKING_BASE_URL + "/rooms/" + custom_room_code + "/start",
+		PackedStringArray(["Content-Type: application/json"]),
+		HTTPClient.METHOD_POST,
+		JSON.stringify(payload)
+	)
+	if custom_room_status_label != null and is_instance_valid(custom_room_status_label):
+		custom_room_status_label.text = "DÉMARRAGE DU SERVEUR..."
 
-	var match_id := str(response.get("match_id", ""))
-	var ip := str(response.get("ip", ""))
-	var port := int(response.get("port", 0))
-	var teams: Dictionary = response.get("teams", {}) if typeof(response.get("teams", {})) == TYPE_DICTIONARY else {}
 
-	if match_id == "" or ip == "" or port <= 0:
-		if custom_status_label != null and is_instance_valid(custom_status_label):
-			custom_status_label.text = "RÉPONSE SERVEUR INVALIDE"
+## Surveille l'apparition d'un serveur "online" dans l'état du salon et
+## connecte le joueur local dès que c'est le cas — le polling continu (pas
+## un mécanisme à part) fait à la fois vivre le lobby ET détecter le
+## lancement, chez tous les membres y compris le host.
+func _check_custom_room_server_ready() -> void:
+	if _custom_room_connect_triggered or matchmaking_connecting:
 		return
-
-	# Le process serveur dédié vient d'être spawné mais n'écoute pas encore
-	# forcément : comme pour le matchmaking classique, on attend qu'il se
-	# déclare "online" avant de faire connecter tout le monde, plutôt que
-	# d'écrire tout de suite dans le lobby (qui déclencherait une connexion
-	# prématurée chez les autres membres).
-	_custom_pending_match_id = match_id
-	_custom_pending_teams = teams
-	matchmaking_in_progress = true
-	if custom_status_label != null and is_instance_valid(custom_status_label):
-		custom_status_label.text = "SERVEUR EN DÉMARRAGE..."
-	_start_matchmaking_poll()
-
-
-## Surveille l'arrivée du serveur Custom Game dans la donnée de lobby et
-## connecte le joueur local dès qu'il apparaît — appelé chez TOUS les
-## membres (host compris) via party_data_changed, pas seulement au clic sur
-## "LANCER LA PARTIE" qui ne concerne que le host.
-func _check_custom_server_ready() -> void:
-	if _custom_connect_triggered or matchmaking_connecting:
+	var server = custom_room_state.get("server", null)
+	if typeof(server) != TYPE_DICTIONARY:
 		return
-	if selected_mode != "CUSTOM GAME":
+	var server_dict: Dictionary = server
+	if str(server_dict.get("status", "")) != "online":
 		return
-
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	if steam_manager == null:
-		return
-
-	var server: Dictionary = steam_manager.call("get_custom_server")
-	if server.is_empty():
-		return
-
-	var ip := str(server.get("ip", ""))
-	var port := int(server.get("port", 0))
-	var match_id := str(server.get("match_id", ""))
+	var ip := str(server_dict.get("ip", ""))
+	var port := int(server_dict.get("port", 0))
+	var match_id := str(server_dict.get("match_id", ""))
 	if ip == "" or port <= 0:
 		return
 
-	var teams: Dictionary = server.get("teams", {}) if typeof(server.get("teams", {})) == TYPE_DICTIONARY else {}
-	var my_steam_id_str := str(int(steam_manager.get("steam_id")))
-	var my_team: String = str(teams.get(my_steam_id_str, ""))
+	var teams: Dictionary = server_dict.get("teams", {}) if typeof(server_dict.get("teams", {})) == TYPE_DICTIONARY else {}
+	var my_team: String = str(teams.get(_my_steam_id_str(), ""))
 
-	_custom_connect_triggered = true
+	_custom_room_connect_triggered = true
+	if custom_room_poll_timer != null:
+		custom_room_poll_timer.stop()
 
 	var network_node: Node = get_node_or_null("/root/Network")
 	if network_node != null:
 		network_node.set("pending_custom_team", my_team)
 
-	if custom_status_label != null and is_instance_valid(custom_status_label):
-		custom_status_label.text = "CONNEXION AU SERVEUR..."
+	selected_mode = "CUSTOM DEATHMATCH" if str(custom_room_state.get("mode", "TEAM")) == "FFA" else "CUSTOM GAME"
+
+	if custom_room_status_label != null and is_instance_valid(custom_room_status_label):
+		custom_room_status_label.text = "CONNEXION AU SERVEUR..."
 
 	_connect_to_game_server(ip, port, match_id)
+
+
+## Quitte le salon localement (arrêt du polling, retour au menu) sans
+## forcément prévenir le serveur — utilisé quand le salon est déjà mort
+## côté service (404 au poll).
+func _leave_custom_room_local_only() -> void:
+	if custom_room_poll_timer != null:
+		custom_room_poll_timer.stop()
+	custom_room_code = ""
+	custom_room_state = {}
+	_custom_room_connect_triggered = false
+
+
+func _leave_custom_room() -> void:
+	if custom_room_http != null and custom_room_code != "":
+		custom_room_http.request(
+			MATCHMAKING_BASE_URL + "/rooms/" + custom_room_code + "/leave",
+			PackedStringArray(["Content-Type: application/json"]),
+			HTTPClient.METHOD_POST,
+			JSON.stringify({"steam_id": _my_steam_id_str()})
+		)
+	_leave_custom_room_local_only()
+	_show_home_deferred()
 
 
 func _launch_party_match() -> void:
@@ -1306,18 +1487,6 @@ func _on_matchmaking_action_completed(
 		_set_matchmaking_status("RECHERCHE ANNULÉE")
 		return
 
-	if action == "custom_start":
-		var parsed_custom = JSON.parse_string(response_text)
-		if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300 or typeof(parsed_custom) != TYPE_DICTIONARY:
-			if custom_launch_button != null and is_instance_valid(custom_launch_button):
-				custom_launch_button.disabled = false
-				custom_launch_button.text = "LANCER LA PARTIE"
-			if custom_status_label != null and is_instance_valid(custom_status_label):
-				custom_status_label.text = "SERVEUR MATCHMAKING INJOIGNABLE"
-			return
-		_handle_custom_game_start_response(parsed_custom as Dictionary)
-		return
-
 	# action == "search"
 	if result != HTTPRequest.RESULT_SUCCESS:
 		matchmaking_in_progress = false
@@ -1362,10 +1531,6 @@ func _on_matchmaking_poll_completed(
 		print("ARENA RIFT : POLL MATCHMAKING INJOIGNABLE, NOUVELLE TENTATIVE...")
 		return
 
-	if _custom_pending_match_id != "":
-		_handle_custom_game_poll_response(response_code, body)
-		return
-
 	if response_code == 404:
 		# Le ticket n'existe plus côté serveur (redémarrage du service,
 		# purge...) : plutôt que de laisser le joueur planté à interroger
@@ -1387,60 +1552,6 @@ func _on_matchmaking_poll_completed(
 		return
 
 	_handle_matchmaking_response(parsed as Dictionary)
-
-
-## Réponse du GET /match/{id} pendant l'attente qu'un serveur Custom Game
-## spawné par _start_custom_game() passe "online". Une fois prêt, écrit dans
-## la donnée du lobby : c'est ce changement, capté par party_data_changed
-## chez TOUS les membres (host compris, via le même mécanisme), qui
-## déclenche la connexion synchronisée de tout le monde.
-func _handle_custom_game_poll_response(response_code: int, body: PackedByteArray) -> void:
-	if response_code == 404:
-		# Le match a disparu côté matchmaking (purge, service redémarré) :
-		# on ne laisse pas le host planté à interroger un match mort.
-		matchmaking_in_progress = false
-		_custom_pending_match_id = ""
-		_custom_pending_teams = {}
-		if custom_launch_button != null and is_instance_valid(custom_launch_button):
-			custom_launch_button.disabled = false
-			custom_launch_button.text = "LANCER LA PARTIE"
-		if custom_status_label != null and is_instance_valid(custom_status_label):
-			custom_status_label.text = "MATCH INTROUVABLE, RÉESSAIE"
-		return
-
-	if response_code < 200 or response_code >= 300:
-		_start_matchmaking_poll()
-		return
-
-	var parsed = JSON.parse_string(body.get_string_from_utf8())
-	if typeof(parsed) != TYPE_DICTIONARY:
-		_start_matchmaking_poll()
-		return
-
-	var match_data: Dictionary = parsed as Dictionary
-	var server_data = match_data.get("server", null)
-	if typeof(server_data) != TYPE_DICTIONARY:
-		_start_matchmaking_poll()
-		return
-
-	var server: Dictionary = server_data
-	var server_status := str(server.get("status", ""))
-	var server_ip := str(server.get("ip", ""))
-	var server_port := int(server.get("port", 0))
-
-	if server_ip == "" or server_port <= 0 or server_status != "online":
-		_start_matchmaking_poll()
-		return
-
-	var steam_manager: Node = get_node_or_null("/root/SteamManager")
-	var finished_match_id := _custom_pending_match_id
-	var finished_teams := _custom_pending_teams
-	matchmaking_in_progress = false
-	_custom_pending_match_id = ""
-	_custom_pending_teams = {}
-
-	if steam_manager != null:
-		steam_manager.call("set_custom_server", finished_match_id, server_ip, server_port, finished_teams)
 
 
 func _handle_matchmaking_response(response: Dictionary) -> void:
@@ -1545,14 +1656,6 @@ func _poll_matchmaking_status() -> void:
 		return
 
 	if matchmaking_poll_http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
-		return
-
-	if _custom_pending_match_id != "":
-		var custom_url := MATCHMAKING_BASE_URL + "/match/" + _custom_pending_match_id
-		print("MATCHMAKING POLL (CUSTOM GAME) : ", custom_url)
-		var custom_error := matchmaking_poll_http.request(custom_url, PackedStringArray(), HTTPClient.METHOD_GET)
-		if custom_error != OK:
-			print("ERREUR POLLING CUSTOM GAME : ", custom_error)
 		return
 
 	if matchmaking_ticket_id == "":
@@ -1677,8 +1780,6 @@ func _leave_party() -> void:
 	# le voir ou l'annuler lui-même.
 	if matchmaking_in_progress and not matchmaking_connecting:
 		_cancel_matchmaking()
-	_custom_pending_match_id = ""
-	_custom_pending_teams = {}
 
 	var steam_manager: Node = get_node_or_null("/root/SteamManager")
 	if steam_manager != null:

@@ -12,17 +12,12 @@ var party_max_members: int = 0
 var pending_party_mode: String = "DEATHMATCH"
 
 var _last_member_count: int = -1
-var _last_lobby_data_fingerprint: String = ""
 
 # Signals consommés par le menu et, plus tard, par le matchmaking.
 signal party_created(lobby_id: int)
 signal party_joined(lobby_id: int)
 signal party_members_changed()
 signal party_failed(reason: String)
-## Émis quand une donnée de lobby (camp d'un membre, map, case "aléatoire",
-## serveur Custom Game prêt) change — utilisé par l'écran Custom Game pour se
-## rafraîchir en direct chez tous les membres, pas seulement chez le host.
-signal party_data_changed()
 
 
 func _init() -> void:
@@ -228,21 +223,6 @@ func _poll_party_members() -> void:
 		_last_member_count = count
 		party_members_changed.emit()
 
-	# GodotSteam expose bien un signal lobby_data_update, mais son déclenchement
-	# fiable dépend de la version du plugin : on complète par un polling simple
-	# (comme pour le nombre de membres ci-dessus) pour ne jamais rater le
-	# changement de camp d'un membre, de map, ou l'arrivée du serveur Custom
-	# Game — c'est justement CE changement qui doit déclencher la connexion
-	# de tout le monde au serveur.
-	var fingerprint := str(Steam.getLobbyData(current_lobby_id, "custom_map"))
-	fingerprint += "|" + str(Steam.getLobbyData(current_lobby_id, "custom_random"))
-	fingerprint += "|" + str(Steam.getLobbyData(current_lobby_id, "custom_server"))
-	for member in get_party_members():
-		fingerprint += "|" + str(member.get("steam_id")) + ":" + get_member_team(int(member.get("steam_id")))
-	if fingerprint != _last_lobby_data_fingerprint:
-		_last_lobby_data_fingerprint = fingerprint
-		party_data_changed.emit()
-
 
 func _on_lobby_chat_update(_lobby_id: int, _changed_user_id: int, _making_change_id: int, _chat_state: int) -> void:
 	party_members_changed.emit()
@@ -269,88 +249,3 @@ func is_party_leader() -> bool:
 
 func get_party_lobby_id() -> int:
 	return current_lobby_id
-
-
-# =========================================================
-# CUSTOM GAME : camp / map / lancement
-# =========================================================
-
-## Chaque joueur ne peut écrire QUE sa propre donnée de membre Steam (limite
-## de l'API Steam) : c'est ce qui permet à n'importe quel membre de choisir
-## son camp lui-même, sans que le host ait besoin d'agir pour lui.
-func set_my_team(team: String) -> void:
-	if not steam_online or current_lobby_id == 0:
-		return
-	Steam.setLobbyMemberData(current_lobby_id, "team", team)
-
-
-func get_member_team(member_steam_id: int) -> String:
-	if not steam_online or current_lobby_id == 0:
-		return ""
-	return str(Steam.getLobbyMemberData(current_lobby_id, member_steam_id, "team"))
-
-
-func get_my_team() -> String:
-	return get_member_team(steam_id)
-
-
-## La donnée de LOBBY (par opposition à la donnée de membre ci-dessus) ne
-## peut être écrite que par le propriétaire du lobby — parfait pour la map et
-## la case "aléatoire", qui sont des réglages du host.
-func set_custom_map(map_key: String) -> void:
-	if not is_party_leader():
-		return
-	Steam.setLobbyData(current_lobby_id, "custom_map", map_key)
-
-
-func get_custom_map() -> String:
-	if current_lobby_id == 0:
-		return "default"
-	var value := str(Steam.getLobbyData(current_lobby_id, "custom_map"))
-	return value if value != "" else "default"
-
-
-func set_custom_random_teams(enabled: bool) -> void:
-	if not is_party_leader():
-		return
-	Steam.setLobbyData(current_lobby_id, "custom_random", "1" if enabled else "0")
-
-
-func get_custom_random_teams() -> bool:
-	if current_lobby_id == 0:
-		return false
-	return str(Steam.getLobbyData(current_lobby_id, "custom_random")) == "1"
-
-
-## Écrit par le host une fois le serveur dédié obtenu du matchmaking : tous
-## les membres (host compris) surveillent cette clé via party_data_changed
-## pour se connecter en même temps, sans dépendre d'un appel réseau de plus.
-func set_custom_server(match_id: String, ip: String, port: int, team_assignments: Dictionary) -> void:
-	if not is_party_leader():
-		return
-	var payload := {
-		"match_id": match_id,
-		"ip": ip,
-		"port": port,
-		"teams": team_assignments,
-	}
-	Steam.setLobbyData(current_lobby_id, "custom_server", JSON.stringify(payload))
-
-
-func get_custom_server() -> Dictionary:
-	if current_lobby_id == 0:
-		return {}
-	var raw := str(Steam.getLobbyData(current_lobby_id, "custom_server"))
-	if raw == "":
-		return {}
-	var parsed: Variant = JSON.parse_string(raw)
-	return parsed as Dictionary if typeof(parsed) == TYPE_DICTIONARY else {}
-
-
-## À l'arrivée dans une party fraîche (nouvelle recherche), on repart d'un
-## lobby propre : sans ça, un vieux "custom_server" d'une partie précédente
-## ferait reconnecter tout le monde instantanément au serveur déjà terminé.
-func reset_custom_server() -> void:
-	if not is_party_leader() or current_lobby_id == 0:
-		return
-	Steam.setLobbyData(current_lobby_id, "custom_server", "")

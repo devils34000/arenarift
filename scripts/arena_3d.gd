@@ -3564,10 +3564,10 @@ func _build_hud() -> void:
 	# Gros chiffre de vie courante, bien plus lisible qu'un simple texte
 	# posé sur la barre — la barre elle-même devient un simple liseré fin
 	# sous le chiffre plutôt que l'élément principal.
-	health_text = _label("", "100", Vector2(100, 40), Vector2(90, 34), 26, Color("eafff5"))
+	health_text = _label("", "100", Vector2(100, 38), Vector2(62, 34), 26, Color("eafff5"))
 	hero_panel.add_child(health_text)
-	health_max_label = _label("", "/ 100", Vector2(100, 40), Vector2(180, 34), 12, Color("6fa593"))
-	health_max_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	health_max_label = _label("", "/ 100", Vector2(162, 50), Vector2(100, 22), 13, Color("6fa593"))
+	health_max_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hero_panel.add_child(health_max_label)
 
 	health_bar = ProgressBar.new()

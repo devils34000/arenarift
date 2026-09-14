@@ -140,6 +140,27 @@ var nova_cooldown_label: MOBAAbilityIcon
 var dash_cooldown_label: MOBAAbilityIcon
 var respawn_overlay: Control
 var respawn_countdown_label: Label
+
+# =========================================================
+# MENU PAUSE (ÉCHAP)
+# =========================================================
+var pause_menu_open: bool = false
+var pause_menu: Control
+var pause_root_panel: Control
+var pause_options_panel: Control
+var pause_master_slider: HSlider
+var pause_music_slider: HSlider
+var pause_sfx_slider: HSlider
+var pause_fov_slider: HSlider
+var pause_sensitivity_slider: HSlider
+var pause_fullscreen_toggle: CheckButton
+var pause_vsync_toggle: CheckButton
+var pause_invert_y_toggle: CheckButton
+var pause_master_volume: float = 78.0
+var pause_music_volume: float = 64.0
+var pause_sfx_volume: float = 64.0
+var pause_fullscreen: bool = false
+var pause_vsync: bool = true
 # Côté client réseau uniquement : le serveur reste seul autoritaire sur la
 # mort/respawn, mais ce timer purement cosmétique permet d'afficher l'écran
 # de mort et son compte à rebours localement (piloté par la RPC
@@ -215,6 +236,7 @@ func _ready() -> void:
 		_load_camera_settings()
 		_build_camera()
 		_build_hud()
+		_build_pause_menu()
 		_build_axe_preview()
 		_create_network_countdown_display()
 		if multiplayer.has_multiplayer_peer():
@@ -341,9 +363,14 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		_toggle_pause_menu()
 	elif event is InputEventMouseButton and event.pressed:
 		last_input_was_controller = false
+		# Sans ce garde, cliquer sur un bouton du menu pause (clic gauche)
+		# recapturait aussitôt la souris et masquait le curseur en plein
+		# milieu du clic, rendant le menu inutilisable à la souris.
+		if pause_menu_open:
+			return
 		if event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -3460,6 +3487,242 @@ func _update_axe_preview() -> void:
 	axe_preview_mesh.surface_add_vertex(end)
 	axe_preview_mesh.surface_end()
 	axe_preview.global_position = Vector3.ZERO
+
+# =========================================================
+# MENU PAUSE (ÉCHAP) : reprendre / options / quitter la partie
+# =========================================================
+
+func _toggle_pause_menu() -> void:
+	if pause_menu_open:
+		_close_pause_menu()
+	else:
+		_open_pause_menu()
+
+func _open_pause_menu() -> void:
+	pause_menu_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	_load_pause_settings()
+	_show_pause_root()
+	if pause_menu != null:
+		pause_menu.visible = true
+
+func _close_pause_menu() -> void:
+	pause_menu_open = false
+	if pause_menu != null:
+		pause_menu.visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _show_pause_root() -> void:
+	if pause_root_panel != null:
+		pause_root_panel.visible = true
+	if pause_options_panel != null:
+		pause_options_panel.visible = false
+
+func _show_pause_options() -> void:
+	if pause_root_panel != null:
+		pause_root_panel.visible = false
+	if pause_options_panel != null:
+		pause_options_panel.visible = true
+	if pause_master_slider != null:
+		pause_master_slider.value = pause_master_volume
+	if pause_music_slider != null:
+		pause_music_slider.value = pause_music_volume
+	if pause_sfx_slider != null:
+		pause_sfx_slider.value = pause_sfx_volume
+	if pause_fov_slider != null:
+		pause_fov_slider.value = camera_fov
+	if pause_sensitivity_slider != null:
+		pause_sensitivity_slider.value = controller_camera_sensitivity
+	if pause_fullscreen_toggle != null:
+		pause_fullscreen_toggle.button_pressed = pause_fullscreen
+	if pause_vsync_toggle != null:
+		pause_vsync_toggle.button_pressed = pause_vsync
+	if pause_invert_y_toggle != null:
+		pause_invert_y_toggle.button_pressed = controller_invert_y
+
+func _quit_match_from_pause() -> void:
+	_close_pause_menu()
+	_return_to_menu()
+
+## Reprend les mêmes fichier/sections/clés que le menu principal
+## (SETTINGS_PATH = "user://settings.cfg" dans main_menu.gd) : les deux
+## écrans doivent éditer le même fichier, sinon un changement fait en jeu
+## serait écrasé au prochain passage par le menu principal, et inversement.
+func _load_pause_settings() -> void:
+	var config := ConfigFile.new()
+	if config.load("user://settings.cfg") != OK:
+		return
+	pause_master_volume = float(config.get_value("audio", "master_volume", 78.0))
+	pause_music_volume = float(config.get_value("audio", "music_volume", 64.0))
+	pause_sfx_volume = float(config.get_value("audio", "sfx_volume", 64.0))
+	pause_fullscreen = bool(config.get_value("video", "fullscreen", false))
+	pause_vsync = bool(config.get_value("video", "vsync", true))
+	_load_camera_settings()
+
+func _save_pause_settings() -> void:
+	var config := ConfigFile.new()
+	# On recharge le fichier existant avant d'écrire : sans ça, les clés
+	# gérées uniquement par le menu principal (gameplay/tutorials...)
+	# seraient perdues à chaque sauvegarde faite depuis le menu pause.
+	config.load("user://settings.cfg")
+	config.set_value("audio", "master_volume", pause_master_volume)
+	config.set_value("audio", "music_volume", pause_music_volume)
+	config.set_value("audio", "sfx_volume", pause_sfx_volume)
+	config.set_value("video", "fullscreen", pause_fullscreen)
+	config.set_value("video", "vsync", pause_vsync)
+	config.set_value("camera", "fov", camera_fov)
+	config.set_value("camera", "height", camera_height)
+	config.set_value("controller", "camera_sensitivity", controller_camera_sensitivity)
+	config.set_value("controller", "invert_y", controller_invert_y)
+	config.save("user://settings.cfg")
+
+func _set_pause_bus_volume(bus_name: String, value: float) -> void:
+	var bus := AudioServer.get_bus_index(bus_name)
+	if bus == -1:
+		return
+	if value <= 0.0:
+		AudioServer.set_bus_mute(bus, true)
+	else:
+		AudioServer.set_bus_mute(bus, false)
+		AudioServer.set_bus_volume_db(bus, linear_to_db(value / 100.0))
+
+func _on_pause_master_changed(value: float) -> void:
+	pause_master_volume = value
+	_set_pause_bus_volume("Master", value)
+	_save_pause_settings()
+
+func _on_pause_music_changed(value: float) -> void:
+	pause_music_volume = value
+	_set_pause_bus_volume("Music", value)
+	_save_pause_settings()
+
+func _on_pause_sfx_changed(value: float) -> void:
+	pause_sfx_volume = value
+	_set_pause_bus_volume("SFX", value)
+	_save_pause_settings()
+
+func _on_pause_fov_changed(value: float) -> void:
+	camera_fov = value
+	if camera != null:
+		camera.fov = camera_fov
+	_save_pause_settings()
+
+func _on_pause_sensitivity_changed(value: float) -> void:
+	controller_camera_sensitivity = value
+	_save_pause_settings()
+
+func _on_pause_fullscreen_toggled(pressed: bool) -> void:
+	pause_fullscreen = pressed
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if pressed else DisplayServer.WINDOW_MODE_WINDOWED)
+	_save_pause_settings()
+
+func _on_pause_vsync_toggled(pressed: bool) -> void:
+	pause_vsync = pressed
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if pressed else DisplayServer.VSYNC_DISABLED)
+	_save_pause_settings()
+
+func _on_pause_invert_y_toggled(pressed: bool) -> void:
+	controller_invert_y = pressed
+	_save_pause_settings()
+
+func _pause_slider_row(parent: Control, y: float, caption: String, min_value: float, max_value: float, step: float) -> HSlider:
+	parent.add_child(_label("", caption, Vector2(0, y), Vector2(200, 18), 10, Color("b7cbe5")))
+	var slider := HSlider.new()
+	slider.position = Vector2(0, y + 20)
+	slider.size = Vector2(360, 20)
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = step
+	parent.add_child(slider)
+	return slider
+
+func _pause_toggle_row(parent: Control, y: float, caption: String) -> CheckButton:
+	parent.add_child(_label("", caption, Vector2(0, y + 4), Vector2(260, 18), 10, Color("b7cbe5")))
+	var toggle := CheckButton.new()
+	toggle.position = Vector2(280, y)
+	toggle.size = Vector2(80, 26)
+	parent.add_child(toggle)
+	return toggle
+
+func _build_pause_menu() -> void:
+	pause_menu = Control.new()
+	pause_menu.name = "PauseMenu"
+	pause_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_menu.visible = false
+	hud.add_child(pause_menu)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.0, 0.0, 0.0, 0.55)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_menu.add_child(dim)
+
+	# --- Écran racine : Reprendre / Options / Quitter la partie ---
+	pause_root_panel = _panel(Vector2(390, 200), Vector2(300, 260), Color("07111ff2"), Color("315b8d"), 16)
+	pause_menu.add_child(pause_root_panel)
+
+	pause_root_panel.add_child(_label("", "PAUSE", Vector2(0, 24), Vector2(300, 30), 20, Color("f3f8ff"), HORIZONTAL_ALIGNMENT_CENTER))
+
+	var resume_btn := Button.new()
+	resume_btn.text = "REPRENDRE"
+	resume_btn.position = Vector2(30, 80)
+	resume_btn.size = Vector2(240, 44)
+	resume_btn.pressed.connect(_close_pause_menu)
+	pause_root_panel.add_child(resume_btn)
+
+	var options_btn := Button.new()
+	options_btn.text = "OPTIONS"
+	options_btn.position = Vector2(30, 134)
+	options_btn.size = Vector2(240, 44)
+	options_btn.pressed.connect(_show_pause_options)
+	pause_root_panel.add_child(options_btn)
+
+	var quit_btn := Button.new()
+	quit_btn.text = "QUITTER LA PARTIE"
+	quit_btn.position = Vector2(30, 188)
+	quit_btn.size = Vector2(240, 44)
+	quit_btn.add_theme_color_override("font_color", Color("ff8a8a"))
+	quit_btn.pressed.connect(_quit_match_from_pause)
+	pause_root_panel.add_child(quit_btn)
+
+	# --- Écran options : audio / vidéo / caméra, mêmes réglages que le
+	# menu principal, persistés dans le même fichier. ---
+	pause_options_panel = _panel(Vector2(330, 100), Vector2(420, 460), Color("07111ff2"), Color("315b8d"), 16)
+	pause_options_panel.visible = false
+	pause_menu.add_child(pause_options_panel)
+
+	pause_options_panel.add_child(_label("", "OPTIONS", Vector2(30, 20), Vector2(360, 28), 18, Color("f3f8ff")))
+
+	var content := Control.new()
+	content.position = Vector2(30, 64)
+	content.size = Vector2(360, 360)
+	pause_options_panel.add_child(content)
+
+	pause_master_slider = _pause_slider_row(content, 0, "VOLUME GÉNÉRAL", 0.0, 100.0, 1.0)
+	pause_master_slider.value_changed.connect(_on_pause_master_changed)
+	pause_music_slider = _pause_slider_row(content, 52, "MUSIQUE", 0.0, 100.0, 1.0)
+	pause_music_slider.value_changed.connect(_on_pause_music_changed)
+	pause_sfx_slider = _pause_slider_row(content, 104, "EFFETS SONORES", 0.0, 100.0, 1.0)
+	pause_sfx_slider.value_changed.connect(_on_pause_sfx_changed)
+	pause_fov_slider = _pause_slider_row(content, 156, "CHAMP DE VISION CAMÉRA", 55.0, 90.0, 1.0)
+	pause_fov_slider.value_changed.connect(_on_pause_fov_changed)
+	pause_sensitivity_slider = _pause_slider_row(content, 208, "SENSIBILITÉ MANETTE", 0.5, 6.0, 0.1)
+	pause_sensitivity_slider.value_changed.connect(_on_pause_sensitivity_changed)
+
+	pause_fullscreen_toggle = _pause_toggle_row(content, 264, "PLEIN ÉCRAN")
+	pause_fullscreen_toggle.toggled.connect(_on_pause_fullscreen_toggled)
+	pause_vsync_toggle = _pause_toggle_row(content, 296, "VSYNC")
+	pause_vsync_toggle.toggled.connect(_on_pause_vsync_toggled)
+	pause_invert_y_toggle = _pause_toggle_row(content, 328, "INVERSER AXE Y (MANETTE)")
+	pause_invert_y_toggle.toggled.connect(_on_pause_invert_y_toggled)
+
+	var back_btn := Button.new()
+	back_btn.text = "RETOUR"
+	back_btn.position = Vector2(30, 400)
+	back_btn.size = Vector2(360, 40)
+	back_btn.pressed.connect(_show_pause_root)
+	pause_options_panel.add_child(back_btn)
 
 func _build_hud() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)

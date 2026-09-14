@@ -419,6 +419,23 @@ func network_receive_input(move_direction: Vector3, aim_direction_value: Vector3
 		network_aim_direction = aim_direction_value.normalized()
 
 func _player_input(delta: float) -> void:
+	# Menu pause (Échap) ouvert : la souris est alors relâchée pour cliquer
+	# dans le menu, ce qui sert ici de signal fiable pour ignorer les
+	# entrées de jeu (mouvement, sorts). Le personnage ralentit normalement
+	# au lieu de se figer net ou de glisser indéfiniment sur sa dernière
+	# vitesse, et on continue de prévenir le serveur qu'on ne bouge plus —
+	# sans ça, il aurait continué d'appliquer la dernière direction reçue
+	# pendant que le menu reste ouvert.
+	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
+		if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() and network_peer_id == multiplayer.get_unique_id():
+			var network_node := get_node_or_null("/root/Network")
+			if network_node != null:
+				network_input_sequence += 1
+				network_node.arena_player_input.rpc_id(1, Vector3.ZERO, aim_direction, network_input_sequence, false, false)
+		return
+
 	# Mouvement robuste : clavier direct + stick gauche direct.
 	# On ne dépend pas de l'InputMap pour éviter qu'un réglage utilisateur
 	# ou une action manquante casse W/Z ou le stick.

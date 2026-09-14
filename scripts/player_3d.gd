@@ -356,16 +356,27 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	# L'arène actuelle est plane autour de Y=0. Le serveur dédié n'a pas
-	# toujours de collision Terrain exploitable : on ne bloque donc plus Y en
-	# permanence (ce qui empêchait tout saut), seulement quand le personnage
-	# atteint ou passe sous le niveau du sol, pour ne jamais tomber sous la map.
-	if global_position.y <= 0.0 and vertical_velocity <= 0.0:
+	# Détection du sol par la physique (is_on_floor(), calculée par
+	# move_and_slide()) plutôt qu'un seuil fixe Y<=0.0 : cet ancien seuil ne
+	# se déclenchait jamais si le personnage retombait avec un minuscule
+	# résidu positif (marge de collision de CharacterBody3D) ou sur une
+	# surface qui n'est pas exactement à Y=0 (marches, murets...), ce qui le
+	# laissait bloqué indéfiniment dans l'animation de saut/chute.
+	var was_grounded := is_grounded
+	is_grounded = is_on_floor()
+
+	# Filet de sécurité : le serveur dédié n'a pas toujours de collision
+	# Terrain exploitable. Si la physique ne détecte pas de sol mais qu'on
+	# est au niveau du sol plat (Y<=0) et qu'on ne monte pas, on considère
+	# quand même le personnage au sol, pour ne jamais tomber sous la map.
+	if not is_grounded and global_position.y <= 0.0 and vertical_velocity <= 0.0:
 		global_position.y = 0.0
+		is_grounded = true
+
+	if is_grounded:
 		vertical_velocity = 0.0
 		velocity.y = 0.0
-		if not is_grounded:
-			is_grounded = true
+		if not was_grounded:
 			_play_animation(_landing_anim)
 	elif multiplayer.has_multiplayer_peer() and multiplayer.is_server() and global_position.y < 0.0:
 		global_position.y = 0.0

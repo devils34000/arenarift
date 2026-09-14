@@ -508,6 +508,7 @@ func _build_world() -> void:
 		# Nomme ton mesh de sol "Terrain" pour que ça fonctionne pareil.
 		_update_map_bounds()
 		_create_terrain_collision()
+		_strip_decorative_wall_collisions(map_root)
 		_rebake_scaled_wall_collisions(map_root)
 	else:
 		# On ne génère plus l'ancienne arène procédurale bleue.
@@ -644,6 +645,34 @@ func _create_terrain_collision() -> void:
 ## trouvé sous la map, une forme figée en coordonnées MONDE (donc sans
 ## échelle) portée par un nouveau corps sans échelle, en désactivant
 ## l'ancien corps devenu inutile.
+## Les modules de mur du pack "simpledongeon" (ArenaLabyrinth) sont importés
+## avec "generate/physics" activé côté FBX, donc chaque instance embarque son
+## propre StaticBody3D/CollisionShape3D en plus du mesh. On ne veut PAS de
+## cette collision par module (des milliers de petites formes redondantes
+## avec la collision "MazeWalls" déjà posée, en boîtes plates) : ces
+## instances sont purement décoratives, groupées sous un nœud
+## "MazeWallVisuals" — on retire donc tout CollisionObject3D qu'elles
+## contiennent, avant le rebake générique qui suit.
+func _strip_decorative_wall_collisions(root: Node) -> void:
+	if root == null:
+		return
+	var visuals := root.get_node_or_null("MazeWallVisuals")
+	if visuals == null:
+		return
+	var to_remove: Array[Node] = []
+	_collect_collision_objects(visuals, to_remove)
+	for node in to_remove:
+		node.free()
+	if not to_remove.is_empty():
+		print("ARENA RIFT : MazeWallVisuals : ", to_remove.size(), " collisions décoratives retirées.")
+
+func _collect_collision_objects(node: Node, out_list: Array[Node]) -> void:
+	for child in node.get_children():
+		if child is CollisionObject3D:
+			out_list.append(child)
+		else:
+			_collect_collision_objects(child, out_list)
+
 func _rebake_scaled_wall_collisions(root: Node) -> void:
 	if root == null:
 		return

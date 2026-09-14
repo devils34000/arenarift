@@ -915,6 +915,41 @@ func consume_eren_fury() -> int:
 	passive_charges = 0
 	return fury
 
+## Libellé court de la ressource passive, pour l'affichage HUD façon badge
+## (le nom complet + valeur combinés de get_passive_text() ne tenait pas
+## dans un badge circulaire compact).
+func get_passive_short_label() -> String:
+	if hero_id == "AERIS":
+		return "FLUX"
+	if hero_id == "MAYLINH":
+		return "ESPRIT"
+	if hero_id == "EREN":
+		return "FUREUR"
+	return "RAGE"
+
+## Valeur seule de la ressource passive (sans le libellé), pour le même
+## badge HUD.
+func get_passive_value_text() -> String:
+	if hero_id == "AERIS":
+		return "PRÊT" if passive_active else "%d/%d" % [passive_charges, aeris_passive_max_charges]
+	if hero_id == "MAYLINH":
+		return "PRÊT" if passive_active else "%d/%d" % [passive_charges, maylinh_passive_max_charges]
+	if hero_id == "EREN":
+		return "%d%%" % int(round(100.0 * eren_fury / 300.0))
+	if passive_active:
+		return "%.1fs" % passive_timer
+	return "%d%%" % int(kaithlyn_rage)
+
+## Vrai quand la ressource passive est totalement chargée/prête à activer —
+## utilisé pour faire "s'allumer" le badge HUD (bordure accentuée) plutôt
+## que de le laisser terne en permanence.
+func is_passive_ready() -> bool:
+	if hero_id == "AERIS" or hero_id == "MAYLINH":
+		return passive_active
+	if hero_id == "EREN":
+		return eren_fury >= 300
+	return passive_active
+
 func get_passive_text() -> String:
 	if hero_id == "AERIS":
 		return "FLUX ARCANÉ  %d/%d" % [passive_charges, aeris_passive_max_charges] if not passive_active else "FLUX ARCANÉ  PRÊT"

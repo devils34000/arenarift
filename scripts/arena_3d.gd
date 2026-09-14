@@ -128,6 +128,11 @@ var subtitle_label: Label
 var health_bar: ProgressBar
 var health_text: Label
 var passive_label: Label
+var passive_caption_label: Label
+var passive_badge: Panel
+var level_badge_label: Label
+var health_max_label: Label
+var hero_accent_color: Color = Color("58cfff")
 var orb_cooldown_label: MOBAAbilityIcon
 var nova_cooldown_label: MOBAAbilityIcon
 var dash_cooldown_label: MOBAAbilityIcon
@@ -3531,43 +3536,61 @@ func _build_hud() -> void:
 	var hero_name := "EREN" if selected_hero == "EREN" else ("KAITHLYN" if selected_hero == "KAITHLYN" else ("MAYLINH" if selected_hero == "MAYLINH" else "AERIS"))
 	var hero_role := "FIRE BURST" if selected_hero == "EREN" else ("BERSERKER" if selected_hero == "KAITHLYN" else ("HEALER" if selected_hero == "MAYLINH" else "ARCANE SKIRMISHER"))
 	var accent := Color("ff7138") if selected_hero == "EREN" else (Color("ffad55") if selected_hero == "KAITHLYN" else (Color("54e1a7") if selected_hero == "MAYLINH" else Color("58cfff")))
+	hero_accent_color = accent
 
-	# Profil compact : pas de gros panneau, lecture immédiate.
-	var hero_panel := _panel(Vector2(20, 633), Vector2(340, 74), Color("07111ff2"), accent.darkened(0.35), 13)
+	# Profil façon "carte de héros" compétitive : portrait circulaire avec
+	# badge de niveau, gros chiffre de vie bien visible, et la ressource
+	# passive en badge circulaire (comme une charge d'ultime) plutôt qu'en
+	# simple bandeau de texte.
+	var hero_panel := _panel(Vector2(20, 606), Vector2(360, 96), Color("07111ff2"), accent.darkened(0.35), 16)
 	bottom.add_child(hero_panel)
 
-	var portrait := _panel(Vector2(7, 7), Vector2(58, 58), Color("101e32"), accent, 24)
+	var portrait := _panel(Vector2(8, 8), Vector2(80, 80), Color("101e32"), accent, 40)
 	hero_panel.add_child(portrait)
-	portrait.add_child(_label("", hero_name.substr(0, 1), Vector2(0, 8), Vector2(58, 44), 28, accent, HORIZONTAL_ALIGNMENT_CENTER))
+	portrait.add_child(_label("", hero_name.substr(0, 1), Vector2(0, 14), Vector2(80, 52), 32, accent, HORIZONTAL_ALIGNMENT_CENTER))
 
-	hero_panel.add_child(_label("", hero_name, Vector2(75, 7), Vector2(160, 16), 12, Color("f3f8ff")))
-	hero_panel.add_child(_label("", hero_role, Vector2(75, 23), Vector2(160, 11), 7, Color("718eaf")))
+	# Badge de niveau, ajouté APRÈS le portrait pour se dessiner par-dessus
+	# son coin bas-droit (comme le badge de niveau des jeux compétitifs).
+	var level_badge := _panel(Vector2(60, 60), Vector2(28, 28), Color("0a1220"), Color("f4c977"), 14)
+	hero_panel.add_child(level_badge)
+	var player_progress := get_node_or_null("/root/PlayerProgress")
+	var player_level: int = int(player_progress.call("get_level")) if player_progress != null else 1
+	level_badge_label = _label("", str(player_level), Vector2(0, 5), Vector2(28, 18), 11, Color("f4c977"), HORIZONTAL_ALIGNMENT_CENTER)
+	level_badge.add_child(level_badge_label)
 
-	var heart := _label("", "♥", Vector2(74, 39), Vector2(18, 16), 13, Color("ff6682"), HORIZONTAL_ALIGNMENT_CENTER)
-	hero_panel.add_child(heart)
+	hero_panel.add_child(_label("", hero_name, Vector2(100, 10), Vector2(180, 16), 12, Color("f3f8ff")))
+	hero_panel.add_child(_label("", hero_role, Vector2(100, 26), Vector2(180, 11), 7, Color("718eaf")))
+
+	# Gros chiffre de vie courante, bien plus lisible qu'un simple texte
+	# posé sur la barre — la barre elle-même devient un simple liseré fin
+	# sous le chiffre plutôt que l'élément principal.
+	health_text = _label("", "100", Vector2(100, 40), Vector2(90, 34), 26, Color("eafff5"))
+	hero_panel.add_child(health_text)
+	health_max_label = _label("", "/ 100", Vector2(100, 40), Vector2(180, 34), 12, Color("6fa593"))
+	health_max_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	hero_panel.add_child(health_max_label)
 
 	health_bar = ProgressBar.new()
 	health_bar.name = "Health"
-	health_bar.position = Vector2(96, 40)
-	health_bar.size = Vector2(234, 13)
+	health_bar.position = Vector2(100, 76)
+	health_bar.size = Vector2(174, 6)
 	health_bar.max_value = 100
 	health_bar.show_percentage = false
 	health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	health_bar.add_theme_stylebox_override("background", _box(Color("0c1626"), accent.darkened(0.5), 6, 1))
-	health_bar.add_theme_stylebox_override("fill", _box(Color("31d795"), Color("8dffd2"), 6, 0))
+	health_bar.add_theme_stylebox_override("background", _box(Color("0c1626"), accent.darkened(0.5), 3, 1))
+	health_bar.add_theme_stylebox_override("fill", _box(Color("31d795"), Color("8dffd2"), 3, 0))
 	hero_panel.add_child(health_bar)
 
-	health_text = _label("", "100 / 100", Vector2(96, 40), Vector2(234, 13), 8, Color("eafff5"), HORIZONTAL_ALIGNMENT_CENTER)
-	health_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hero_panel.add_child(health_text)
-
-	# Puce du passif : un petit fond distinct plutôt qu'un simple texte qui se
-	# fondait avec le reste du panneau, pour bien voir "prêt" vs "en charge".
-	var passive_chip := _panel(Vector2(75, 57), Vector2(255, 14), accent.darkened(0.55), accent, 7)
-	hero_panel.add_child(passive_chip)
-	passive_label = _label("", "PASSIF", Vector2(6, 1), Vector2(243, 12), 8, Color("ffe6a3"), HORIZONTAL_ALIGNMENT_CENTER)
-	passive_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	passive_chip.add_child(passive_label)
+	# Badge de ressource passive, façon charge d'ultime : cercle avec le
+	# libellé court en haut et la valeur en gros au centre. Le contour
+	# s'accentue automatiquement (cf. _update_hud) quand la ressource est
+	# prête, au lieu de rester terne en permanence.
+	passive_badge = _panel(Vector2(284, 12), Vector2(68, 68), Color("101e32"), accent.darkened(0.4), 34)
+	hero_panel.add_child(passive_badge)
+	passive_caption_label = _label("", "PASSIF", Vector2(0, 8), Vector2(68, 12), 7, Color("8aa0bd"), HORIZONTAL_ALIGNMENT_CENTER)
+	passive_badge.add_child(passive_caption_label)
+	passive_label = _label("", "0/3", Vector2(0, 22), Vector2(68, 34), 17, Color("ffe6a3"), HORIZONTAL_ALIGNMENT_CENTER)
+	passive_badge.add_child(passive_label)
 
 	# Sorts : uniquement les icônes. Les touches LMB/RMB/SPACE sont volontairement retirées.
 	var skill_y := 644.0
@@ -3659,9 +3682,18 @@ func _update_hud() -> void:
 		if respawn_overlay.visible and respawn_countdown_label != null:
 			respawn_countdown_label.text = "RÉAPPARITION  %.1f" % respawn_left
 
+	health_bar.max_value = player.max_health
 	health_bar.value = player.health
-	health_text.text = "%d / %d" % [int(player.health), int(player.max_health)]
-	passive_label.text = player.get_passive_text()
+	health_text.text = "%d" % int(player.health)
+	if health_max_label != null and is_instance_valid(health_max_label):
+		health_max_label.text = "/ %d" % int(player.max_health)
+	passive_caption_label.text = player.get_passive_short_label()
+	passive_label.text = player.get_passive_value_text()
+	if passive_badge != null and is_instance_valid(passive_badge):
+		passive_badge.add_theme_stylebox_override(
+			"panel",
+			_box(Color("101e32"), Color("fff2c4") if player.is_passive_ready() else hero_accent_color.darkened(0.4), 34, 2)
+		)
 	if selected_hero == "MAYLINH":
 		orb_cooldown_label.set_cooldown(player.orb_cooldown, 4.0)
 		nova_cooldown_label.set_cooldown(player.heal_cooldown, 10.0)

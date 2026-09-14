@@ -3600,10 +3600,11 @@ func _update_hud() -> void:
 		return
 
 	var seconds := 0
+	var display_time := 0.0
 	if _is_explore_mode():
 		timer_label.text = "∞"
 	else:
-		var display_time: float = network_round_time if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() else round_time
+		display_time = network_round_time if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() else round_time
 		seconds = int(ceil(display_time))
 		timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
 	if _is_team_mode():

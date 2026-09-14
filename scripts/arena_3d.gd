@@ -3026,7 +3026,9 @@ func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
 	var root := Node3D.new()
 	root.name = "KaithlynShieldFX"
 	caster.add_child(root)
-	root.position = Vector3(0.0, 0.95, 0.0)
+	# Bouclier centré plus bas et plus petit qu'avant : il doit envelopper le
+	# torse sans englober la tête du personnage.
+	root.position = Vector3(0.0, 0.7, 0.0)
 
 	var shell_mat := ShaderMaterial.new()
 	shell_mat.shader = load(SHIELD_HEX_SHADER_PATH)
@@ -3041,10 +3043,10 @@ func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
 
 	var shell := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
-	sphere.radius = 1.05
-	sphere.height = 2.10
+	sphere.radius = 0.8
+	sphere.height = 1.6
 	shell.mesh = sphere
-	shell.scale = Vector3(1.05, 1.12, 1.05)
+	shell.scale = Vector3(1.0, 1.0, 1.0)
 	shell.material_override = shell_mat
 	root.add_child(shell)
 
@@ -3059,29 +3061,29 @@ func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
 	for i in range(3):
 		var ring := MeshInstance3D.new()
 		var torus := TorusMesh.new()
-		torus.inner_radius = 0.86 + float(i) * 0.05
-		torus.outer_radius = 0.91 + float(i) * 0.05
+		torus.inner_radius = 0.66 + float(i) * 0.04
+		torus.outer_radius = 0.70 + float(i) * 0.04
 		torus.rings = 40
 		torus.ring_segments = 10
 		ring.mesh = torus
-		ring.position.y = (float(i) - 1.0) * 0.38
+		ring.position.y = (float(i) - 1.0) * 0.29
 		ring.rotation_degrees = Vector3(90.0, float(i) * 60.0, 0.0)
 		ring.material_override = ring_mat
 		root.add_child(ring)
 
-	# Petit noyau lumineux au-dessus de la tête pour rendre l'activation évidente.
+	# Petit noyau lumineux au sommet du bouclier (pas au-dessus de la tête).
 	var core := MeshInstance3D.new()
 	var core_mesh := SphereMesh.new()
-	core_mesh.radius = 0.16
-	core_mesh.height = 0.32
+	core_mesh.radius = 0.13
+	core_mesh.height = 0.26
 	core.mesh = core_mesh
-	core.position.y = 1.25
+	core.position.y = 0.8
 	core.material_override = ring_mat
 	root.add_child(core)
 
 	var tween := root.create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(shell, "scale", Vector3(1.12, 1.18, 1.12), 0.20)
+	tween.tween_property(shell, "scale", Vector3(1.07, 1.05, 1.07), 0.20)
 	tween.tween_property(core, "scale", Vector3(1.7, 1.7, 1.7), 0.55)
 	var rings := root.get_children()
 	for child in rings:

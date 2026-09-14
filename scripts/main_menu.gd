@@ -595,9 +595,58 @@ func _set_nav_active(active_item: String) -> void:
 # HOME
 # =========================================================
 
+## Écran d'accueil PLAY : choix de la catégorie de jeu (Multijoueur Arena,
+## Co-op Donjon, Impostor, Hide & Seek). Seule la première catégorie est
+## implémentée pour l'instant, les autres ouvrent un écran "à venir".
 func _show_home() -> void:
 	_clear()
 	title.text = "PLAY"
+
+	var categories_box := VBoxContainer.new()
+	categories_box.custom_minimum_size = Vector2(600, 0)
+	categories_box.add_theme_constant_override("separation", 10)
+	content.add_child(categories_box)
+	categories_box.add_child(_label("SÉLECTIONNE UN MODE", 11, Color("8a7550"), Vector2.ZERO, Vector2(500, 22)))
+
+	var arena_card := _mode_card("MULTIJOUEUR ARENA", false)
+	arena_card.pressed.connect(_show_arena_modes)
+	categories_box.add_child(arena_card)
+
+	var coop_card := _mode_card("CO-OP DONJON", false)
+	coop_card.pressed.connect(func():
+		_show_play_placeholder("CO-OP DONJON", "Mode coopératif roguelike en développement. Explorez un donjon généré à plusieurs contre des vagues d'ennemis — revenez bientôt !")
+	)
+	categories_box.add_child(coop_card)
+
+	var impostor_card := _mode_card("IMPOSTOR", false)
+	impostor_card.pressed.connect(func():
+		_show_play_placeholder("IMPOSTOR", "Mode social façon Among Us en développement. Démasquez les imposteurs avant qu'ils ne sabotent la partie — revenez bientôt !")
+	)
+	categories_box.add_child(impostor_card)
+
+	var hideseek_card := _mode_card("HIDE & SEEK", false)
+	hideseek_card.pressed.connect(func():
+		_show_play_placeholder("HIDE & SEEK", "Prop Hunt en développement. Cachez-vous en objet du décor ou traquez ceux qui s'y dissimulent — revenez bientôt !")
+	)
+	categories_box.add_child(hideseek_card)
+
+
+## Écran de sélection du mode Arena (Deathmatch / 1v1 / 2v2 / 3v3 / Custom
+## Game) — anciennement l'écran PLAY racine, maintenant sous-écran de
+## "MULTIJOUEUR ARENA".
+func _show_arena_modes() -> void:
+	_clear()
+	title.text = "MULTIJOUEUR ARENA"
+
+	var back_btn := Button.new()
+	back_btn.text = "←  PLAY"
+	back_btn.flat = true
+	back_btn.custom_minimum_size = Vector2(120, 26)
+	back_btn.focus_mode = Control.FOCUS_ALL
+	back_btn.add_theme_font_size_override("font_size", 11)
+	back_btn.add_theme_color_override("font_color", Color("c9a24d"))
+	back_btn.pressed.connect(_show_home)
+	content.add_child(back_btn)
 
 	var row := HBoxContainer.new()
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -615,7 +664,7 @@ func _show_home() -> void:
 		var card := _mode_card(mode, selected)
 		card.pressed.connect(func():
 			selected_mode = mode
-			_show_home_deferred()
+			_show_arena_modes_deferred()
 		)
 		modes_box.add_child(card)
 
@@ -922,7 +971,7 @@ func _show_custom_game_home() -> void:
 
 	var back_btn := _button("RETOUR", Vector2(510, 40), false)
 	back_btn.position = Vector2(24, 272)
-	back_btn.pressed.connect(_show_home_deferred)
+	back_btn.pressed.connect(_show_arena_modes_deferred)
 	panel.add_child(back_btn)
 
 
@@ -1404,7 +1453,7 @@ func _leave_custom_room() -> void:
 			JSON.stringify({"steam_id": _my_steam_id_str()})
 		)
 	_leave_custom_room_local_only()
-	_show_home_deferred()
+	_show_arena_modes_deferred()
 
 
 func _launch_party_match() -> void:
@@ -1849,7 +1898,7 @@ func _leave_party() -> void:
 	var steam_manager: Node = get_node_or_null("/root/SteamManager")
 	if steam_manager != null:
 		steam_manager.leave_party()
-	_show_home_deferred()
+	_show_arena_modes_deferred()
 
 
 func _mode_accent(mode: String) -> Color:
@@ -2948,6 +2997,25 @@ func _setup_menu_music() -> void:
 # PLACEHOLDER
 # =========================================================
 
+## Écran "à venir" pour les modes PLAY pas encore implémentés
+## (Co-op Donjon, Impostor, Hide & Seek).
+func _show_play_placeholder(mode_title: String, description: String) -> void:
+	_clear()
+	title.text = mode_title + " // À VENIR"
+
+	var back_btn := Button.new()
+	back_btn.text = "←  PLAY"
+	back_btn.flat = true
+	back_btn.custom_minimum_size = Vector2(120, 26)
+	back_btn.focus_mode = Control.FOCUS_ALL
+	back_btn.add_theme_font_size_override("font_size", 11)
+	back_btn.add_theme_color_override("font_color", Color("c9a24d"))
+	back_btn.pressed.connect(_show_home)
+	content.add_child(back_btn)
+
+	content.add_child(_label(description, 16, Color("b8a880"), Vector2.ZERO, Vector2(700, 90)))
+
+
 func _show_placeholder(item: String) -> void:
 	_clear()
 
@@ -3005,6 +3073,10 @@ func _navigate_deferred(item: String) -> void:
 
 func _show_home_deferred() -> void:
 	call_deferred("_show_home")
+	call_deferred("_focus_first_control")
+
+func _show_arena_modes_deferred() -> void:
+	call_deferred("_show_arena_modes")
 	call_deferred("_focus_first_control")
 
 func _show_heroes_deferred() -> void:

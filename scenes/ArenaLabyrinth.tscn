@@ -1,0 +1,2613 @@
+[gd_scene load_steps=37 format=3 uid="uid://darenalabyrinth1"]
+
+[ext_resource type="Script" uid="uid://cnxhs10scv8yn" path="res://scripts/arena_3d.gd" id="1_arena"]
+
+[sub_resource type="PlaneMesh" id="floor_mesh"]
+size = Vector2(156.0, 126.0)
+
+[sub_resource type="StandardMaterial3D" id="floor_mat"]
+albedo_color = Color(0.16, 0.15, 0.14, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="wall_mat"]
+albedo_color = Color(0.26, 0.24, 0.22, 1)
+roughness = 0.9
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.28, 0.34, 1)
+ambient_light_energy = 0.6
+fog_enabled = true
+fog_light_color = Color(0.05, 0.04, 0.06, 1)
+fog_density = 0.008
+
+[sub_resource type="BoxMesh" id="wallmesh_1"]
+size = Vector3(150.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_1"]
+size = Vector3(150.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_2"]
+size = Vector3(18.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_2"]
+size = Vector3(18.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_3"]
+size = Vector3(6.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_3"]
+size = Vector3(6.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_4"]
+size = Vector3(12.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_4"]
+size = Vector3(12.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_5"]
+size = Vector3(24.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_5"]
+size = Vector3(24.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_6"]
+size = Vector3(42.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_6"]
+size = Vector3(42.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_7"]
+size = Vector3(30.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_7"]
+size = Vector3(30.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_8"]
+size = Vector3(36.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_8"]
+size = Vector3(36.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_9"]
+size = Vector3(48.0, 4.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_9"]
+size = Vector3(48.0, 4.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_10"]
+size = Vector3(0.4, 4.0, 120.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_10"]
+size = Vector3(0.4, 4.0, 120.0)
+
+[sub_resource type="BoxMesh" id="wallmesh_11"]
+size = Vector3(0.4, 4.0, 12.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_11"]
+size = Vector3(0.4, 4.0, 12.0)
+
+[sub_resource type="BoxMesh" id="wallmesh_12"]
+size = Vector3(0.4, 4.0, 6.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_12"]
+size = Vector3(0.4, 4.0, 6.0)
+
+[sub_resource type="BoxMesh" id="wallmesh_13"]
+size = Vector3(0.4, 4.0, 24.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_13"]
+size = Vector3(0.4, 4.0, 24.0)
+
+[sub_resource type="BoxMesh" id="wallmesh_14"]
+size = Vector3(0.4, 4.0, 18.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_14"]
+size = Vector3(0.4, 4.0, 18.0)
+
+[sub_resource type="BoxMesh" id="wallmesh_15"]
+size = Vector3(0.4, 4.0, 36.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_15"]
+size = Vector3(0.4, 4.0, 36.0)
+
+[sub_resource type="BoxMesh" id="wallmesh_16"]
+size = Vector3(0.4, 4.0, 30.0)
+
+[sub_resource type="BoxShape3D" id="wallshape_16"]
+size = Vector3(0.4, 4.0, 30.0)
+
+[node name="ArenaLabyrinth" type="Node3D"]
+script = ExtResource("1_arena")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.7, -0.5, 0.5, 0, 0.7, 0.7, -0.7, -0.5, 0.5, 0, 40, 0)
+light_energy = 0.65
+shadow_enabled = true
+
+[node name="Terrain" type="MeshInstance3D" parent="."]
+mesh = SubResource("floor_mesh")
+surface_material_override/0 = SubResource("floor_mat")
+
+[node name="MazeWalls" type="Node3D" parent="."]
+
+[node name="WallH1" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 2.0, -60.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH1"]
+mesh = SubResource("wallmesh_1")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH1"]
+shape = SubResource("wallshape_1")
+
+[node name="WallH2" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH2"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH2"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH3" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH3"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH3"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH4" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH4"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH4"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH5" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH5"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH5"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH6" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH6"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH6"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH7" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH7"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH7"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH8" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH8"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH8"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH9" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH9"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH9"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH10" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH10"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH10"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH11" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 54.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH11"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH11"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH12" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH12"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH12"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH13" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 2.0, -42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH13"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH13"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH14" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.0, 2.0, -42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH14"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH14"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH15" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.0, 2.0, -42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH15"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH15"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH16" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48.0, 2.0, -42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH16"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH16"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH17" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.0, 2.0, -42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH17"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH17"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH18" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH18"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH18"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH19" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH19"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH19"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH20" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH20"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH20"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH21" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH21"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH21"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH22" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH22"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH22"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH23" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH23"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH23"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH24" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH24"]
+mesh = SubResource("wallmesh_5")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH24"]
+shape = SubResource("wallshape_5")
+
+[node name="WallH25" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH25"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH25"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH26" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH26"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH26"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH27" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH27"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH27"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH28" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH28"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH28"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH29" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH29"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH29"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH30" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH30"]
+mesh = SubResource("wallmesh_5")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH30"]
+shape = SubResource("wallshape_5")
+
+[node name="WallH31" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH31"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH31"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH32" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH32"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH32"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH33" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH33"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH33"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH34" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH34"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH34"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH35" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH35"]
+mesh = SubResource("wallmesh_5")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH35"]
+shape = SubResource("wallshape_5")
+
+[node name="WallH36" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH36"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH36"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH37" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH37"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH37"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH38" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH38"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH38"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH39" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH39"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH39"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH40" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH40"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH40"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH41" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH41"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH41"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH42" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH42"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH42"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH43" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH43"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH43"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH44" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH44"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH44"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH45" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH45"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH45"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH46" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH46"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH46"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH47" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH47"]
+mesh = SubResource("wallmesh_6")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH47"]
+shape = SubResource("wallshape_6")
+
+[node name="WallH48" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH48"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH48"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH49" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH49"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH49"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH50" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH50"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH50"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH51" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -72.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH51"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH51"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH52" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH52"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH52"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH53" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH53"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH53"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH54" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH54"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH54"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH55" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH55"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH55"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH56" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH56"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH56"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH57" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH57"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH57"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH58" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH58"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH58"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH59" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH59"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH59"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH60" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH60"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH60"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH61" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH61"]
+mesh = SubResource("wallmesh_5")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH61"]
+shape = SubResource("wallshape_5")
+
+[node name="WallH62" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH62"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH62"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH63" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH63"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH63"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH64" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH64"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH64"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH65" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH65"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH65"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH66" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH66"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH66"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH67" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.0, 2.0, 18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH67"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH67"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH68" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.0, 2.0, 18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH68"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH68"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH69" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.0, 2.0, 18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH69"]
+mesh = SubResource("wallmesh_7")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH69"]
+shape = SubResource("wallshape_7")
+
+[node name="WallH70" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -69.0, 2.0, 24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH70"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH70"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH71" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.0, 2.0, 24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH71"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH71"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH72" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 2.0, 24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH72"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH72"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH73" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.0, 2.0, 24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH73"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH73"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH74" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66.0, 2.0, 30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH74"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH74"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH75" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.0, 2.0, 30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH75"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH75"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH76" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, 2.0, 30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH76"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH76"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH77" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.0, 2.0, 30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH77"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH77"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH78" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.0, 2.0, 30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH78"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH78"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH79" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.0, 2.0, 36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH79"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH79"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH80" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.0, 2.0, 36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH80"]
+mesh = SubResource("wallmesh_7")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH80"]
+shape = SubResource("wallshape_7")
+
+[node name="WallH81" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.0, 2.0, 36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH81"]
+mesh = SubResource("wallmesh_8")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH81"]
+shape = SubResource("wallshape_8")
+
+[node name="WallH82" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 2.0, 36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH82"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH82"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH83" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, 36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH83"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH83"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH84" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH84"]
+mesh = SubResource("wallmesh_2")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH84"]
+shape = SubResource("wallshape_2")
+
+[node name="WallH85" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH85"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH85"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH86" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH86"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH86"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH87" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH87"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH87"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH88" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH88"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH88"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH89" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH89"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH89"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH90" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH90"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH90"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH91" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH91"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH91"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH92" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH92"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH92"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH93" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH93"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH93"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH94" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH94"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH94"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH95" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH95"]
+mesh = SubResource("wallmesh_4")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH95"]
+shape = SubResource("wallshape_4")
+
+[node name="WallH96" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH96"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH96"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH97" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, 54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH97"]
+mesh = SubResource("wallmesh_9")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH97"]
+shape = SubResource("wallshape_9")
+
+[node name="WallH98" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.0, 2.0, 54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH98"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH98"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH99" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 54.0, 2.0, 54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH99"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH99"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH100" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.0, 2.0, 54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH100"]
+mesh = SubResource("wallmesh_3")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH100"]
+shape = SubResource("wallshape_3")
+
+[node name="WallH101" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 2.0, 60.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallH101"]
+mesh = SubResource("wallmesh_1")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH101"]
+shape = SubResource("wallshape_1")
+
+[node name="WallV102" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV102"]
+mesh = SubResource("wallmesh_10")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV102"]
+shape = SubResource("wallshape_10")
+
+[node name="WallV103" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -69.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV103"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV103"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV104" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -69.0, 2.0, 3.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV104"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV104"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV105" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -69.0, 2.0, 21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV105"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV105"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV106" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -69.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV106"]
+mesh = SubResource("wallmesh_13")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV106"]
+shape = SubResource("wallshape_13")
+
+[node name="WallV107" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.0, 2.0, -15.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV107"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV107"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV108" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.0, 2.0, -3.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV108"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV108"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV109" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV109"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV109"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV110" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.0, 2.0, 51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV110"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV110"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV111" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.0, 2.0, -51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV111"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV111"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV112" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV112"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV112"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV113" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV113"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV113"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV114" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.0, 2.0, 39.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV114"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV114"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV115" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.0, 2.0, 51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV115"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV115"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV116" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51.0, 2.0, -57.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV116"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV116"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV117" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51.0, 2.0, -15.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV117"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV117"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV118" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.0, 2.0, -51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV118"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV118"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV119" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.0, 2.0, -33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV119"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV119"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV120" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV120"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV120"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV121" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV121"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV121"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV122" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.0, 2.0, 45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV122"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV122"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV123" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 2.0, -51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV123"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV123"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV124" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV124"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV124"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV125" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 2.0, -12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV125"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV125"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV126" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 2.0, 18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV126"]
+mesh = SubResource("wallmesh_13")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV126"]
+shape = SubResource("wallshape_13")
+
+[node name="WallV127" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV127"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV127"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV128" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV128"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV128"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV129" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, -21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV129"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV129"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV130" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, 15.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV130"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV130"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV131" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, 27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV131"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV131"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV132" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33.0, 2.0, 42.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV132"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV132"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV133" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, -45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV133"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV133"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV134" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, -27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV134"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV134"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV135" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, -3.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV135"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV135"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV136" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, 21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV136"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV136"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV137" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV137"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV137"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV138" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, -57.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV138"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV138"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV139" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, -45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV139"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV139"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV140" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, -33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV140"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV140"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV141" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, -9.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV141"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV141"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV142" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, 9.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV142"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV142"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV143" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.0, 2.0, 39.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV143"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV143"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV144" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.0, 2.0, -27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV144"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV144"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV145" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.0, 2.0, 12.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV145"]
+mesh = SubResource("wallmesh_15")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV145"]
+shape = SubResource("wallshape_15")
+
+[node name="WallV146" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.0, 2.0, 39.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV146"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV146"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV147" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.0, 2.0, 21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV147"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV147"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV148" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.0, 2.0, 33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV148"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV148"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV149" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.0, 2.0, 45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV149"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV149"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV150" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 2.0, -33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV150"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV150"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV151" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 2.0, -18.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV151"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV151"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV152" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 2.0, 27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV152"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV152"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV153" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 2.0, 39.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV153"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV153"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV154" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 2.0, -33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV154"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV154"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV155" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 2.0, -15.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV155"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV155"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV156" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 2.0, 21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV156"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV156"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV157" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 2.0, 33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV157"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV157"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV158" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV158"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV158"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV159" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.0, 2.0, 27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV159"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV159"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV160" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.0, 2.0, -24.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV160"]
+mesh = SubResource("wallmesh_13")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV160"]
+shape = SubResource("wallshape_13")
+
+[node name="WallV161" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.0, 2.0, 9.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV161"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV161"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV162" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.0, 2.0, 27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV162"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV162"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV163" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.0, 2.0, 45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV163"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV163"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV164" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV164"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV164"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV165" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.0, 2.0, 30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV165"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV165"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV166" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.0, 2.0, 45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV166"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV166"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV167" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV167"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV167"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV168" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, -27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV168"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV168"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV169" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, 3.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV169"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV169"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV170" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, 27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV170"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV170"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV171" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 2.0, 54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV171"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV171"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV172" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, -45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV172"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV172"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV173" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, -33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV173"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV173"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV174" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, -21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV174"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV174"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV175" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV175"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV175"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV176" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, 27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV176"]
+mesh = SubResource("wallmesh_16")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV176"]
+shape = SubResource("wallshape_16")
+
+[node name="WallV177" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.0, 2.0, 51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV177"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV177"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV178" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, -51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV178"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV178"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV179" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, -33.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV179"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV179"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV180" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, -15.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV180"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV180"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV181" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, 15.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV181"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV181"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV182" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV182"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV182"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV183" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.0, 2.0, -48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV183"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV183"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV184" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.0, 2.0, -6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV184"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV184"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV185" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV185"]
+mesh = SubResource("wallmesh_13")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV185"]
+shape = SubResource("wallshape_13")
+
+[node name="WallV186" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, 2.0, -51.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV186"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV186"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV187" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, 2.0, -30.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV187"]
+mesh = SubResource("wallmesh_13")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV187"]
+shape = SubResource("wallshape_13")
+
+[node name="WallV188" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, 2.0, 3.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV188"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV188"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV189" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, 2.0, 45.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV189"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV189"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV190" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, -54.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV190"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV190"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV191" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, -39.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV191"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV191"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV192" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, -27.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV192"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV192"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV193" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV193"]
+mesh = SubResource("wallmesh_13")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV193"]
+shape = SubResource("wallshape_13")
+
+[node name="WallV194" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, 39.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV194"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV194"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV195" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.0, 2.0, 57.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV195"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV195"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV196" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.0, 2.0, -36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV196"]
+mesh = SubResource("wallmesh_15")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV196"]
+shape = SubResource("wallshape_15")
+
+[node name="WallV197" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.0, 2.0, -9.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV197"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV197"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV198" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.0, 2.0, 6.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV198"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV198"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV199" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.0, 2.0, 48.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV199"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV199"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV200" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.0, 2.0, -21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV200"]
+mesh = SubResource("wallmesh_14")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV200"]
+shape = SubResource("wallshape_14")
+
+[node name="WallV201" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV201"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV201"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV202" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.0, 2.0, 21.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV202"]
+mesh = SubResource("wallmesh_12")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV202"]
+shape = SubResource("wallshape_12")
+
+[node name="WallV203" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.0, 2.0, 36.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV203"]
+mesh = SubResource("wallmesh_11")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV203"]
+shape = SubResource("wallshape_11")
+
+[node name="WallV204" type="StaticBody3D" parent="MazeWalls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75.0, 2.0, 0.0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="Mesh" type="MeshInstance3D" parent="MazeWalls/WallV204"]
+mesh = SubResource("wallmesh_10")
+surface_material_override/0 = SubResource("wall_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallV204"]
+shape = SubResource("wallshape_10")
+
+[node name="SpawnPoints" type="Node3D" parent="."]
+
+[node name="Ally_Astral_01" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 0.1, 51.0)
+
+[node name="Enemy_Arcane_01" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 0.1, 3.0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 0.0, 60, 91.0)
+
+[node name="Room_F_BOSS" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.1, -48.0)
+
+[node name="Room_D_PUZZLE" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60.0, 0.1, -33.0)
+
+[node name="Room_C_HUB" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.1, 3.0)
+
+[node name="Room_B_REST" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51.0, 0.1, 24.0)
+
+[node name="Room_E_REWARD" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 54.0, 0.1, 24.0)
+
+[node name="Room_A_ENTRANCE" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.1, 51.0)

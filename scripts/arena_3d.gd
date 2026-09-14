@@ -3012,45 +3012,31 @@ func _spawn_axe_pickup_fx(position: Vector3) -> Node3D:
 	pulse.tween_property(ring, "scale", Vector3.ONE * 0.85, 0.45)
 	return root
 
-const SHIELD_SURFACE_SHADER_PATH := "res://assets/BinbunVFX_Vol2/BattleFX/shader/shield_surface.gdshader"
-var _shield_noise_texture: NoiseTexture2D
-
-## Texture de bruit partagée par tous les bouclers Kaithlyn : coûteuse à
-## générer (FastNoiseLite), donc construite une seule fois et réutilisée.
-func _get_shield_noise_texture() -> NoiseTexture2D:
-	if _shield_noise_texture == null:
-		var noise := FastNoiseLite.new()
-		noise.fractal_octaves = 3
-		_shield_noise_texture = NoiseTexture2D.new()
-		_shield_noise_texture.generate_mipmaps = false
-		_shield_noise_texture.seamless = true
-		_shield_noise_texture.noise = noise
-	return _shield_noise_texture
+const SHIELD_HEX_SHADER_PATH := "res://assets/vfx/shaders/shield_hex_hologram.gdshader"
 
 func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
-	# Bouclier visuel : dôme en shader "hologramme" (fresnel + bruit animé,
-	# issu du pack BinbunVFX déjà présent dans le projet). Seul
-	# shield_surface.gdshader est utilisé ici — les variantes Aura/Orbit du
-	# même pack lisent une depth_texture d'écran non supportée par le
-	# renderer GL Compatibility utilisé par ce projet et ne s'affichent pas
-	# correctement dessus.
+	# Bouclier visuel : dôme en shader "hologramme" maison (fresnel + grille
+	# hexagonale animée). Le shield_surface.gdshader du pack BinbunVFX
+	# rendait un plein bloc opaque façon "boule de lave" au lieu d'un
+	# hologramme translucide (sa formule d'alpha ne descend quasi jamais en
+	# dessous de 1.0), et ses variantes Aura/Orbit lisent une depth_texture
+	# d'écran non supportée par le renderer GL Compatibility du projet —
+	# shield_hex_hologram.gdshader est écrit spécifiquement pour ce projet,
+	# sans dépendance externe, avec un vrai fondu additif translucide.
 	var root := Node3D.new()
 	root.name = "KaithlynShieldFX"
 	caster.add_child(root)
 	root.position = Vector3(0.0, 0.95, 0.0)
 
 	var shell_mat := ShaderMaterial.new()
-	shell_mat.shader = load(SHIELD_SURFACE_SHADER_PATH)
-	shell_mat.set_shader_parameter("primary_color", Color(1.0, 0.68, 0.2))
-	shell_mat.set_shader_parameter("secondary_color", Color(1.0, 0.32, 0.05))
-	shell_mat.set_shader_parameter("tertiary_color", Color(0.25, 0.08, 0.0))
-	shell_mat.set_shader_parameter("emission", 2.2)
-	shell_mat.set_shader_parameter("noise_texture", _get_shield_noise_texture())
-	shell_mat.set_shader_parameter("noise_scale", Vector2(1.2, 1.2))
-	shell_mat.set_shader_parameter("noise_scroll", Vector2(-0.3, 0.5))
-	shell_mat.set_shader_parameter("noise_twist", 1.0)
-	shell_mat.set_shader_parameter("noise_shape", 1.0)
-	shell_mat.set_shader_parameter("double_noise", true)
+	shell_mat.shader = load(SHIELD_HEX_SHADER_PATH)
+	shell_mat.set_shader_parameter("shield_color", Color(1.0, 0.7, 0.22))
+	shell_mat.set_shader_parameter("fresnel_power", 2.5)
+	shell_mat.set_shader_parameter("rim_strength", 2.2)
+	shell_mat.set_shader_parameter("hex_scale", 12.0)
+	shell_mat.set_shader_parameter("hex_line_width", 0.09)
+	shell_mat.set_shader_parameter("hex_glow", 1.4)
+	shell_mat.set_shader_parameter("scroll_speed", 0.2)
 	shell_mat.set_shader_parameter("effect_decay", 0.0)
 
 	var shell := MeshInstance3D.new()
@@ -3103,7 +3089,7 @@ func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
 			tween.tween_property(child, "rotation_degrees:y", child.rotation_degrees.y + 360.0, 3.0)
 	tween.set_parallel(false)
 	tween.tween_interval(2.0)
-	# Dissolve final du hologramme (effect_decay 0 -> 1, cf. shield_surface.gdshader).
+	# Dissolve final du hologramme (effect_decay 0 -> 1, cf. shield_hex_hologram.gdshader).
 	tween.tween_property(shell_mat, "shader_parameter/effect_decay", 1.0, 0.45)
 	tween.tween_callback(root.queue_free)
 

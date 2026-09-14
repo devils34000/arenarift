@@ -156,6 +156,9 @@ var pause_sensitivity_slider: HSlider
 var pause_fullscreen_toggle: CheckButton
 var pause_vsync_toggle: CheckButton
 var pause_invert_y_toggle: CheckButton
+var pause_keybind_orb_button: Button
+var pause_keybind_nova_button: Button
+var pause_keybind_dash_button: Button
 var pause_master_volume: float = 78.0
 var pause_music_volume: float = 64.0
 var pause_sfx_volume: float = 64.0
@@ -3539,6 +3542,12 @@ func _show_pause_options() -> void:
 		pause_vsync_toggle.button_pressed = pause_vsync
 	if pause_invert_y_toggle != null:
 		pause_invert_y_toggle.button_pressed = controller_invert_y
+	if pause_keybind_orb_button != null:
+		pause_keybind_orb_button.text = _get_pause_key_name("spell_orb")
+	if pause_keybind_nova_button != null:
+		pause_keybind_nova_button.text = _get_pause_key_name("spell_nova")
+	if pause_keybind_dash_button != null:
+		pause_keybind_dash_button.text = _get_pause_key_name("spell_dash")
 
 func _quit_match_from_pause() -> void:
 	_close_pause_menu()
@@ -3625,6 +3634,79 @@ func _on_pause_invert_y_toggled(pressed: bool) -> void:
 	controller_invert_y = pressed
 	_save_pause_settings()
 
+## Reprend le même schéma que main_menu.gd (_get_key_name / _rebind_action /
+## _save_keybinds) : les deux écrans doivent éditer la même section
+## "keybinds" de user://settings.cfg pour rester cohérents entre eux.
+func _get_pause_key_name(action_name: String) -> String:
+	if not InputMap.has_action(action_name):
+		return "AUCUNE"
+	var events := InputMap.action_get_events(action_name)
+	if events.is_empty():
+		return "AUCUNE"
+	var event: InputEvent = events[0]
+	if event is InputEventKey:
+		return OS.get_keycode_string(event.physical_keycode)
+	if event is InputEventMouseButton:
+		return "SOURIS %d" % event.button_index
+	return "INCONNU"
+
+func _start_pause_key_rebind(button: Button, action_name: String) -> void:
+	button.text = "APPUYEZ..."
+	button.set_meta("waiting_for_key", true)
+	button.gui_input.connect(
+		func(event: InputEvent):
+			if not button.get_meta("waiting_for_key", false):
+				return
+			if event is InputEventKey and event.pressed:
+				_rebind_pause_action(action_name, event)
+				button.text = _get_pause_key_name(action_name)
+				button.set_meta("waiting_for_key", false)
+				var viewport := get_viewport()
+				if viewport != null:
+					viewport.set_input_as_handled()
+	)
+
+func _rebind_pause_action(action_name: String, event: InputEventKey) -> void:
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name)
+	InputMap.action_erase_events(action_name)
+	var new_event := InputEventKey.new()
+	new_event.physical_keycode = event.physical_keycode
+	new_event.keycode = event.keycode
+	InputMap.action_add_event(action_name, new_event)
+	_save_pause_keybinds()
+
+func _save_pause_keybinds() -> void:
+	var config := ConfigFile.new()
+	var error := config.load("user://settings.cfg")
+	if error != OK and error != ERR_FILE_NOT_FOUND:
+		return
+	for action_name in ["spell_orb", "spell_nova", "spell_dash"]:
+		if not InputMap.has_action(action_name):
+			continue
+		var events := InputMap.action_get_events(action_name)
+		if events.is_empty():
+			continue
+		var event: InputEvent = events[0]
+		if event is InputEventKey:
+			config.set_value("keybinds", action_name, event.physical_keycode)
+	config.save("user://settings.cfg")
+
+func _pause_keybind_row(parent: Control, y: float, caption: String, action_name: String) -> Button:
+	parent.add_child(_label("", caption, Vector2(0, y + 4), Vector2(220, 18), 10, Color("b7cbe5")))
+	var button := Button.new()
+	button.focus_mode = Control.FOCUS_ALL
+	button.position = Vector2(240, y)
+	button.size = Vector2(120, 30)
+	button.text = _get_pause_key_name(action_name)
+	button.add_theme_font_size_override("font_size", 11)
+	button.pressed.connect(
+		func():
+			_start_pause_key_rebind(button, action_name)
+	)
+	parent.add_child(button)
+	return button
+
 func _pause_slider_row(parent: Control, y: float, caption: String, min_value: float, max_value: float, step: float) -> HSlider:
 	parent.add_child(_label("", caption, Vector2(0, y), Vector2(200, 18), 10, Color("b7cbe5")))
 	var slider := HSlider.new()
@@ -3694,32 +3776,49 @@ func _build_pause_menu() -> void:
 
 	pause_options_panel.add_child(_label("", "OPTIONS", Vector2(30, 20), Vector2(360, 28), 18, Color("f3f8ff")))
 
-	var content := Control.new()
-	content.position = Vector2(30, 64)
-	content.size = Vector2(360, 360)
-	pause_options_panel.add_child(content)
+	var tabs := TabContainer.new()
+	tabs.position = Vector2(30, 60)
+	tabs.size = Vector2(360, 340)
+	tabs.add_theme_font_size_override("font_size", 12)
+	pause_options_panel.add_child(tabs)
 
-	pause_master_slider = _pause_slider_row(content, 0, "VOLUME GÉNÉRAL", 0.0, 100.0, 1.0)
+	# --- Onglet AUDIO ---
+	var audio_tab := Control.new()
+	audio_tab.name = "AUDIO"
+	tabs.add_child(audio_tab)
+	pause_master_slider = _pause_slider_row(audio_tab, 12, "VOLUME GÉNÉRAL", 0.0, 100.0, 1.0)
 	pause_master_slider.value_changed.connect(_on_pause_master_changed)
-	pause_music_slider = _pause_slider_row(content, 52, "MUSIQUE", 0.0, 100.0, 1.0)
+	pause_music_slider = _pause_slider_row(audio_tab, 64, "MUSIQUE", 0.0, 100.0, 1.0)
 	pause_music_slider.value_changed.connect(_on_pause_music_changed)
-	pause_sfx_slider = _pause_slider_row(content, 104, "EFFETS SONORES", 0.0, 100.0, 1.0)
+	pause_sfx_slider = _pause_slider_row(audio_tab, 116, "EFFETS SONORES", 0.0, 100.0, 1.0)
 	pause_sfx_slider.value_changed.connect(_on_pause_sfx_changed)
-	pause_fov_slider = _pause_slider_row(content, 156, "CHAMP DE VISION CAMÉRA", 55.0, 90.0, 1.0)
-	pause_fov_slider.value_changed.connect(_on_pause_fov_changed)
-	pause_sensitivity_slider = _pause_slider_row(content, 208, "SENSIBILITÉ MANETTE", 0.5, 6.0, 0.1)
-	pause_sensitivity_slider.value_changed.connect(_on_pause_sensitivity_changed)
 
-	pause_fullscreen_toggle = _pause_toggle_row(content, 264, "PLEIN ÉCRAN")
+	# --- Onglet VIDÉO ---
+	var video_tab := Control.new()
+	video_tab.name = "VIDÉO"
+	tabs.add_child(video_tab)
+	pause_fullscreen_toggle = _pause_toggle_row(video_tab, 12, "PLEIN ÉCRAN")
 	pause_fullscreen_toggle.toggled.connect(_on_pause_fullscreen_toggled)
-	pause_vsync_toggle = _pause_toggle_row(content, 296, "VSYNC")
+	pause_vsync_toggle = _pause_toggle_row(video_tab, 44, "VSYNC")
 	pause_vsync_toggle.toggled.connect(_on_pause_vsync_toggled)
-	pause_invert_y_toggle = _pause_toggle_row(content, 328, "INVERSER AXE Y (MANETTE)")
+	pause_fov_slider = _pause_slider_row(video_tab, 84, "CHAMP DE VISION CAMÉRA", 55.0, 90.0, 1.0)
+	pause_fov_slider.value_changed.connect(_on_pause_fov_changed)
+
+	# --- Onglet TOUCHES ---
+	var keys_tab := Control.new()
+	keys_tab.name = "TOUCHES"
+	tabs.add_child(keys_tab)
+	pause_keybind_orb_button = _pause_keybind_row(keys_tab, 12, "ARC BOLT", "spell_orb")
+	pause_keybind_nova_button = _pause_keybind_row(keys_tab, 52, "NOVA", "spell_nova")
+	pause_keybind_dash_button = _pause_keybind_row(keys_tab, 92, "PHASE DASH", "spell_dash")
+	pause_sensitivity_slider = _pause_slider_row(keys_tab, 140, "SENSIBILITÉ MANETTE", 0.5, 6.0, 0.1)
+	pause_sensitivity_slider.value_changed.connect(_on_pause_sensitivity_changed)
+	pause_invert_y_toggle = _pause_toggle_row(keys_tab, 192, "INVERSER AXE Y (MANETTE)")
 	pause_invert_y_toggle.toggled.connect(_on_pause_invert_y_toggled)
 
 	var back_btn := Button.new()
 	back_btn.text = "RETOUR"
-	back_btn.position = Vector2(30, 400)
+	back_btn.position = Vector2(30, 410)
 	back_btn.size = Vector2(360, 40)
 	back_btn.pressed.connect(_show_pause_root)
 	pause_options_panel.add_child(back_btn)

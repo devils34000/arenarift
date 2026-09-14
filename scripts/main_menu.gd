@@ -2,6 +2,13 @@ extends Control
 
 var selected_mode := "DEATHMATCH"
 var selected_hero := "AERIS"
+# Renseigné juste avant _launch() par le flux Custom Game (dépend de la map
+# choisie dans le salon, pas du mode) : sans ça, _launch() ne connaissait
+# que le cas "1V1 DUEL" et chargeait toujours arena.tscn pour tout le
+# reste, y compris quand le salon avait choisi une autre map — le serveur
+# recevait bien la bonne map (d'où des collisions cohérentes), mais le
+# client affichait toujours arena.tscn.
+var pending_arena_scene_path: String = ""
 var page := "HOME"
 var content: VBoxContainer
 var title: Label
@@ -1361,6 +1368,14 @@ func _check_custom_room_server_ready() -> void:
 		selected_mode = "CUSTOM EXPLORE"
 	else:
 		selected_mode = "CUSTOM GAME"
+
+	match str(custom_room_state.get("map", "default")):
+		"1v1":
+			pending_arena_scene_path = "res://scenes/Arena1v1.tscn"
+		"labyrinth":
+			pending_arena_scene_path = "res://scenes/ArenaLabyrinth.tscn"
+		_:
+			pending_arena_scene_path = "res://scenes/arena.tscn"
 
 	if custom_room_status_label != null and is_instance_valid(custom_room_status_label):
 		custom_room_status_label.text = "CONNEXION AU SERVEUR..."
@@ -2965,8 +2980,12 @@ func _launch() -> void:
 	# quel que soit selected_mode : une map dédiée (ex. Arena1v1.tscn pour
 	# le 1V1 DUEL) n'était donc jamais chargée en jouant depuis le menu.
 	var arena_scene_path := "res://scenes/arena.tscn"
-	if selected_mode == "1V1 DUEL" and ResourceLoader.exists("res://scenes/Arena1v1.tscn"):
+	if pending_arena_scene_path != "":
+		# Custom Game : la map vient du salon, pas du mode.
+		arena_scene_path = pending_arena_scene_path
+	elif selected_mode == "1V1 DUEL" and ResourceLoader.exists("res://scenes/Arena1v1.tscn"):
 		arena_scene_path = "res://scenes/Arena1v1.tscn"
+	pending_arena_scene_path = ""
 
 	get_tree().change_scene_to_file(arena_scene_path)
 

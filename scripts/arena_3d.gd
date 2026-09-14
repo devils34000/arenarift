@@ -125,7 +125,9 @@ var hud: CanvasLayer
 var timer_label: Label
 var score_label: Label
 var subtitle_label: Label
-var health_bar: ProgressBar
+var health_bar_bg: ColorRect
+var health_bar_fill: ColorRect
+const HERO_HEALTH_BAR_WIDTH: float = 174.0
 var health_text: Label
 var passive_label: Label
 var passive_caption_label: Label
@@ -3570,16 +3572,25 @@ func _build_hud() -> void:
 	health_max_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hero_panel.add_child(health_max_label)
 
-	health_bar = ProgressBar.new()
-	health_bar.name = "Health"
-	health_bar.position = Vector2(100, 76)
-	health_bar.size = Vector2(174, 6)
-	health_bar.max_value = 100
-	health_bar.show_percentage = false
-	health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	health_bar.add_theme_stylebox_override("background", _box(Color("0c1626"), accent.darkened(0.5), 3, 1))
-	health_bar.add_theme_stylebox_override("fill", _box(Color("31d795"), Color("8dffd2"), 3, 0))
-	hero_panel.add_child(health_bar)
+	# ColorRect plutôt que ProgressBar : sa taille minimale imposée par le
+	# thème ignorait la .size qu'on lui donnait et débordait du cadre du
+	# panneau (même bug déjà rencontré — et corrigé de la même façon —
+	# sur la barre d'XP du menu principal).
+	health_bar_bg = ColorRect.new()
+	health_bar_bg.name = "HealthBg"
+	health_bar_bg.position = Vector2(100, 76)
+	health_bar_bg.size = Vector2(HERO_HEALTH_BAR_WIDTH, 6)
+	health_bar_bg.color = Color("0c1626")
+	health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_panel.add_child(health_bar_bg)
+
+	health_bar_fill = ColorRect.new()
+	health_bar_fill.name = "HealthFill"
+	health_bar_fill.position = Vector2(100, 76)
+	health_bar_fill.size = Vector2(HERO_HEALTH_BAR_WIDTH, 6)
+	health_bar_fill.color = Color("31d795")
+	health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_panel.add_child(health_bar_fill)
 
 	# Badge de ressource passive, façon charge d'ultime : cercle avec le
 	# libellé court en haut et la valeur en gros au centre. Le contour
@@ -3682,8 +3693,9 @@ func _update_hud() -> void:
 		if respawn_overlay.visible and respawn_countdown_label != null:
 			respawn_countdown_label.text = "RÉAPPARITION  %.1f" % respawn_left
 
-	health_bar.max_value = player.max_health
-	health_bar.value = player.health
+	if health_bar_fill != null and is_instance_valid(health_bar_fill):
+		var health_ratio: float = clampf(player.health / maxf(1.0, player.max_health), 0.0, 1.0)
+		health_bar_fill.size.x = HERO_HEALTH_BAR_WIDTH * health_ratio
 	health_text.text = "%d" % int(player.health)
 	if health_max_label != null and is_instance_valid(health_max_label):
 		health_max_label.text = "/ %d" % int(player.max_health)

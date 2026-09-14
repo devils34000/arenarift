@@ -250,7 +250,7 @@ func _process(delta: float) -> void:
 			_update_duel(delta)
 		elif _is_team_mode():
 			_update_team_mode(delta)
-		else:
+		elif not _is_explore_mode():
 			round_time = maxf(0.0, round_time - delta)
 
 		for fighter_node in get_tree().get_nodes_in_group("fighters"):
@@ -258,7 +258,7 @@ func _process(delta: float) -> void:
 			if fighter != null and fighter.global_position.distance_to(objective_position) < 2.0:
 				fighter.health = mini(fighter.max_health, fighter.health + delta * 9.0)
 
-		if not _is_duel_mode() and not _is_team_mode() and round_time <= 0.0 and not game_over:
+		if not _is_duel_mode() and not _is_team_mode() and not _is_explore_mode() and round_time <= 0.0 and not game_over:
 			# En réseau, cette branche ne faisait auparavant que positionner
 			# game_over sans jamais appeler _show_round_end() ni prévenir les
 			# clients : la partie DEATHMATCH s'arrêtait silencieusement.
@@ -317,7 +317,7 @@ func _process(delta: float) -> void:
 		_update_duel(delta)
 	elif _is_team_mode():
 		_update_team_mode(delta)
-	else:
+	elif not _is_explore_mode():
 		round_time = maxf(0.0, round_time - delta)
 
 	for fighter_node in get_tree().get_nodes_in_group("fighters"):
@@ -327,7 +327,7 @@ func _process(delta: float) -> void:
 
 	_update_hud()
 
-	if not _is_duel_mode() and not _is_team_mode() and round_time <= 0.0:
+	if not _is_duel_mode() and not _is_team_mode() and not _is_explore_mode() and round_time <= 0.0:
 		game_over = true
 		_show_round_end()
 
@@ -1387,6 +1387,11 @@ func _build_fighters() -> void:
 func mode_value_for_bots() -> String:
 	var network_node := get_node_or_null("/root/Network")
 	return str(network_node.get("match_mode")) if network_node != null else "DEATHMATCH"
+
+## Mode Découverte (Custom Game) : pas de round, pas de fin de partie, temps
+## illimité pour tester une map librement.
+func _is_explore_mode() -> bool:
+	return mode_value_for_bots() == "CUSTOM EXPLORE"
 
 func _is_duel_mode() -> bool:
 	return mode_value_for_bots() == "1V1 DUEL"
@@ -3594,9 +3599,13 @@ func _update_hud() -> void:
 	if player == null or not is_instance_valid(player):
 		return
 
-	var display_time: float = network_round_time if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() else round_time
-	var seconds := int(ceil(display_time))
-	timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
+	var seconds := 0
+	if _is_explore_mode():
+		timer_label.text = "∞"
+	else:
+		var display_time: float = network_round_time if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() else round_time
+		seconds = int(ceil(display_time))
+		timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
 	if _is_team_mode():
 		seconds = int(ceil(display_time))
 		timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]

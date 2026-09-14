@@ -418,6 +418,14 @@ func network_receive_input(move_direction: Vector3, aim_direction_value: Vector3
 	if aim_direction_value.length_squared() > 0.001:
 		network_aim_direction = aim_direction_value.normalized()
 
+func _is_move_action_pressed(action_name: String, fallback_keys: Array) -> bool:
+	if InputMap.has_action(action_name) and not InputMap.action_get_events(action_name).is_empty():
+		return Input.is_action_pressed(action_name)
+	for key in fallback_keys:
+		if Input.is_key_pressed(key):
+			return true
+	return false
+
 func _player_input(delta: float) -> void:
 	# Menu pause (Échap) ouvert : la souris est alors relâchée pour cliquer
 	# dans le menu, ce qui sert ici de signal fiable pour ignorer les
@@ -436,17 +444,18 @@ func _player_input(delta: float) -> void:
 				network_node.arena_player_input.rpc_id(1, Vector3.ZERO, aim_direction, network_input_sequence, false, false)
 		return
 
-	# Mouvement robuste : clavier direct + stick gauche direct.
-	# On ne dépend pas de l'InputMap pour éviter qu'un réglage utilisateur
-	# ou une action manquante casse W/Z ou le stick.
+	# Mouvement robuste : InputMap (pour honorer un rebind fait dans les
+	# options) avec repli sur le clavier ZQSD/WASD si l'action est absente
+	# ou n'a aucune touche assignée, pour qu'un réglage cassé ne puisse
+	# jamais rendre le personnage injouable.
 	var input_direction := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_Z):
+	if _is_move_action_pressed("move_up", [KEY_W, KEY_Z]):
 		input_direction.y -= 1.0
-	if Input.is_key_pressed(KEY_S):
+	if _is_move_action_pressed("move_down", [KEY_S]):
 		input_direction.y += 1.0
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_Q):
+	if _is_move_action_pressed("move_left", [KEY_A, KEY_Q]):
 		input_direction.x -= 1.0
-	if Input.is_key_pressed(KEY_D):
+	if _is_move_action_pressed("move_right", [KEY_D]):
 		input_direction.x += 1.0
 
 	var controller := _get_controller_device()

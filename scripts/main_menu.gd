@@ -44,9 +44,13 @@ var custom_room_status_label: Label
 var custom_room_map_option: OptionButton
 var custom_room_mode_option: OptionButton
 var custom_room_random_button: Button
+var custom_room_astral_panel: Panel
+var custom_room_arcane_panel: Panel
 var custom_room_astral_box: VBoxContainer
 var custom_room_arcane_box: VBoxContainer
+var custom_room_unassigned_label: Label
 var custom_room_unassigned_box: VBoxContainer
+var custom_room_ffa_box: VBoxContainer
 var custom_room_launch_button: Button
 var custom_room_pending_action: String = ""
 var _custom_room_connect_triggered: bool = false
@@ -1073,33 +1077,34 @@ func _show_custom_room_lobby() -> void:
 
 	# --- Les deux blocs d'équipe, façon Among Us : ASTRAL à gauche, ARCANE
 	# à droite, chacun listant les joueurs qui l'ont rejoint. ---
-	var astral_panel := _panel(Vector2(24, 170), Vector2(455, 260), Color("101b26"), Color("2f6f9c"), 12)
-	custom_room_panel.add_child(astral_panel)
-	astral_panel.add_child(_label("ASTRAL", 16, Color("78cfff"), Vector2(16, 12), Vector2(200, 26)))
+	custom_room_astral_panel = _panel(Vector2(24, 170), Vector2(455, 260), Color("101b26"), Color("2f6f9c"), 12)
+	custom_room_panel.add_child(custom_room_astral_panel)
+	custom_room_astral_panel.add_child(_label("ASTRAL", 16, Color("78cfff"), Vector2(16, 12), Vector2(200, 26)))
 	var astral_join_btn := _button("REJOINDRE", Vector2(140, 32), false)
 	astral_join_btn.position = Vector2(299, 12)
 	astral_join_btn.pressed.connect(func(): _pick_custom_room_team("ASTRAL"))
-	astral_panel.add_child(astral_join_btn)
+	custom_room_astral_panel.add_child(astral_join_btn)
 	custom_room_astral_box = VBoxContainer.new()
 	custom_room_astral_box.position = Vector2(16, 52)
 	custom_room_astral_box.size = Vector2(423, 200)
 	custom_room_astral_box.add_theme_constant_override("separation", 6)
-	astral_panel.add_child(custom_room_astral_box)
+	custom_room_astral_panel.add_child(custom_room_astral_box)
 
-	var arcane_panel := _panel(Vector2(501, 170), Vector2(455, 260), Color("1f1226"), Color("8a4fae"), 12)
-	custom_room_panel.add_child(arcane_panel)
-	arcane_panel.add_child(_label("ARCANE", 16, Color("d29cff"), Vector2(16, 12), Vector2(200, 26)))
+	custom_room_arcane_panel = _panel(Vector2(501, 170), Vector2(455, 260), Color("1f1226"), Color("8a4fae"), 12)
+	custom_room_panel.add_child(custom_room_arcane_panel)
+	custom_room_arcane_panel.add_child(_label("ARCANE", 16, Color("d29cff"), Vector2(16, 12), Vector2(200, 26)))
 	var arcane_join_btn := _button("REJOINDRE", Vector2(140, 32), false)
 	arcane_join_btn.position = Vector2(299, 12)
 	arcane_join_btn.pressed.connect(func(): _pick_custom_room_team("ARCANE"))
-	arcane_panel.add_child(arcane_join_btn)
+	custom_room_arcane_panel.add_child(arcane_join_btn)
 	custom_room_arcane_box = VBoxContainer.new()
 	custom_room_arcane_box.position = Vector2(16, 52)
 	custom_room_arcane_box.size = Vector2(423, 200)
 	custom_room_arcane_box.add_theme_constant_override("separation", 6)
-	arcane_panel.add_child(custom_room_arcane_box)
+	custom_room_arcane_panel.add_child(custom_room_arcane_box)
 
-	custom_room_panel.add_child(_label("SANS ÉQUIPE", 9, Color("7a6a4a"), Vector2(24, 436), Vector2(200, 16)))
+	custom_room_unassigned_label = _label("SANS ÉQUIPE", 9, Color("7a6a4a"), Vector2(24, 436), Vector2(200, 16))
+	custom_room_panel.add_child(custom_room_unassigned_label)
 	custom_room_unassigned_box = VBoxContainer.new()
 	custom_room_unassigned_box.position = Vector2(24, 454)
 	custom_room_unassigned_box.size = Vector2(700, 40)
@@ -1138,18 +1143,28 @@ func _refresh_custom_room_lobby_ui() -> void:
 	if custom_room_status_label != null and is_instance_valid(custom_room_status_label):
 		custom_room_status_label.text = "%d JOUEUR(S)" % members.size()
 
+	# On ne touche à .select() que si la valeur affichée diffère vraiment de
+	# l'état serveur, et jamais pendant que le menu déroulant est ouvert :
+	# sinon, le poll (toutes les 1s) rappelait .select() avec l'ANCIENNE
+	# valeur pendant que le joueur choisissait tout juste la nouvelle,
+	# fermant/perturbant le popup avant que son clic ne soit pris en compte
+	# — la sélection semblait alors "ne jamais se faire".
 	if custom_room_map_option != null and is_instance_valid(custom_room_map_option):
-		for i in CUSTOM_ROOM_MAPS.size():
-			if CUSTOM_ROOM_MAPS[i][0] == map_key:
-				custom_room_map_option.select(i)
-				break
+		if not custom_room_map_option.get_popup().visible:
+			for i in CUSTOM_ROOM_MAPS.size():
+				if CUSTOM_ROOM_MAPS[i][0] == map_key:
+					if custom_room_map_option.selected != i:
+						custom_room_map_option.select(i)
+					break
 		custom_room_map_option.disabled = not is_host
 
 	if custom_room_mode_option != null and is_instance_valid(custom_room_mode_option):
-		for i in CUSTOM_ROOM_MODES.size():
-			if CUSTOM_ROOM_MODES[i][0] == mode:
-				custom_room_mode_option.select(i)
-				break
+		if not custom_room_mode_option.get_popup().visible:
+			for i in CUSTOM_ROOM_MODES.size():
+				if CUSTOM_ROOM_MODES[i][0] == mode:
+					if custom_room_mode_option.selected != i:
+						custom_room_mode_option.select(i)
+					break
 		custom_room_mode_option.disabled = not is_host
 
 	var team_mode := mode == "TEAM"
@@ -1157,6 +1172,18 @@ func _refresh_custom_room_lobby_ui() -> void:
 		custom_room_random_button.visible = team_mode
 		custom_room_random_button.text = "☑ RÉPARTITION ALÉATOIRE" if random_teams else "☐ RÉPARTITION ALÉATOIRE"
 		custom_room_random_button.disabled = not is_host
+
+	# Hors mode Équipes, les blocs ASTRAL/ARCANE (fond coloré compris, pas
+	# seulement la liste de joueurs qu'ils contiennent) doivent disparaître
+	# entièrement : les laisser visibles sans contenu faisait flotter la
+	# liste FFA par-dessus les deux blocs encore affichés, donnant
+	# l'impression que les pseudos "débordaient" sur les deux barres.
+	if custom_room_astral_panel != null and is_instance_valid(custom_room_astral_panel):
+		custom_room_astral_panel.visible = team_mode
+	if custom_room_arcane_panel != null and is_instance_valid(custom_room_arcane_panel):
+		custom_room_arcane_panel.visible = team_mode
+	if custom_room_unassigned_label != null and is_instance_valid(custom_room_unassigned_label):
+		custom_room_unassigned_label.visible = team_mode
 
 	for box in [custom_room_astral_box, custom_room_arcane_box, custom_room_unassigned_box]:
 		if box != null and is_instance_valid(box):
@@ -1170,23 +1197,21 @@ func _refresh_custom_room_lobby_ui() -> void:
 		custom_room_launch_button.text = "DÉMARRAGE..." if status != "open" else "LANCER LA PARTIE"
 
 	if not team_mode:
-		# Mode FFA : une seule liste à plat, pas de camp à choisir.
-		var flat_box := VBoxContainer.new()
-		flat_box.position = Vector2(24, 170)
-		flat_box.size = Vector2(932, 250)
-		flat_box.add_theme_constant_override("separation", 6)
-		flat_box.name = "FFAList"
-		var previous := custom_room_panel.get_node_or_null("FFAList")
-		if previous != null:
-			previous.queue_free()
+		# Mode FFA/Découverte : une seule liste à plat, pas de camp à choisir.
+		if custom_room_ffa_box == null or not is_instance_valid(custom_room_ffa_box):
+			custom_room_ffa_box = VBoxContainer.new()
+			custom_room_ffa_box.position = Vector2(24, 170)
+			custom_room_ffa_box.size = Vector2(932, 250)
+			custom_room_ffa_box.add_theme_constant_override("separation", 6)
+			custom_room_panel.add_child(custom_room_ffa_box)
+		custom_room_ffa_box.visible = true
+		for child in custom_room_ffa_box.get_children():
+			child.queue_free()
 		for member in members:
-			flat_box.add_child(_custom_room_member_row(member))
-		custom_room_panel.add_child(flat_box)
+			custom_room_ffa_box.add_child(_custom_room_member_row(member))
 		return
-	else:
-		var previous_flat := custom_room_panel.get_node_or_null("FFAList")
-		if previous_flat != null:
-			previous_flat.queue_free()
+	elif custom_room_ffa_box != null and is_instance_valid(custom_room_ffa_box):
+		custom_room_ffa_box.visible = false
 
 	for member in members:
 		var team: String = str(member.get("team", ""))

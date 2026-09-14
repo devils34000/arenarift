@@ -53,6 +53,14 @@ var custom_room_unassigned_box: VBoxContainer
 var custom_room_ffa_box: VBoxContainer
 var custom_room_launch_button: Button
 var custom_room_pending_action: String = ""
+# Le polling continu (GET toutes les 1s) et une action (POST settings/team/
+# start) peuvent se terminer dans le désordre selon la latence réseau —
+# sans ce garde, une réponse de poll "en retard" pouvait écraser un
+# changement pourtant déjà appliqué avec l'état d'AVANT ce changement,
+# donnant l'impression que la sélection de map/mode revenait en arrière
+# toute seule. On applique donc uniquement les réponses dont la version
+# est supérieure ou égale à la dernière appliquée.
+var _custom_room_last_version: int = -1
 var _custom_room_connect_triggered: bool = false
 const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"]]
 const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"], ["EXPLORE", "DÉCOUVERTE (SANS COMBAT)"]]
@@ -971,17 +979,16 @@ func _on_custom_room_action_completed(
 			return
 		custom_room_state = parsed as Dictionary
 		custom_room_code = str(custom_room_state.get("code", ""))
+		_custom_room_last_version = int(custom_room_state.get("version", 0))
 		_custom_room_connect_triggered = false
 		_show_custom_room_lobby()
 		if custom_room_poll_timer != null and custom_room_poll_timer.is_stopped():
 			custom_room_poll_timer.start()
 		return
 
-	# "room_settings" / "room_team" / "room_start" : best-effort, le polling
-	# continu resynchronise de toute façon l'état réel juste après.
+	# "room_settings" / "room_team" / "room_start"
 	if typeof(parsed) == TYPE_DICTIONARY and result == HTTPRequest.RESULT_SUCCESS and response_code >= 200 and response_code < 300:
-		custom_room_state = parsed as Dictionary
-		_refresh_custom_room_lobby_ui()
+		_apply_custom_room_state(parsed as Dictionary)
 
 
 func _poll_custom_room() -> void:
@@ -1014,9 +1021,20 @@ func _on_custom_room_poll_completed(
 	var parsed = JSON.parse_string(body.get_string_from_utf8())
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
-	custom_room_state = parsed as Dictionary
-	_refresh_custom_room_lobby_ui()
+	_apply_custom_room_state(parsed as Dictionary)
 	_check_custom_room_server_ready()
+
+
+## N'applique une réponse de salon que si elle est au moins aussi récente
+## que la dernière déjà appliquée — voir le commentaire sur
+## _custom_room_last_version pour le problème que ça évite.
+func _apply_custom_room_state(state: Dictionary) -> void:
+	var version := int(state.get("version", 0))
+	if version < _custom_room_last_version:
+		return
+	_custom_room_last_version = version
+	custom_room_state = state
+	_refresh_custom_room_lobby_ui()
 
 
 func _is_custom_room_host() -> bool:
@@ -1359,6 +1377,7 @@ func _leave_custom_room_local_only() -> void:
 	custom_room_code = ""
 	custom_room_state = {}
 	_custom_room_connect_triggered = false
+	_custom_room_last_version = -1
 
 
 func _leave_custom_room() -> void:

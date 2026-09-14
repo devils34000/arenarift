@@ -159,6 +159,25 @@ var pause_invert_y_toggle: CheckButton
 var pause_keybind_orb_button: Button
 var pause_keybind_nova_button: Button
 var pause_keybind_dash_button: Button
+var pause_keybind_move_up_button: Button
+var pause_keybind_move_down_button: Button
+var pause_keybind_move_left_button: Button
+var pause_keybind_move_right_button: Button
+var pause_screen_shake_toggle: CheckButton
+var pause_damage_numbers_toggle: CheckButton
+var pause_camera_height_slider: HSlider
+var pause_tutorials_toggle: CheckButton
+var pause_ability_hints_toggle: CheckButton
+var pause_autosave_toggle: CheckButton
+var pause_confirmations_toggle: CheckButton
+var pause_indicators_toggle: CheckButton
+var pause_screen_shake: bool = true
+var pause_damage_numbers: bool = true
+var pause_tutorials: bool = true
+var pause_ability_hints: bool = true
+var pause_autosave: bool = true
+var pause_confirmations: bool = true
+var pause_indicators: bool = true
 var pause_master_volume: float = 78.0
 var pause_music_volume: float = 64.0
 var pause_sfx_volume: float = 64.0
@@ -3548,6 +3567,30 @@ func _show_pause_options() -> void:
 		pause_keybind_nova_button.text = _get_pause_key_name("spell_nova")
 	if pause_keybind_dash_button != null:
 		pause_keybind_dash_button.text = _get_pause_key_name("spell_dash")
+	if pause_keybind_move_up_button != null:
+		pause_keybind_move_up_button.text = _get_pause_key_name("move_up")
+	if pause_keybind_move_down_button != null:
+		pause_keybind_move_down_button.text = _get_pause_key_name("move_down")
+	if pause_keybind_move_left_button != null:
+		pause_keybind_move_left_button.text = _get_pause_key_name("move_left")
+	if pause_keybind_move_right_button != null:
+		pause_keybind_move_right_button.text = _get_pause_key_name("move_right")
+	if pause_screen_shake_toggle != null:
+		pause_screen_shake_toggle.button_pressed = pause_screen_shake
+	if pause_damage_numbers_toggle != null:
+		pause_damage_numbers_toggle.button_pressed = pause_damage_numbers
+	if pause_camera_height_slider != null:
+		pause_camera_height_slider.value = camera_height
+	if pause_tutorials_toggle != null:
+		pause_tutorials_toggle.button_pressed = pause_tutorials
+	if pause_ability_hints_toggle != null:
+		pause_ability_hints_toggle.button_pressed = pause_ability_hints
+	if pause_autosave_toggle != null:
+		pause_autosave_toggle.button_pressed = pause_autosave
+	if pause_confirmations_toggle != null:
+		pause_confirmations_toggle.button_pressed = pause_confirmations
+	if pause_indicators_toggle != null:
+		pause_indicators_toggle.button_pressed = pause_indicators
 
 func _quit_match_from_pause() -> void:
 	_close_pause_menu()
@@ -3566,6 +3609,13 @@ func _load_pause_settings() -> void:
 	pause_sfx_volume = float(config.get_value("audio", "sfx_volume", 64.0))
 	pause_fullscreen = bool(config.get_value("video", "fullscreen", false))
 	pause_vsync = bool(config.get_value("video", "vsync", true))
+	pause_screen_shake = bool(config.get_value("video", "screen_shake", true))
+	pause_damage_numbers = bool(config.get_value("video", "damage_numbers", true))
+	pause_tutorials = bool(config.get_value("gameplay", "tutorials", true))
+	pause_ability_hints = bool(config.get_value("gameplay", "ability_hints", true))
+	pause_autosave = bool(config.get_value("gameplay", "autosave", true))
+	pause_confirmations = bool(config.get_value("gameplay", "confirmations", true))
+	pause_indicators = bool(config.get_value("gameplay", "indicators", true))
 	_load_camera_settings()
 
 func _save_pause_settings() -> void:
@@ -3579,10 +3629,17 @@ func _save_pause_settings() -> void:
 	config.set_value("audio", "sfx_volume", pause_sfx_volume)
 	config.set_value("video", "fullscreen", pause_fullscreen)
 	config.set_value("video", "vsync", pause_vsync)
+	config.set_value("video", "screen_shake", pause_screen_shake)
+	config.set_value("video", "damage_numbers", pause_damage_numbers)
 	config.set_value("camera", "fov", camera_fov)
 	config.set_value("camera", "height", camera_height)
 	config.set_value("controller", "camera_sensitivity", controller_camera_sensitivity)
 	config.set_value("controller", "invert_y", controller_invert_y)
+	config.set_value("gameplay", "tutorials", pause_tutorials)
+	config.set_value("gameplay", "ability_hints", pause_ability_hints)
+	config.set_value("gameplay", "autosave", pause_autosave)
+	config.set_value("gameplay", "confirmations", pause_confirmations)
+	config.set_value("gameplay", "indicators", pause_indicators)
 	config.save("user://settings.cfg")
 
 func _set_pause_bus_volume(bus_name: String, value: float) -> void:
@@ -3634,6 +3691,38 @@ func _on_pause_invert_y_toggled(pressed: bool) -> void:
 	controller_invert_y = pressed
 	_save_pause_settings()
 
+func _on_pause_screen_shake_toggled(pressed: bool) -> void:
+	pause_screen_shake = pressed
+	_save_pause_settings()
+
+func _on_pause_damage_numbers_toggled(pressed: bool) -> void:
+	pause_damage_numbers = pressed
+	_save_pause_settings()
+
+func _on_pause_camera_height_changed(value: float) -> void:
+	camera_height = value
+	_save_pause_settings()
+
+func _on_pause_tutorials_toggled(pressed: bool) -> void:
+	pause_tutorials = pressed
+	_save_pause_settings()
+
+func _on_pause_ability_hints_toggled(pressed: bool) -> void:
+	pause_ability_hints = pressed
+	_save_pause_settings()
+
+func _on_pause_autosave_toggled(pressed: bool) -> void:
+	pause_autosave = pressed
+	_save_pause_settings()
+
+func _on_pause_confirmations_toggled(pressed: bool) -> void:
+	pause_confirmations = pressed
+	_save_pause_settings()
+
+func _on_pause_indicators_toggled(pressed: bool) -> void:
+	pause_indicators = pressed
+	_save_pause_settings()
+
 ## Reprend le même schéma que main_menu.gd (_get_key_name / _rebind_action /
 ## _save_keybinds) : les deux écrans doivent éditer la même section
 ## "keybinds" de user://settings.cfg pour rester cohérents entre eux.
@@ -3681,7 +3770,7 @@ func _save_pause_keybinds() -> void:
 	var error := config.load("user://settings.cfg")
 	if error != OK and error != ERR_FILE_NOT_FOUND:
 		return
-	for action_name in ["spell_orb", "spell_nova", "spell_dash"]:
+	for action_name in ["move_up", "move_down", "move_left", "move_right", "spell_orb", "spell_nova", "spell_dash"]:
 		if not InputMap.has_action(action_name):
 			continue
 		var events := InputMap.action_get_events(action_name)
@@ -3768,9 +3857,9 @@ func _build_pause_menu() -> void:
 	quit_btn.pressed.connect(_quit_match_from_pause)
 	pause_root_panel.add_child(quit_btn)
 
-	# --- Écran options : audio / vidéo / caméra, mêmes réglages que le
-	# menu principal, persistés dans le même fichier. ---
-	pause_options_panel = _panel(Vector2(330, 100), Vector2(420, 460), Color("07111ff2"), Color("315b8d"), 16)
+	# --- Écran options : audio / vidéo / touches / gameplay, mêmes
+	# réglages que le menu principal, persistés dans le même fichier. ---
+	pause_options_panel = _panel(Vector2(330, 30), Vector2(420, 640), Color("07111ff2"), Color("315b8d"), 16)
 	pause_options_panel.visible = false
 	pause_menu.add_child(pause_options_panel)
 
@@ -3778,7 +3867,7 @@ func _build_pause_menu() -> void:
 
 	var tabs := TabContainer.new()
 	tabs.position = Vector2(30, 60)
-	tabs.size = Vector2(360, 340)
+	tabs.size = Vector2(360, 490)
 	tabs.add_theme_font_size_override("font_size", 12)
 	pause_options_panel.add_child(tabs)
 
@@ -3801,24 +3890,49 @@ func _build_pause_menu() -> void:
 	pause_fullscreen_toggle.toggled.connect(_on_pause_fullscreen_toggled)
 	pause_vsync_toggle = _pause_toggle_row(video_tab, 44, "VSYNC")
 	pause_vsync_toggle.toggled.connect(_on_pause_vsync_toggled)
-	pause_fov_slider = _pause_slider_row(video_tab, 84, "CHAMP DE VISION CAMÉRA", 55.0, 90.0, 1.0)
+	pause_screen_shake_toggle = _pause_toggle_row(video_tab, 76, "SECOUSSE CAMÉRA")
+	pause_screen_shake_toggle.toggled.connect(_on_pause_screen_shake_toggled)
+	pause_damage_numbers_toggle = _pause_toggle_row(video_tab, 108, "NOMBRES DE DÉGÂTS")
+	pause_damage_numbers_toggle.toggled.connect(_on_pause_damage_numbers_toggled)
+	pause_fov_slider = _pause_slider_row(video_tab, 148, "CHAMP DE VISION CAMÉRA", 55.0, 90.0, 1.0)
 	pause_fov_slider.value_changed.connect(_on_pause_fov_changed)
+	pause_camera_height_slider = _pause_slider_row(video_tab, 200, "HAUTEUR CAMÉRA", 2.0, 5.5, 0.1)
+	pause_camera_height_slider.value_changed.connect(_on_pause_camera_height_changed)
 
 	# --- Onglet TOUCHES ---
 	var keys_tab := Control.new()
 	keys_tab.name = "TOUCHES"
 	tabs.add_child(keys_tab)
-	pause_keybind_orb_button = _pause_keybind_row(keys_tab, 12, "ARC BOLT", "spell_orb")
-	pause_keybind_nova_button = _pause_keybind_row(keys_tab, 52, "NOVA", "spell_nova")
-	pause_keybind_dash_button = _pause_keybind_row(keys_tab, 92, "PHASE DASH", "spell_dash")
-	pause_sensitivity_slider = _pause_slider_row(keys_tab, 140, "SENSIBILITÉ MANETTE", 0.5, 6.0, 0.1)
+	pause_keybind_move_up_button = _pause_keybind_row(keys_tab, 12, "AVANCER", "move_up")
+	pause_keybind_move_down_button = _pause_keybind_row(keys_tab, 52, "RECULER", "move_down")
+	pause_keybind_move_left_button = _pause_keybind_row(keys_tab, 92, "GAUCHE", "move_left")
+	pause_keybind_move_right_button = _pause_keybind_row(keys_tab, 132, "DROITE", "move_right")
+	pause_keybind_orb_button = _pause_keybind_row(keys_tab, 172, "ARC BOLT", "spell_orb")
+	pause_keybind_nova_button = _pause_keybind_row(keys_tab, 212, "NOVA", "spell_nova")
+	pause_keybind_dash_button = _pause_keybind_row(keys_tab, 252, "PHASE DASH", "spell_dash")
+	pause_sensitivity_slider = _pause_slider_row(keys_tab, 300, "SENSIBILITÉ MANETTE", 0.5, 6.0, 0.1)
 	pause_sensitivity_slider.value_changed.connect(_on_pause_sensitivity_changed)
-	pause_invert_y_toggle = _pause_toggle_row(keys_tab, 192, "INVERSER AXE Y (MANETTE)")
+	pause_invert_y_toggle = _pause_toggle_row(keys_tab, 364, "INVERSER AXE Y (MANETTE)")
 	pause_invert_y_toggle.toggled.connect(_on_pause_invert_y_toggled)
+
+	# --- Onglet GAMEPLAY ---
+	var gameplay_tab := Control.new()
+	gameplay_tab.name = "GAMEPLAY"
+	tabs.add_child(gameplay_tab)
+	pause_tutorials_toggle = _pause_toggle_row(gameplay_tab, 12, "TUTORIELS")
+	pause_tutorials_toggle.toggled.connect(_on_pause_tutorials_toggled)
+	pause_ability_hints_toggle = _pause_toggle_row(gameplay_tab, 44, "ASTUCES")
+	pause_ability_hints_toggle.toggled.connect(_on_pause_ability_hints_toggled)
+	pause_autosave_toggle = _pause_toggle_row(gameplay_tab, 76, "SAUVEGARDE AUTO")
+	pause_autosave_toggle.toggled.connect(_on_pause_autosave_toggled)
+	pause_confirmations_toggle = _pause_toggle_row(gameplay_tab, 108, "CONFIRMATIONS")
+	pause_confirmations_toggle.toggled.connect(_on_pause_confirmations_toggled)
+	pause_indicators_toggle = _pause_toggle_row(gameplay_tab, 140, "INDICATEURS")
+	pause_indicators_toggle.toggled.connect(_on_pause_indicators_toggled)
 
 	var back_btn := Button.new()
 	back_btn.text = "RETOUR"
-	back_btn.position = Vector2(30, 410)
+	back_btn.position = Vector2(30, 570)
 	back_btn.size = Vector2(360, 40)
 	back_btn.pressed.connect(_show_pause_root)
 	pause_options_panel.add_child(back_btn)

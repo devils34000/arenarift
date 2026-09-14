@@ -51,7 +51,7 @@ var custom_room_launch_button: Button
 var custom_room_pending_action: String = ""
 var _custom_room_connect_triggered: bool = false
 const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"]]
-const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"]]
+const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"], ["EXPLORE", "DÉCOUVERTE (SANS COMBAT)"]]
 
 var matchmaking_action_http: HTTPRequest
 var matchmaking_poll_http: HTTPRequest
@@ -1311,7 +1311,13 @@ func _check_custom_room_server_ready() -> void:
 	if network_node != null:
 		network_node.set("pending_custom_team", my_team)
 
-	selected_mode = "CUSTOM DEATHMATCH" if str(custom_room_state.get("mode", "TEAM")) == "FFA" else "CUSTOM GAME"
+	var room_mode := str(custom_room_state.get("mode", "TEAM"))
+	if room_mode == "FFA":
+		selected_mode = "CUSTOM DEATHMATCH"
+	elif room_mode == "EXPLORE":
+		selected_mode = "CUSTOM EXPLORE"
+	else:
+		selected_mode = "CUSTOM GAME"
 
 	if custom_room_status_label != null and is_instance_valid(custom_room_status_label):
 		custom_room_status_label.text = "CONNEXION AU SERVEUR..."

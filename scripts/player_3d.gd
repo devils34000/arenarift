@@ -843,6 +843,12 @@ func try_throw_dagger(direction: Vector3 = Vector3.ZERO) -> void:
 
 func take_damage(amount: int, force: Vector3) -> bool:
 	last_damage_dealt = 0.0
+	# Mode Découverte (Custom Game) : aucun combat, on ignore silencieusement
+	# tous les dégâts plutôt que de dupliquer ce garde à chaque source de
+	# dégâts (mêlée, projectiles, hache, traînée de feu...).
+	var network_node := get_node_or_null("/root/Network")
+	if network_node != null and str(network_node.get("match_mode")) == "CUSTOM EXPLORE":
+		return false
 	if invulnerable_left > 0.0:
 		return false
 	var remaining_damage: float = float(amount)

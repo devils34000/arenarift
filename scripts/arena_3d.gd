@@ -3012,20 +3012,46 @@ func _spawn_axe_pickup_fx(position: Vector3) -> Node3D:
 	pulse.tween_property(ring, "scale", Vector3.ONE * 0.85, 0.45)
 	return root
 
+const SHIELD_SURFACE_SHADER_PATH := "res://assets/BinbunVFX_Vol2/BattleFX/shader/shield_surface.gdshader"
+var _shield_noise_texture: NoiseTexture2D
+
+## Texture de bruit partagée par tous les bouclers Kaithlyn : coûteuse à
+## générer (FastNoiseLite), donc construite une seule fois et réutilisée.
+func _get_shield_noise_texture() -> NoiseTexture2D:
+	if _shield_noise_texture == null:
+		var noise := FastNoiseLite.new()
+		noise.fractal_octaves = 3
+		_shield_noise_texture = NoiseTexture2D.new()
+		_shield_noise_texture.generate_mipmaps = false
+		_shield_noise_texture.seamless = true
+		_shield_noise_texture.noise = noise
+	return _shield_noise_texture
+
 func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
-	# Bouclier visuel procédural : compatible GL Compatibility, sans particules/shaders externes.
+	# Bouclier visuel : dôme en shader "hologramme" (fresnel + bruit animé,
+	# issu du pack BinbunVFX déjà présent dans le projet). Seul
+	# shield_surface.gdshader est utilisé ici — les variantes Aura/Orbit du
+	# même pack lisent une depth_texture d'écran non supportée par le
+	# renderer GL Compatibility utilisé par ce projet et ne s'affichent pas
+	# correctement dessus.
 	var root := Node3D.new()
 	root.name = "KaithlynShieldFX"
 	caster.add_child(root)
 	root.position = Vector3(0.0, 0.95, 0.0)
 
-	var shell_mat := StandardMaterial3D.new()
-	shell_mat.albedo_color = Color(1.0, 0.48, 0.08, 0.16)
-	shell_mat.emission_enabled = true
-	shell_mat.emission = Color(1.0, 0.22, 0.02)
-	shell_mat.emission_energy_multiplier = 4.0
-	shell_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	shell_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var shell_mat := ShaderMaterial.new()
+	shell_mat.shader = load(SHIELD_SURFACE_SHADER_PATH)
+	shell_mat.set_shader_parameter("primary_color", Color(1.0, 0.68, 0.2))
+	shell_mat.set_shader_parameter("secondary_color", Color(1.0, 0.32, 0.05))
+	shell_mat.set_shader_parameter("tertiary_color", Color(0.25, 0.08, 0.0))
+	shell_mat.set_shader_parameter("emission", 2.2)
+	shell_mat.set_shader_parameter("noise_texture", _get_shield_noise_texture())
+	shell_mat.set_shader_parameter("noise_scale", Vector2(1.2, 1.2))
+	shell_mat.set_shader_parameter("noise_scroll", Vector2(-0.3, 0.5))
+	shell_mat.set_shader_parameter("noise_twist", 1.0)
+	shell_mat.set_shader_parameter("noise_shape", 1.0)
+	shell_mat.set_shader_parameter("double_noise", true)
+	shell_mat.set_shader_parameter("effect_decay", 0.0)
 
 	var shell := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
@@ -3070,14 +3096,15 @@ func _spawn_kaithlyn_shield_fx(caster: CharacterBody3D) -> void:
 	var tween := root.create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(shell, "scale", Vector3(1.12, 1.18, 1.12), 0.20)
-	tween.tween_property(shell_mat, "emission_energy_multiplier", 1.5, 3.0)
 	tween.tween_property(core, "scale", Vector3(1.7, 1.7, 1.7), 0.55)
 	var rings := root.get_children()
 	for child in rings:
 		if child is MeshInstance3D and child != shell and child != core:
 			tween.tween_property(child, "rotation_degrees:y", child.rotation_degrees.y + 360.0, 3.0)
 	tween.set_parallel(false)
-	tween.tween_interval(2.45)
+	tween.tween_interval(2.0)
+	# Dissolve final du hologramme (effect_decay 0 -> 1, cf. shield_surface.gdshader).
+	tween.tween_property(shell_mat, "shader_parameter/effect_decay", 1.0, 0.45)
 	tween.tween_callback(root.queue_free)
 
 func _handle_combat_death(victim: ArenaPlayer3D, killer: ArenaPlayer3D) -> void:

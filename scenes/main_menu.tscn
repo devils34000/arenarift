@@ -1,12 +1,12 @@
-[gd_scene load_steps=8 format=3 uid="uid://d2dk35a842mn0"]
+[gd_scene format=3 uid="uid://d2dk35a842mn0"]
 
 [ext_resource type="Script" uid="uid://bl5dlyc5hgjjf" path="res://scripts/main_menu.gd" id="1_menu"]
-[ext_resource type="Texture2D" path="res://assets/menu_art/arena_rift_background.jpg" id="2_bg"]
-[ext_resource type="Texture2D" path="res://assets/menu_art/logo_arena_rift.png" id="3_logo"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_menu_play_cropped.png" id="4_rail_border"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_steam_cropped.png" id="5_steam_border"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_level_cropped.png" id="6_level_border"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_menu_cropped.png" id="7_frame_border"]
+[ext_resource type="Texture2D" uid="uid://bcu8jy0aip0um" path="res://assets/menu_art/arena_rift_background.jpg" id="2_bg"]
+[ext_resource type="Texture2D" uid="uid://bkdl1nveibnmm" path="res://assets/menu_art/logo_arena_rift.png" id="3_logo"]
+[ext_resource type="Texture2D" uid="uid://bs7hxbm0fm1da" path="res://assets/menu_design/champ_select/bordure_menu_play_cropped.png" id="4_rail_border"]
+[ext_resource type="Texture2D" uid="uid://b0hppeuywe8wy" path="res://assets/menu_design/champ_select/bordure_steam_cropped.png" id="5_steam_border"]
+[ext_resource type="Texture2D" uid="uid://ble1xlphoiehb" path="res://assets/menu_design/champ_select/bordure_level_cropped.png" id="6_level_border"]
+[ext_resource type="Texture2D" uid="uid://b0le3ivsbxo85" path="res://assets/menu_design/champ_select/bordure_menu_cropped.png" id="7_frame_border"]
 
 [node name="MainMenu" type="Control" unique_id=1079531850]
 layout_mode = 3
@@ -17,7 +17,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="TextureRect" parent="." unique_id=292362710]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -30,7 +30,7 @@ texture = ExtResource("2_bg")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CinematicTint" type="ColorRect" parent="."]
+[node name="CinematicTint" type="ColorRect" parent="." unique_id=1474761816]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -41,7 +41,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.027451, 0.0196078, 0.00784314, 0.588235)
 
-[node name="EmberGlow" type="ColorRect" parent="."]
+[node name="EmberGlow" type="ColorRect" parent="." unique_id=304459630]
 unique_name_in_owner = true
 layout_mode = 0
 offset_right = 1280.0
@@ -49,7 +49,7 @@ offset_bottom = 180.0
 mouse_filter = 2
 color = Color(0.227451, 0.101961, 0.0235294, 0.25098)
 
-[node name="EmberLayer" type="Control" parent="."]
+[node name="EmberLayer" type="Control" parent="." unique_id=248277422]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -59,14 +59,15 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LeftRail" type="Panel" parent="."]
+[node name="LeftRail" type="Panel" parent="." unique_id=1066990660]
 unique_name_in_owner = true
 layout_mode = 0
 offset_right = 244.0
 offset_bottom = 720.0
 mouse_filter = 2
 
-[node name="RailEdge" type="ColorRect" parent="LeftRail"]
+[node name="RailEdge" type="ColorRect" parent="LeftRail" unique_id=1965397914]
+visible = false
 layout_mode = 0
 offset_left = 242.0
 offset_right = 244.0
@@ -74,7 +75,7 @@ offset_bottom = 720.0
 mouse_filter = 2
 color = Color(0.788235, 0.635294, 0.301961, 1)
 
-[node name="Brand" type="TextureRect" parent="LeftRail"]
+[node name="Brand" type="TextureRect" parent="LeftRail" unique_id=2102532424]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
@@ -86,20 +87,19 @@ texture = ExtResource("3_logo")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Divider" type="Label" parent="LeftRail"]
+[node name="Divider" type="Label" parent="LeftRail" unique_id=1818278122]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
 offset_top = 132.0
 offset_right = 226.0
 offset_bottom = 148.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.290196, 0.188235, 0.0941176, 1)
 theme_override_font_sizes/font_size = 9
 text = "──────────────"
 horizontal_alignment = 1
 
-[node name="Nav" type="VBoxContainer" parent="LeftRail"]
+[node name="Nav" type="VBoxContainer" parent="LeftRail" unique_id=1029339547]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
@@ -108,21 +108,20 @@ offset_right = 226.0
 offset_bottom = 390.0
 theme_override_constants/separation = 9
 
-[node name="VersionLabel" type="Label" parent="LeftRail"]
+[node name="VersionLabel" type="Label" parent="LeftRail" unique_id=2142661294]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 34.0
 offset_top = 650.0
 offset_right = 214.0
 offset_bottom = 705.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.419608, 0.352941, 0.227451, 1)
 theme_override_font_sizes/font_size = 9
 text = "V0.1 · PRÉ-ALPHA
 UNE NOUVELLE ÈRE
 SE LÈVE"
 
-[node name="RailBorder" type="TextureRect" parent="LeftRail"]
+[node name="RailBorder" type="TextureRect" parent="LeftRail" unique_id=1578981523]
 unique_name_in_owner = true
 layout_mode = 0
 offset_right = 244.0
@@ -130,18 +129,17 @@ offset_bottom = 720.0
 mouse_filter = 2
 texture = ExtResource("4_rail_border")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="SteamProfile" type="Panel" parent="."]
+[node name="SteamProfile" type="Panel" parent="." unique_id=1534472996]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1050.0
-offset_top = 24.0
-offset_right = 1256.0
-offset_bottom = 86.0
+offset_left = 1035.0
+offset_top = 8.0
+offset_right = 1241.0
+offset_bottom = 69.0
 mouse_filter = 2
 
-[node name="AvatarFrame" type="Panel" parent="SteamProfile"]
+[node name="AvatarFrame" type="Panel" parent="SteamProfile" unique_id=1708900979]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 8.0
@@ -150,7 +148,7 @@ offset_right = 53.0
 offset_bottom = 53.0
 mouse_filter = 2
 
-[node name="Avatar" type="TextureRect" parent="SteamProfile/AvatarFrame"]
+[node name="Avatar" type="TextureRect" parent="SteamProfile/AvatarFrame" unique_id=1384324876]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 1.0
@@ -161,32 +159,31 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 6
 
-[node name="AvatarFallback" type="Label" parent="SteamProfile/AvatarFrame"]
+[node name="AvatarFallback" type="Label" parent="SteamProfile/AvatarFrame" unique_id=423593062]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 8.0
 offset_top = 9.0
 offset_right = 36.0
 offset_bottom = 34.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.909804, 0.713726, 0.337255, 1)
 theme_override_font_sizes/font_size = 20
 text = "?"
 horizontal_alignment = 1
 
-[node name="NameLabel" type="Label" parent="SteamProfile"]
+[node name="NameLabel" type="Label" parent="SteamProfile" unique_id=1647855312]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 64.0
 offset_top = 8.0
 offset_right = 198.0
 offset_bottom = 26.0
-clip_text = true
 theme_override_colors/font_color = Color(0.952941, 0.901961, 0.784314, 1)
 theme_override_font_sizes/font_size = 12
 text = "STEAM"
+clip_text = true
 
-[node name="StatusLabel" type="Label" parent="SteamProfile"]
+[node name="StatusLabel" type="Label" parent="SteamProfile" unique_id=1084651176]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 64.0
@@ -197,58 +194,59 @@ theme_override_colors/font_color = Color(0.435294, 0.721569, 0.541176, 1)
 theme_override_font_sizes/font_size = 9
 text = "STEAM  •  EN LIGNE"
 
-[node name="SteamBorder" type="TextureRect" parent="SteamProfile"]
+[node name="SteamBorder" type="TextureRect" parent="SteamProfile" unique_id=162108701]
 unique_name_in_owner = true
 layout_mode = 0
-offset_right = 206.0
-offset_bottom = 62.0
+offset_left = -12.0
+offset_top = -7.0
+offset_right = 211.0
+offset_bottom = 64.0
 mouse_filter = 2
 texture = ExtResource("5_steam_border")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="LevelPanel" type="Panel" parent="."]
+[node name="LevelPanel" type="Panel" parent="." unique_id=1322888025]
 unique_name_in_owner = true
-layout_mode = 0
-offset_left = 858.0
-offset_top = 24.0
-offset_right = 1042.0
-offset_bottom = 86.0
-mouse_filter = 2
 clip_contents = true
+layout_mode = 0
+offset_left = 827.0
+offset_top = 5.0
+offset_right = 1011.0
+offset_bottom = 67.0
+mouse_filter = 2
 
-[node name="LevelLabel" type="Label" parent="LevelPanel"]
+[node name="LevelLabel" type="Label" parent="LevelPanel" unique_id=980034805]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 10.0
+offset_left = 18.0
 offset_top = 8.0
-offset_right = 110.0
+offset_right = 118.0
 offset_bottom = 26.0
 theme_override_colors/font_color = Color(0.909804, 0.713726, 0.337255, 1)
 theme_override_font_sizes/font_size = 12
 text = "NIVEAU 1"
 
-[node name="XpLabel" type="Label" parent="LevelPanel"]
+[node name="XpLabel" type="Label" parent="LevelPanel" unique_id=735262917]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 10.0
+offset_left = 19.0
 offset_top = 27.0
-offset_right = 174.0
+offset_right = 162.0
 offset_bottom = 41.0
 theme_override_colors/font_color = Color(0.788235, 0.658824, 0.466667, 1)
 theme_override_font_sizes/font_size = 9
 text = "0 / 100 XP"
 
-[node name="ProgressBg" type="ColorRect" parent="LevelPanel"]
+[node name="ProgressBg" type="ColorRect" parent="LevelPanel" unique_id=610521584]
 layout_mode = 0
-offset_left = 10.0
+offset_left = 15.0
 offset_top = 45.0
-offset_right = 174.0
+offset_right = 165.0
 offset_bottom = 53.0
 mouse_filter = 2
 color = Color(0.141176, 0.101961, 0.0509804, 1)
 
-[node name="ProgressFill" type="ColorRect" parent="LevelPanel"]
+[node name="ProgressFill" type="ColorRect" parent="LevelPanel" unique_id=2028663054]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 10.0
@@ -258,17 +256,17 @@ offset_bottom = 53.0
 mouse_filter = 2
 color = Color(0.345098, 0.811765, 1, 1)
 
-[node name="LevelBorder" type="TextureRect" parent="LevelPanel"]
+[node name="LevelBorder" type="TextureRect" parent="LevelPanel" unique_id=1565134334]
 unique_name_in_owner = true
 layout_mode = 0
-offset_right = 184.0
+offset_left = -2.0
+offset_right = 185.0
 offset_bottom = 62.0
 mouse_filter = 2
 texture = ExtResource("6_level_border")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="MainFrame" type="Panel" parent="."]
+[node name="MainFrame" type="Panel" parent="." unique_id=1588510121]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 262.0
@@ -276,59 +274,60 @@ offset_top = 88.0
 offset_right = 1256.0
 offset_bottom = 702.0
 
-[node name="FrameBorder" type="TextureRect" parent="MainFrame"]
+[node name="FrameBorder" type="TextureRect" parent="MainFrame" unique_id=728199689]
 unique_name_in_owner = true
 layout_mode = 0
-offset_right = 994.0
-offset_bottom = 614.0
+offset_left = -29.0
+offset_top = -35.0
+offset_right = 1028.0
+offset_bottom = 651.0
 mouse_filter = 2
 texture = ExtResource("7_frame_border")
 expand_mode = 1
-stretch_mode = 0
 
-[node name="Title" type="Label" parent="MainFrame"]
+[node name="Title" type="Label" parent="MainFrame" unique_id=292370811]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
-offset_top = 20.0
+offset_top = 28.0
 offset_right = 970.0
-offset_bottom = 60.0
+offset_bottom = 70.0
 theme_override_colors/font_color = Color(0.952941, 0.901961, 0.784314, 1)
 theme_override_font_sizes/font_size = 30
 horizontal_alignment = 1
 
-[node name="AccentLeft" type="ColorRect" parent="MainFrame"]
+[node name="AccentLeft" type="ColorRect" parent="MainFrame" unique_id=1832028187]
 layout_mode = 0
-offset_left = 410.0
-offset_top = 65.0
-offset_right = 468.0
-offset_bottom = 66.0
+offset_left = 434.0
+offset_top = 70.0
+offset_right = 492.0
+offset_bottom = 71.0
 mouse_filter = 2
 color = Color(0.788235, 0.635294, 0.301961, 1)
 
-[node name="AccentRight" type="ColorRect" parent="MainFrame"]
+[node name="AccentRight" type="ColorRect" parent="MainFrame" unique_id=711907808]
 layout_mode = 0
-offset_left = 478.0
-offset_top = 65.0
-offset_right = 536.0
-offset_bottom = 66.0
+offset_left = 502.0
+offset_top = 70.0
+offset_right = 560.0
+offset_bottom = 71.0
 mouse_filter = 2
 color = Color(0.788235, 0.635294, 0.301961, 1)
 
-[node name="AccentMark" type="Label" parent="MainFrame"]
+[node name="AccentMark" type="Label" parent="MainFrame" unique_id=488629718]
 layout_mode = 0
-offset_left = 465.0
-offset_top = 58.0
-offset_right = 481.0
-offset_bottom = 74.0
-mouse_filter = 2
+offset_left = 489.0
+offset_top = 63.0
+offset_right = 505.0
+offset_bottom = 79.0
 theme_override_colors/font_color = Color(0.909804, 0.713726, 0.337255, 1)
 theme_override_font_sizes/font_size = 10
 text = "◆"
 horizontal_alignment = 1
 
-[node name="Content" type="VBoxContainer" parent="MainFrame"]
+[node name="Content" type="VBoxContainer" parent="MainFrame" unique_id=1156330929]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 24.0
 offset_top = 72.0

@@ -2,6 +2,9 @@
 
 [ext_resource type="Script" path="res://addons/dungeon_crawler_3d/nodes/room_connector_3d.gd" id="0_connector"]
 [ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
+[ext_resource type="Material" path="res://scenes/dungeon/materials/DungeonWallMaterial.tres" id="90_wallmat"]
+[ext_resource type="Material" path="res://scenes/dungeon/materials/DungeonFloorMaterial.tres" id="91_floormat"]
+[ext_resource type="Material" path="res://scenes/dungeon/materials/DungeonPillarMaterial.tres" id="92_pillarmat"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_1"]
 size = Vector3(18.0, 0.4, 18.0)
@@ -75,7 +78,7 @@ has_torch = true
 [node name="Floor" type="MeshInstance3D" parent="."]
 mesh = SubResource("BoxMesh_1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
-material_override = SubResource("StandardMaterial3D_2")
+material_override = ExtResource("91_floormat")
 [node name="FloorCollision" type="StaticBody3D" parent="Floor"]
 collision_layer = 3
 collision_mask = 1
@@ -85,7 +88,7 @@ shape = SubResource("BoxShape3D_3")
 [node name="Wall_1" type="MeshInstance3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 2.1, -8.8)
 mesh = SubResource("BoxMesh_5")
-material_override = SubResource("StandardMaterial3D_4")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_1"]
 collision_layer = 3
 collision_mask = 1
@@ -94,7 +97,7 @@ shape = SubResource("BoxShape3D_6")
 [node name="Wall_2" type="MeshInstance3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.8, 2.1, 0.0)
 mesh = SubResource("BoxMesh_7")
-material_override = SubResource("StandardMaterial3D_4")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_2"]
 collision_layer = 3
 collision_mask = 1
@@ -103,7 +106,7 @@ shape = SubResource("BoxShape3D_8")
 [node name="Wall_4_A" type="MeshInstance3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.075, 2.1, 8.8)
 mesh = SubResource("BoxMesh_9")
-material_override = SubResource("StandardMaterial3D_4")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_A"]
 collision_layer = 3
 collision_mask = 1
@@ -112,7 +115,7 @@ shape = SubResource("BoxShape3D_10")
 [node name="Wall_4_B" type="MeshInstance3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.075, 2.1, 8.8)
 mesh = SubResource("BoxMesh_11")
-material_override = SubResource("StandardMaterial3D_4")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_B"]
 collision_layer = 3
 collision_mask = 1
@@ -121,7 +124,7 @@ shape = SubResource("BoxShape3D_12")
 [node name="Lintel_4" type="MeshInstance3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 3.4000000000000004, 8.8)
 mesh = SubResource("BoxMesh_13")
-material_override = SubResource("StandardMaterial3D_4")
+material_override = ExtResource("90_wallmat")
 [node name="Connector_4" type="Node3D" parent="Walls"]
 transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, -0.0, 0, 1.0, 0, 0, 9.0)
 script = ExtResource("0_connector")
@@ -131,7 +134,7 @@ aperture_height = 2.6
 [node name="Wall_8" type="MeshInstance3D" parent="Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.8, 2.1, 0.0)
 mesh = SubResource("BoxMesh_14")
-material_override = SubResource("StandardMaterial3D_4")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_8"]
 collision_layer = 3
 collision_mask = 1
@@ -141,19 +144,19 @@ shape = SubResource("BoxShape3D_15")
 [node name="Pillar_0" type="MeshInstance3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.6, 2.1, 8.6)
 mesh = SubResource("CylinderMesh_17")
-material_override = SubResource("StandardMaterial3D_16")
+material_override = ExtResource("92_pillarmat")
 [node name="Pillar_1" type="MeshInstance3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.6, 2.1, 8.6)
 mesh = SubResource("CylinderMesh_18")
-material_override = SubResource("StandardMaterial3D_16")
+material_override = ExtResource("92_pillarmat")
 [node name="Pillar_2" type="MeshInstance3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.6, 2.1, -8.6)
 mesh = SubResource("CylinderMesh_19")
-material_override = SubResource("StandardMaterial3D_16")
+material_override = ExtResource("92_pillarmat")
 [node name="Pillar_3" type="MeshInstance3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.6, 2.1, -8.6)
 mesh = SubResource("CylinderMesh_20")
-material_override = SubResource("StandardMaterial3D_16")
+material_override = ExtResource("92_pillarmat")
 [node name="Torch" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1500000000000004, 0)
 light_color = Color(1, 0.6666667, 0.33333334, 1)

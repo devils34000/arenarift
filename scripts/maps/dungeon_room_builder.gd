@@ -46,6 +46,10 @@ extends Node3D
 
 var _scene_root: Node
 
+const WALL_MATERIAL := preload("res://scenes/dungeon/materials/DungeonWallMaterial.tres")
+const FLOOR_MATERIAL := preload("res://scenes/dungeon/materials/DungeonFloorMaterial.tres")
+const PILLAR_MATERIAL := preload("res://scenes/dungeon/materials/DungeonPillarMaterial.tres")
+
 const SIDE_NORTH := 1
 const SIDE_EAST := 2
 const SIDE_SOUTH := 4
@@ -81,10 +85,7 @@ func _build_floor() -> void:
 	box.size = Vector3(room_size.x, 0.4, room_size.y)
 	floor_mesh.mesh = box
 	floor_mesh.position = Vector3(0, -0.2, 0)
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = floor_color
-	mat.roughness = 0.9
-	floor_mesh.material_override = mat
+	floor_mesh.material_override = FLOOR_MATERIAL
 	_spawn(self, floor_mesh)
 
 	var body := StaticBody3D.new()
@@ -107,14 +108,11 @@ func _build_walls() -> void:
 	var walls := Node3D.new()
 	walls.name = "Walls"
 	_spawn(self, walls)
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = accent_color
-	mat.roughness = 0.88
 
-	_build_wall_side(walls, SIDE_NORTH, mat)
-	_build_wall_side(walls, SIDE_EAST, mat)
-	_build_wall_side(walls, SIDE_SOUTH, mat)
-	_build_wall_side(walls, SIDE_WEST, mat)
+	_build_wall_side(walls, SIDE_NORTH, WALL_MATERIAL)
+	_build_wall_side(walls, SIDE_EAST, WALL_MATERIAL)
+	_build_wall_side(walls, SIDE_SOUTH, WALL_MATERIAL)
+	_build_wall_side(walls, SIDE_WEST, WALL_MATERIAL)
 
 ## Retourne la position exacte du bord de la salle pour un côté donné (c'est
 ## LÀ que doit se trouver le RoomConnector3D : les salles voisines se
@@ -221,9 +219,6 @@ func _build_corner_pillars() -> void:
 	var pillars := Node3D.new()
 	pillars.name = "Pillars"
 	_spawn(self, pillars)
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = accent_color.darkened(0.15)
-	mat.roughness = 0.85
 
 	# Inset des piliers depuis le coin exact : un pilier de rayon 0.4 posé pile
 	# au coin dépasse du mur (qui ne fait que wall_thickness*0.5 de chaque côté
@@ -250,7 +245,7 @@ func _build_corner_pillars() -> void:
 		mesh.radial_segments = 10
 		pillar.mesh = mesh
 		pillar.position = corners[i] + Vector3(0, wall_height * 0.5, 0)
-		pillar.material_override = mat
+		pillar.material_override = PILLAR_MATERIAL
 		_spawn(pillars, pillar)
 
 func _build_torch() -> void:

@@ -40,6 +40,23 @@ var level_progress_fill: ColorRect
 const LEVEL_BAR_WIDTH: float = 164.0
 const NAV_BUTTON_FRAME := "res://assets/menu_design/champ_select/menu_left_button.png"
 
+## Bannières illustrées par mode/catégorie, mêmes gabarit (icône à gauche
+## dans un médaillon, flèche à droite dans un losange) mais couleurs et
+## artwork différents par mode — fournies par le graphiste.
+const MODE_CARD_ASSETS := {
+	"MULTIJOUEUR ARENA": "res://assets/menu_design/champ_select/multijoueur_arena.png",
+	"CO-OP DONJON": "res://assets/menu_design/champ_select/coop_donjon.png",
+	"IMPOSTOR": "res://assets/menu_design/champ_select/impostor.png",
+	"HIDE & SEEK": "res://assets/menu_design/champ_select/hide_and_seek.png",
+	"DEATHMATCH": "res://assets/menu_design/champ_select/deathmatch_button.png",
+	"1V1 DUEL": "res://assets/menu_design/champ_select/1v1_button.png",
+	"2V2 CLASH": "res://assets/menu_design/champ_select/2v2_button.png",
+	"3V3 RIVALRY": "res://assets/menu_design/champ_select/3v3_button.png",
+	"CUSTOM GAME": "res://assets/menu_design/champ_select/custom_button.png",
+}
+const MODE_CARD_HEIGHT: float = 90.0
+const CREATE_PARTY_BUTTON_ASSET := "res://assets/menu_design/champ_select/create_party_button.png"
+
 var party_panel: Panel
 var party_title_label: Label
 var party_status_label: Label
@@ -688,8 +705,8 @@ func _show_arena_modes() -> void:
 		)
 		modes_box.add_child(card)
 
-	var side := _panel(Vector2.ZERO, Vector2(290, 360), Color("1a140b"), Color("4a3018"), 14)
-	side.custom_minimum_size = Vector2(290, 360)
+	var side := _panel(Vector2.ZERO, Vector2(290, 380), Color("1a140b"), Color("4a3018"), 14)
+	side.custom_minimum_size = Vector2(290, 380)
 	row.add_child(side)
 	var hero_accent := _hero_accent(selected_hero)
 	side.add_child(_label("READY", 10, Color("6fb88a"), Vector2(18, 16), Vector2(90, 18)))
@@ -709,8 +726,10 @@ func _show_arena_modes() -> void:
 	side.add_child(_label(_hero_spells(selected_hero), 10, Color("c4b394"), Vector2(18, 270), Vector2(250, 42)))
 
 	var launch := _button("SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY", Vector2(280, 48), true)
-	launch.position = Vector2(18, 310)
-	launch.size = Vector2(254, 40)
+	launch.position = Vector2(18, 320)
+	launch.size = Vector2(254, 58)
+	launch.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_apply_banner_launch_style(launch)
 	if selected_mode == "CUSTOM GAME":
 		launch.pressed.connect(_show_custom_game_home)
 	else:
@@ -2556,9 +2575,10 @@ func _aaa_nav_button(text_value: String, active: bool) -> Button:
 func _mode_card(mode: String, selected: bool) -> Button:
 	var b := Button.new()
 	b.text = mode
-	b.custom_minimum_size = Vector2(600, 68)
+	b.custom_minimum_size = Vector2(600, MODE_CARD_HEIGHT)
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.add_theme_font_size_override("font_size", 17)
 	b.add_theme_constant_override("outline_size", 1)
 	b.add_theme_color_override("font_outline_color", Color("0a0603"))
@@ -2567,12 +2587,76 @@ func _mode_card(mode: String, selected: bool) -> Button:
 	# pour les autres, plutôt que du brun plat sans relief.
 	b.add_theme_color_override("font_color", Color("fff2d4") if selected else Color("d4c4a0"))
 	b.add_theme_color_override("font_hover_color", Color("fff2d4"))
-	b.add_theme_stylebox_override("normal", _rune_box(Color("1f160c"), Color("6b4a24"), 1))
-	b.add_theme_stylebox_override("hover", _rune_box(Color("2c2010"), Color("c9a24d"), 2))
-	if selected:
-		b.add_theme_stylebox_override("normal", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
-	b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
+
+	var frame_tex: Texture2D = null
+	if MODE_CARD_ASSETS.has(mode):
+		frame_tex = load(MODE_CARD_ASSETS[mode]) as Texture2D
+
+	if frame_tex != null:
+		# Le médaillon d'icône occupe la partie gauche de la bannière et la
+		# flèche la partie droite : on resserre la zone de texte au bandeau
+		# central plutôt que de le laisser chevaucher l'artwork.
+		var normal_style := StyleBoxTexture.new()
+		normal_style.texture = frame_tex
+		normal_style.modulate_color = Color(1.15, 1.08, 0.85) if selected else Color(0.72, 0.68, 0.6)
+		normal_style.content_margin_left = 150
+		normal_style.content_margin_right = 70
+		b.add_theme_stylebox_override("normal", normal_style)
+
+		var hover_style := StyleBoxTexture.new()
+		hover_style.texture = frame_tex
+		hover_style.modulate_color = Color(1.32, 1.26, 1.0)
+		hover_style.content_margin_left = 150
+		hover_style.content_margin_right = 70
+		b.add_theme_stylebox_override("hover", hover_style)
+		b.add_theme_stylebox_override("focus", hover_style)
+
+		var pressed_style := StyleBoxTexture.new()
+		pressed_style.texture = frame_tex
+		pressed_style.modulate_color = Color(0.72, 0.66, 0.54)
+		pressed_style.content_margin_left = 150
+		pressed_style.content_margin_right = 70
+		b.add_theme_stylebox_override("pressed", pressed_style)
+	else:
+		push_warning("Cadre du bouton de mode introuvable pour : " + mode)
+		b.add_theme_stylebox_override("normal", _rune_box(Color("1f160c"), Color("6b4a24"), 1))
+		b.add_theme_stylebox_override("hover", _rune_box(Color("2c2010"), Color("c9a24d"), 2))
+		if selected:
+			b.add_theme_stylebox_override("normal", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
+		b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
 	return b
+
+## Skin bannière (icône groupe à gauche, flèche à droite) pour le bouton
+## CRÉER LA PARTY / SALON CUSTOM GAME du panneau latéral — même famille
+## d'asset et même technique que _mode_card().
+func _apply_banner_launch_style(b: Button) -> void:
+	var frame_tex := load(CREATE_PARTY_BUTTON_ASSET) as Texture2D
+	if frame_tex == null:
+		push_warning("Cadre du bouton CRÉER LA PARTY introuvable : " + CREATE_PARTY_BUTTON_ASSET)
+		return
+
+	var normal_style := StyleBoxTexture.new()
+	normal_style.texture = frame_tex
+	normal_style.modulate_color = Color(1.15, 1.08, 0.85)
+	normal_style.content_margin_left = 66
+	normal_style.content_margin_right = 34
+	b.add_theme_stylebox_override("normal", normal_style)
+
+	var hover_style := StyleBoxTexture.new()
+	hover_style.texture = frame_tex
+	hover_style.modulate_color = Color(1.32, 1.26, 1.0)
+	hover_style.content_margin_left = 66
+	hover_style.content_margin_right = 34
+	b.add_theme_stylebox_override("hover", hover_style)
+	b.add_theme_stylebox_override("focus", hover_style)
+
+	var pressed_style := StyleBoxTexture.new()
+	pressed_style.texture = frame_tex
+	pressed_style.modulate_color = Color(0.72, 0.66, 0.54)
+	pressed_style.content_margin_left = 66
+	pressed_style.content_margin_right = 34
+	b.add_theme_stylebox_override("pressed", pressed_style)
+
 
 func _hero_accent(hero_name: String) -> Color:
 	# Teintes patinées façon aura magique ancienne plutôt que néon.

@@ -2520,12 +2520,10 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		vfx_manager.spawn_eren_fire_nova(self, visual_origin, 1.45, false)
 		_play_sfx(DASH_SFX, visual_origin, -3.0)
 	elif kind == "heal":
-		# Zone posée au sol : on recale sur la hauteur réelle du personnage plutôt
-		# que sur visual_origin, qui peut être décalé en hauteur via _visual_root
-		# et faisait flotter le halo/la pluie au-dessus du sol.
-		var heal_ground_position := visual_origin
-		heal_ground_position.y = caster.global_position.y
-		vfx_manager.spawn_maylinh_elemental_heal(self, heal_ground_position, float(caster.get("maylinh_heal_radius")))
+		# Zone posée au sol, pile sous les pieds de Maylinh : on utilise directement
+		# la position réelle du personnage plutôt que visual_origin, qui est décalé
+		# (hauteur ET position) via _visual_root et faisait dériver le pentagramme.
+		vfx_manager.spawn_maylinh_elemental_heal(self, caster.global_position, float(caster.get("maylinh_heal_radius")))
 		_play_sfx(TELEPORT_SFX, visual_origin, -8.0)
 	elif kind == "flee":
 		vfx_manager.spawn_maylinh_flee(self, visual_origin)
@@ -2734,7 +2732,9 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		spirit.hit.connect(_on_projectile_hit)
 		vfx_manager.spawn_maylinh_elemental_projectile(spirit, direction)
 	elif kind == "heal":
-		vfx_manager.spawn_maylinh_elemental_heal(self, origin, float(caster.get("maylinh_heal_radius")))
+		# Idem : position réelle du personnage pour que la zone (et le pentagramme)
+		# reste bien centrée sous ses pieds, pas sur le point d'origine du sort.
+		vfx_manager.spawn_maylinh_elemental_heal(self, caster.global_position, float(caster.get("maylinh_heal_radius")))
 		_play_sfx(TELEPORT_SFX, origin, -8.0)
 	elif kind == "flee":
 		vfx_manager.spawn_maylinh_flee(self, caster.global_position)

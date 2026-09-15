@@ -2159,16 +2159,35 @@ func _build_lobby_validate_button() -> Control:
 	_lobby_validate_button.position = Vector2((946.0 - button_size.x) / 2.0, 400)
 	_lobby_validate_button.size = button_size
 	_lobby_validate_button.focus_mode = Control.FOCUS_ALL
+	_lobby_validate_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	# Habille le bouton directement avec l'image (StyleBoxTexture, le
 	# mécanisme natif de Godot pour un bouton à fond illustré) plutôt que de
 	# poser un TextureRect à côté : le bouton se charge lui-même de peindre
 	# l'image ET le texte, sans ambiguïté d'ordre d'affichage entre nœuds.
 	if frame_tex != null:
-		var style := StyleBoxTexture.new()
-		style.texture = frame_tex
-		for state in ["normal", "hover", "pressed", "focus", "disabled"]:
-			_lobby_validate_button.add_theme_stylebox_override(state, style)
+		# Une StyleBoxTexture par état avec sa propre teinte (modulate_color) :
+		# plus lumineux au survol, assombri à l'appui, pour un vrai retour
+		# visuel plutôt que la même image figée dans tous les états.
+		var normal_style := StyleBoxTexture.new()
+		normal_style.texture = frame_tex
+		_lobby_validate_button.add_theme_stylebox_override("normal", normal_style)
+
+		var hover_style := StyleBoxTexture.new()
+		hover_style.texture = frame_tex
+		hover_style.modulate_color = Color(1.25, 1.18, 0.95)
+		_lobby_validate_button.add_theme_stylebox_override("hover", hover_style)
+		_lobby_validate_button.add_theme_stylebox_override("focus", hover_style)
+
+		var pressed_style := StyleBoxTexture.new()
+		pressed_style.texture = frame_tex
+		pressed_style.modulate_color = Color(0.72, 0.66, 0.55)
+		_lobby_validate_button.add_theme_stylebox_override("pressed", pressed_style)
+
+		var disabled_style := StyleBoxTexture.new()
+		disabled_style.texture = frame_tex
+		disabled_style.modulate_color = Color(0.55, 0.55, 0.55)
+		_lobby_validate_button.add_theme_stylebox_override("disabled", disabled_style)
 	else:
 		# Repli visible si le cadre ne charge pas, plutôt qu'un bouton
 		# totalement invisible.

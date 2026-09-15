@@ -342,6 +342,15 @@ func _input(event: InputEvent) -> void:
 					_show_home_deferred()
 				return
 
+			# START/Options : déclenche le CTA principal de l'écran actuel
+			# (CRÉER LA PARTY, VALIDER MON CHOIX...), remplacé par ce prompt
+			# tant qu'une manette est branchée (voir _apply_controller_primary_cta).
+			if event.button_index == JOY_BUTTON_START:
+				if _controller_primary_action.is_valid():
+					get_viewport().set_input_as_handled()
+					_controller_primary_action.call()
+				return
+
 			# Bouton A / bouton sud : valide toujours le contrôle actuellement sélectionné.
 			if event.button_index == JOY_BUTTON_A:
 				var viewport := get_viewport()
@@ -357,6 +366,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _update_controller_connection(force: bool = false) -> void:
+	var was_connected := controller_connected
 	controller_connected = not Input.get_connected_joypads().is_empty()
 	if not force and controller_connected == _last_controller_connected:
 		return
@@ -366,6 +376,12 @@ func _update_controller_connection(force: bool = false) -> void:
 		call_deferred("_focus_first_control")
 	elif page == "SETTINGS":
 		call_deferred("_show_settings")
+	# Bascule les CTA principaux (CRÉER LA PARTY, VALIDER MON CHOIX...) entre
+	# leur forme cliquable et leur prompt "APPUIE SUR START" sans attendre
+	# une prochaine navigation, si le branchement/débranchement arrive en
+	# cours d'écran.
+	if controller_connected != was_connected:
+		call_deferred("_refresh_controller_ctas")
 
 
 ## Construit le contour de surbrillance unique (voir _focus_ring), une fois
@@ -432,15 +448,9 @@ func _focus_first_control() -> void:
 		first.grab_focus()
 
 
-## Icônes de boutons manette (pack Kenney "Input Prompts", assets/input_controler/).
-const CONTROLLER_ICON_XBOX_CONFIRM := "res://assets/input_controler/Xbox Series/Default/xbox_button_a.png"
-const CONTROLLER_ICON_XBOX_CANCEL := "res://assets/input_controler/Xbox Series/Default/xbox_button_b.png"
-const CONTROLLER_ICON_PLAYSTATION_CONFIRM := "res://assets/input_controler/PlayStation Series/Default/playstation_button_cross.png"
-const CONTROLLER_ICON_PLAYSTATION_CANCEL := "res://assets/input_controler/PlayStation Series/Default/playstation_button_circle.png"
-
 ## "xbox" ou "playstation" selon le nom rapporté par la première manette
 ## connectée — sert uniquement à choisir la bonne icône de bouton (A/✕,
-## B/○), pas une détection exhaustive de tous les modèles.
+## START/Options...), pas une détection exhaustive de tous les modèles.
 func _controller_brand() -> String:
 	var pads := Input.get_connected_joypads()
 	if pads.is_empty():
@@ -452,31 +462,101 @@ func _controller_brand() -> String:
 	return "xbox"
 
 
-## Chemin de l'icône de bouton manette pour "confirm" (bouton sud, A/✕) ou
-## "cancel" (bouton est, B/○), selon la marque de manette détectée.
-func _controller_icon_path(kind: String) -> String:
-	var playstation := _controller_brand() == "playstation"
-	if kind == "confirm":
-		return CONTROLLER_ICON_PLAYSTATION_CONFIRM if playstation else CONTROLLER_ICON_XBOX_CONFIRM
-	if kind == "cancel":
-		return CONTROLLER_ICON_PLAYSTATION_CANCEL if playstation else CONTROLLER_ICON_XBOX_CANCEL
-	return ""
+# =========================================================
+# CTA PRINCIPAUX EN MANETTE (façon Rocket League) : le gros bouton cliquable
+# d'un écran (CRÉER LA PARTY, VALIDER MON CHOIX...) disparaît complètement
+# manette branchée, remplacé par un simple prompt "bouton START/Options" —
+# non cliquable, déclenché en appuyant sur START n'importe où sur l'écran.
+# Redevient un bouton normal cliquable dès que la manette est débranchée.
+# =========================================================
+
+## Callable appelée quand START/Options est pressé, tant qu'un écran avec un
+## CTA principal actif est affiché. Réinitialisée par _clear() à chaque
+## changement d'écran, reposée par _apply_controller_primary_cta().
+var _controller_primary_action: Callable = Callable()
+
+func _set_controller_primary_action(action: Callable) -> void:
+	_controller_primary_action = action
+
+func _clear_controller_primary_action() -> void:
+	_controller_primary_action = Callable()
 
 
-## Pose l'icône du bouton manette correspondant sur un Button (avant son
-## texte), seulement si une manette est connectée — la retire sinon, pour
-## un joueur clavier/souris.
-func _apply_controller_prompt(button: Button, kind: String) -> void:
-	if not controller_connected:
-		button.icon = null
-		return
-	var path := _controller_icon_path(kind)
-	if path == "":
-		button.icon = null
-		return
-	button.icon = load(path) as Texture2D
-	button.add_theme_constant_override("icon_max_width", 34)
-	button.expand_icon = true
+func _controller_start_icon_path() -> String:
+	return ("res://assets/input_controler/PlayStation Series/Default/playstation5_button_options.png"
+		if _controller_brand() == "playstation"
+		else "res://assets/input_controler/Xbox Series/Default/xbox_button_start.png")
+
+
+## Construit (une seule fois par bouton, mis en cache via set_meta) le prompt
+## "icône START + texte" affiché à la place du bouton manette branchée.
+func _build_controller_cta_prompt(button: Button) -> HBoxContainer:
+	var prompt := HBoxContainer.new()
+	prompt.name = "ControllerPrompt"
+	prompt.alignment = BoxContainer.ALIGNMENT_CENTER
+	prompt.add_theme_constant_override("separation", 12)
+	prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	prompt.visible = false
+
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(36, 36)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	prompt.add_child(icon)
+
+	var label := _label("", 17, Color("fff2d4"), Vector2.ZERO, Vector2(240, 36), HORIZONTAL_ALIGNMENT_LEFT)
+	label.name = "Label"
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_constant_override("outline_size", 2)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_use_title_font(label)
+	prompt.add_child(label)
+
+	button.get_parent().add_child(prompt)
+	button.set_meta("controller_prompt", prompt)
+	return prompt
+
+
+## Bascule `button` entre sa forme cliquable normale (clavier/souris) et un
+## prompt "APPUIE SUR START" non cliquable (manette). `parent` doit déjà
+## contenir `button` (ajouté avant cet appel). `label_text` s'affiche à côté
+## de l'icône START ; `action` est ce que déclenche START tant que ce CTA
+## est affiché.
+func _apply_controller_primary_cta(button: Button, label_text: String, action: Callable) -> void:
+	var prompt: Control = button.get_meta("controller_prompt", null)
+	if prompt == null or not is_instance_valid(prompt):
+		prompt = _build_controller_cta_prompt(button)
+
+	prompt.position = button.position
+	prompt.size = button.size
+	var prompt_label := prompt.get_node("Label") as Label
+	prompt_label.text = label_text
+	var prompt_icon := prompt.get_node("Icon") as TextureRect
+	var icon_path := _controller_start_icon_path()
+	if ResourceLoader.exists(icon_path):
+		prompt_icon.texture = load(icon_path) as Texture2D
+
+	if controller_connected:
+		button.visible = false
+		prompt.visible = true
+		_set_controller_primary_action(action)
+	else:
+		button.visible = true
+		prompt.visible = false
+
+
+## Ré-applique le basculement CTA cliquable/prompt START sur l'écran
+## actuellement affiché, sans attendre une prochaine navigation — utile
+## quand la manette est branchée/débranchée en cours d'écran.
+func _refresh_controller_ctas() -> void:
+	var arena_screen: Control = %ArenaModesScreen
+	if arena_screen.visible:
+		_show_arena_modes()
+	elif _lobby_active_screen:
+		_build_hero_select_lobby_ui()
 
 
 func _find_first_focusable(root: Node) -> Control:
@@ -951,18 +1031,20 @@ func _show_arena_modes() -> void:
 	map_value.text = str(details.get("map", ""))
 
 	var launch: Button = %LaunchButton
-	launch.text = "SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY"
-	_apply_controller_prompt(launch, "confirm")
+	var launch_text := "SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY"
+	var launch_action: Callable = _show_custom_game_home if selected_mode == "CUSTOM GAME" else _create_party
+	launch.text = launch_text
 	_apply_banner_launch_style(launch)
 	_apply_banner_text_style(launch, 16)
 	if launch.pressed.is_connected(_show_custom_game_home):
 		launch.pressed.disconnect(_show_custom_game_home)
 	if launch.pressed.is_connected(_create_party):
 		launch.pressed.disconnect(_create_party)
-	if selected_mode == "CUSTOM GAME":
-		launch.pressed.connect(_show_custom_game_home)
-	else:
-		launch.pressed.connect(_create_party)
+	launch.pressed.connect(launch_action)
+	# Manette branchée : remplace le bouton cliquable par un prompt "START"
+	# façon Rocket League (appelé après le connect ci-dessus, dont il a
+	# besoin pour l'action START).
+	_apply_controller_primary_cta(launch, launch_text, launch_action)
 
 	var bottom_label: Label = %BottomLabel
 	bottom_label.text = "MODE ACTIF  •  %s     |     LOCAL / PRACTICE" % selected_mode
@@ -2401,7 +2483,7 @@ func _build_hero_select_lobby_ui() -> void:
 	_lobby_status_box.add_theme_constant_override("separation", 5)
 	canvas.add_child(_lobby_status_box)
 
-	canvas.add_child(_build_lobby_validate_button())
+	_build_lobby_validate_button(canvas)
 
 
 const VALIDATE_BUTTON_FRAME := "res://assets/menu_design/champ_select/button_menu_select_validation.png"
@@ -2412,7 +2494,7 @@ const VALIDATE_BUTTON_FRAME := "res://assets/menu_design/champ_select/button_men
 ## -même est totalement transparent (juste le texte), posé PAR-DESSUS
 ## l'image de fond dans un Control englobant, puisqu'un enfant de Button
 ## se dessinerait par-dessus son texte s'il était mis dedans directement.
-func _build_lobby_validate_button() -> Control:
+func _build_lobby_validate_button(parent: Control) -> Control:
 	var frame_tex := load(VALIDATE_BUTTON_FRAME) as Texture2D
 	if frame_tex == null:
 		push_warning("Cadre du bouton VALIDER introuvable : " + VALIDATE_BUTTON_FRAME)
@@ -2427,6 +2509,9 @@ func _build_lobby_validate_button() -> Control:
 	_lobby_validate_button.size = button_size
 	_lobby_validate_button.focus_mode = Control.FOCUS_ALL
 	_lobby_validate_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	# Ajouté tout de suite : _apply_controller_primary_cta() a besoin que le
+	# bouton soit déjà dans l'arbre pour poser son prompt "START" à côté.
+	parent.add_child(_lobby_validate_button)
 
 	# Habille le bouton directement avec l'image (StyleBoxTexture, le
 	# mécanisme natif de Godot pour un bouton à fond illustré) plutôt que de
@@ -2474,9 +2559,9 @@ func _build_lobby_validate_button() -> Control:
 		_lobby_validate_button.disabled = true
 	else:
 		_lobby_validate_button.text = "VALIDER MON CHOIX"
-		_apply_controller_prompt(_lobby_validate_button, "confirm")
 		_lobby_validate_button.add_theme_font_size_override("font_size", 19)
 		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
+		_apply_controller_primary_cta(_lobby_validate_button, "VALIDER MON CHOIX", _on_lobby_validate_pressed)
 	return _lobby_validate_button
 
 
@@ -3879,6 +3964,9 @@ func _clear() -> void:
 	arena_screen.visible = false
 	for child in content.get_children():
 		child.queue_free()
+	# Le CTA "START" (s'il y en avait un) n'a plus de sens sur le nouvel
+	# écran tant qu'il n'en repose pas un lui-même.
+	_clear_controller_primary_action()
 
 
 func _navigate_deferred(item: String) -> void:

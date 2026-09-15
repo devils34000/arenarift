@@ -2162,8 +2162,9 @@ func _build_lobby_validate_button() -> Control:
 
 	if frame_tex != null:
 		var frame := TextureRect.new()
-		frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		frame.texture = frame_tex
+		frame.position = Vector2.ZERO
+		frame.size = button_size
+		frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		frame.stretch_mode = TextureRect.STRETCH_SCALE
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		wrap.add_child(frame)
@@ -2171,12 +2172,14 @@ func _build_lobby_validate_button() -> Control:
 		# Repli visible si le cadre ne charge pas, plutôt qu'un bouton
 		# totalement invisible (juste du texte flottant).
 		var fallback := Panel.new()
-		fallback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fallback.position = Vector2.ZERO
+		fallback.size = button_size
 		fallback.add_theme_stylebox_override("panel", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
 		wrap.add_child(fallback)
 
 	_lobby_validate_button = Button.new()
-	_lobby_validate_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_lobby_validate_button.position = Vector2.ZERO
+	_lobby_validate_button.size = button_size
 	_lobby_validate_button.flat = true
 	_lobby_validate_button.focus_mode = Control.FOCUS_ALL
 	var empty_style := StyleBoxEmpty.new()

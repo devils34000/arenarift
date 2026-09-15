@@ -537,11 +537,18 @@ func _add_border_overlay(parent: Control, path: String) -> void:
 	if tex == null:
 		push_warning("Bordure introuvable : " + path)
 		return
+	# STRETCH_SCALE (étirement non-uniforme) déformait ces bordures de façon
+	# très visible dès que le ratio largeur/hauteur du panneau ne collait
+	# pas à celui de l'image recadrée (ex : panneau principal ~1.62 contre
+	# ~1.97 pour bordure_menu.png recadrée) — le trait doré et les losanges
+	# d'angle finissaient visuellement "n'importe où". KEEP_ASPECT_CENTERED
+	# garde les proportions d'origine intactes, quitte à laisser un léger
+	# espace en haut/bas ou à gauche/droite plutôt que de déformer le motif.
 	var overlay := TextureRect.new()
 	overlay.position = Vector2.ZERO
 	overlay.size = parent.size
 	overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	overlay.stretch_mode = TextureRect.STRETCH_SCALE
+	overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	overlay.texture = tex
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(overlay)

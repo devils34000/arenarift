@@ -373,6 +373,8 @@ func _find_first_focusable(root: Node) -> Control:
 # =========================================================
 
 func _build_shell() -> void:
+	_apply_global_fonts()
+
 	# Grimoire vivant : fond sombre gravé, braises flottantes, cadre en
 	# pierre/bronze plutôt que verre. Toute la logique de navigation reste
 	# identique, seul l'habillage visuel change.
@@ -477,6 +479,7 @@ func _build_shell() -> void:
 	_add_border_overlay(frame, "res://assets/menu_design/champ_select/bordure_menu.png")
 
 	title = _label("", 30, Color("f3e6c8"), Vector2(24, 20), Vector2(946, 40), HORIZONTAL_ALIGNMENT_CENTER)
+	_use_title_font(title)
 	frame.add_child(title)
 
 	# Séparateur orné : losange central entre deux filets, façon sceau.
@@ -500,8 +503,54 @@ func _build_shell() -> void:
 	frame.add_child(content)
 
 
-## Braises flottantes en fond de menu : quelques particules ambrées qui
-## montent lentement, purement décoratif et non-bloquant (mouse_filter IGNORE).
+const FONT_CINZEL_BOLD := "res://assets/menu_design/font/Cintel/static/Cinzel-Bold.ttf"
+const FONT_CINZEL_SEMIBOLD := "res://assets/menu_design/font/Cintel/static/Cinzel-SemiBold.ttf"
+const FONT_CINZEL_DECORATIVE_BOLD := "res://assets/menu_design/font/Cinzel_Decorative/CinzelDecorative-Bold.ttf"
+const FONT_INTER_REGULAR := "res://assets/menu_design/font/Inter/static/Inter_18pt-Regular.ttf"
+const FONT_INTER_MEDIUM := "res://assets/menu_design/font/Inter/static/Inter_18pt-Medium.ttf"
+
+var _font_cache: Dictionary = {}
+
+func _font(path: String) -> Font:
+	if _font_cache.has(path):
+		return _font_cache[path]
+	var f := load(path) as FontFile
+	_font_cache[path] = f
+	if f == null:
+		push_warning("Police introuvable : " + path)
+	return f
+
+
+## Applique Inter comme police par défaut de tout le menu (thème racine) :
+## couvre automatiquement les petits textes (XP, Steam, stats...) sans
+## avoir à toucher chaque _label(). Les titres/éléments premium reçoivent
+## ensuite Cinzel / Cinzel Decorative au cas par cas via _use_title_font()
+## et _use_decorative_font() sur les Controls concernés.
+func _apply_global_fonts() -> void:
+	var body_font := _font(FONT_INTER_REGULAR)
+	if body_font == null:
+		return
+	var menu_theme := Theme.new()
+	menu_theme.default_font = body_font
+	theme = menu_theme
+
+
+## Cinzel (empattements, majuscules) pour les titres d'écran, les boutons
+## de mode/nav et tout ce qui doit avoir le côté "premium médiéval".
+func _use_title_font(control: Control, weight_semibold: bool = false) -> void:
+	var f := _font(FONT_CINZEL_SEMIBOLD if weight_semibold else FONT_CINZEL_BOLD)
+	if f != null:
+		control.add_theme_font_override("font", f)
+
+
+## Cinzel Decorative pour les noms de héros et titres de cartes très mis en
+## avant, plus ornée que Cinzel simple.
+func _use_decorative_font(control: Control) -> void:
+	var f := _font(FONT_CINZEL_DECORATIVE_BOLD)
+	if f != null:
+		control.add_theme_font_override("font", f)
+
+
 var _border_texture_cache: Dictionary = {}
 
 ## Certaines bordures (bordure_menu.png, bordure_steam.png, bordure_level.png)
@@ -868,7 +917,9 @@ func _show_arena_modes() -> void:
 	var mode_accent: Color = _mode_accent(selected_mode)
 
 	side.add_child(_label("MODE SÉLECTIONNÉ", 10, Color("6fb88a"), Vector2(18, 16), Vector2(254, 18)))
-	side.add_child(_label(selected_mode, 22, mode_accent, Vector2(18, 40), Vector2(254, 30)))
+	var mode_name_label := _label(selected_mode, 22, mode_accent, Vector2(18, 40), Vector2(254, 30))
+	_use_title_font(mode_name_label)
+	side.add_child(mode_name_label)
 
 	# autowrap_mode seul ne suffisait pas ici (le texte débordait toujours
 	# sur une seule ligne) : on découpe nous-mêmes le texte en lignes avant
@@ -2306,7 +2357,9 @@ func _build_hero_select_lobby_ui() -> void:
 	portrait.clip_contents = true
 	portrait.texture = _hero_head_texture(selected_hero)
 	preview.add_child(portrait)
-	preview.add_child(_label(selected_hero, 18, _hero_accent(selected_hero), Vector2(0, 162), Vector2(300, 26), HORIZONTAL_ALIGNMENT_CENTER))
+	var lobby_hero_name_label := _label(selected_hero, 18, _hero_accent(selected_hero), Vector2(0, 162), Vector2(300, 26), HORIZONTAL_ALIGNMENT_CENTER)
+	_use_decorative_font(lobby_hero_name_label)
+	preview.add_child(lobby_hero_name_label)
 	preview.add_child(_label(_hero_role(selected_hero), 9, Color("9a8760"), Vector2(0, 186), Vector2(300, 16), HORIZONTAL_ALIGNMENT_CENTER))
 
 	# Rangée de portraits cliquables, légère (pas de fiche détaillée).
@@ -2392,6 +2445,7 @@ func _build_lobby_validate_button() -> Control:
 		for state in ["normal", "hover", "pressed", "focus", "disabled"]:
 			_lobby_validate_button.add_theme_stylebox_override(state, fallback_style)
 
+	_use_title_font(_lobby_validate_button)
 	_lobby_validate_button.add_theme_color_override("font_color", Color("fff2d4"))
 	_lobby_validate_button.add_theme_color_override("font_hover_color", Color("fffbe8"))
 	_lobby_validate_button.add_theme_color_override("font_disabled_color", Color("c9b98a"))
@@ -2534,7 +2588,9 @@ func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color
 	info_hitbox.pressed.connect(on_focus)
 	card.add_child(info_hitbox)
 
-	card.add_child(_label(hero_name, 18, accent, Vector2(8, 246), Vector2(140, 24), HORIZONTAL_ALIGNMENT_CENTER))
+	var hero_card_name_label := _label(hero_name, 18, accent, Vector2(8, 246), Vector2(140, 24), HORIZONTAL_ALIGNMENT_CENTER)
+	_use_decorative_font(hero_card_name_label)
+	card.add_child(hero_card_name_label)
 	card.add_child(_label(subtitle, 8, Color("d4c4a0"), Vector2(8, 270), Vector2(140, 17), HORIZONTAL_ALIGNMENT_CENTER))
 	card.add_child(_label(role, 8, Color("9a8760"), Vector2(8, 291), Vector2(140, 17), HORIZONTAL_ALIGNMENT_CENTER))
 
@@ -2598,7 +2654,9 @@ func _hero_detail_panel(hero_name: String) -> Panel:
 	panel.clip_contents = true
 	var accent := _hero_accent(hero_name)
 
-	panel.add_child(_label(hero_name, 24, accent, Vector2(18, 14), Vector2(205, 31)))
+	var hero_detail_name_label := _label(hero_name, 24, accent, Vector2(18, 14), Vector2(205, 31))
+	_use_decorative_font(hero_detail_name_label)
+	panel.add_child(hero_detail_name_label)
 	panel.add_child(_label(_hero_role(hero_name), 8, Color("9a8760"), Vector2(19, 42), Vector2(255, 18)))
 	var info := _panel(Vector2(247, 13), Vector2(34, 34), Color("241a0d"), accent, 17)
 	panel.add_child(info)
@@ -2739,6 +2797,7 @@ func _aaa_nav_button(text_value: String, active: bool) -> Button:
 	b.add_theme_color_override("font_color", Color("fff2d4") if active else Color("c4b48a"))
 	b.add_theme_color_override("font_hover_color", Color("fff2d4"))
 	b.add_theme_color_override("font_focus_color", Color("fff2d4"))
+	_use_title_font(b, true)
 	_apply_nav_button_style(b, active)
 	return b
 
@@ -2807,6 +2866,7 @@ func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEI
 ## garder le texte net quel que soit ce qu'il y a derrière, plutôt qu'un
 ## simple contour fin qui se noie dans l'artwork.
 func _apply_banner_text_style(b: Button, font_size: int) -> void:
+	_use_title_font(b)
 	b.add_theme_font_size_override("font_size", font_size)
 	b.add_theme_constant_override("outline_size", 3)
 	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))

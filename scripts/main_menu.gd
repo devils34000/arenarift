@@ -864,6 +864,7 @@ func _show_arena_modes() -> void:
 	else:
 		launch.pressed.connect(_create_party)
 	side.add_child(launch)
+	_add_border_overlay(side, "res://assets/menu_design/champ_select/bordure_mode_menu.png")
 
 	content.add_child(_label("MODE ACTIF  •  %s     |     LOCAL / PRACTICE" % selected_mode, 10, Color("6b5a3a"), Vector2.ZERO, Vector2(850, 20)))
 

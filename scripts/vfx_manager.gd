@@ -529,6 +529,25 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.5)
 	ring_tween.parallel().tween_property(ring_mat, "emission_energy_multiplier", 0.0, 0.5)
 
+	# Pentagramme au sol (texture Free Magic d'origine) — remis, redimensionné sur le
+	# vrai rayon de la zone et enrichi de spirales pour un rendu plus soigné.
+	var circle_scene := load("res://scenes/vfx/free_magic_circle.tscn") as PackedScene
+	if circle_scene != null:
+		var circle := circle_scene.instantiate() as Node3D
+		if circle != null:
+			root.add_child(circle)
+			circle.position = Vector3.UP * 0.015
+			circle.scale = Vector3.ONE * (r * 0.5)
+			circle.set("circle_color", HEAL_PRIMARY)
+			circle.set("circle_scale", 2.0)
+			circle.set("spiral_count", 16)
+			circle.set("smoke_count", 10)
+			circle.set("duration", duration)
+			get_tree().create_timer(duration + 0.1).timeout.connect(func():
+				if is_instance_valid(circle):
+					circle.queue_free()
+			)
+
 	# Pluie verte dense qui tombe dans toute la zone.
 	var rain := GPUParticles3D.new()
 	rain.amount = 320

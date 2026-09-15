@@ -14,22 +14,33 @@ const LOADOUT_MAX_SLOTS: int = 3
 ## équipable aléatoire non encore possédée (en plus des fragments de fin de
 ## match).
 const CHEST_LEVEL_INTERVAL: int = 5
+## Probabilité qu'un match termine sur un gain de fragments d'Arkanite (les
+## Éclats de fin de match, eux, tombent toujours). Volontairement faible pour
+## pousser à jouer davantage plutôt que de garantir un drop à chaque partie.
+const FRAGMENT_DROP_CHANCE: float = 0.35
 
 signal level_up(new_level: int)
 signal xp_changed(xp: int, level: int)
+signal currency_changed(amount: int)
 ## Émis quand un coffre de palier (niveau multiple de CHEST_LEVEL_INTERVAL)
 ## octroie une Arkanite directement.
 signal arkanite_chest_opened(card_id: String)
 
 var level: int = 1
 var xp: int = 0
+## Monnaie in-game ("Éclats"), gagnée en fin de match (comme les PI/BE de
+## League of Legends). Sert à payer le déblocage final d'une Arkanite une
+## fois ses fragments complétés, et plus tard à acheter de nouveaux héros.
+var currency: int = 0
 ## Héros déjà sélectionnés (validés) dans un lobby au moins une fois : sert à
 ## débloquer les Arkanites liées à un héros (hero_id), maintenant que le
 ## choix du personnage se fait dans le lobby de partie et plus dans le menu.
 var played_heroes: Array[String] = []
 ## Fragments accumulés par Arkanite (id -> quantité), pour les Arkanites
-## équipables (Maîtrise/Invocation). Une fois le seuil "fragments_required"
-## atteint, la carte bascule automatiquement dans owned_arkanites.
+## équipables (Maîtrise/Invocation), plafonnés à "fragments_required". Une
+## fois le seuil atteint, la carte devient "prête" (is_arkanite_ready) mais
+## ne rejoint owned_arkanites qu'après paiement de son unlock_cost en Éclats
+## (try_unlock_arkanite) — les fragments seuls ne suffisent plus.
 var arkanite_fragments: Dictionary = {}
 ## Arkanites équipables possédées en entier (fragments complétés, ou
 ## octroyées directement par un coffre de palier).
@@ -103,6 +114,31 @@ func award_match_xp(player_won: bool, kills: int) -> int:
 	return amount
 
 
+func get_currency() -> int:
+	_ensure_loaded()
+	return currency
+
+
+func add_currency(amount: int) -> void:
+	_ensure_loaded()
+	if amount == 0:
+		return
+	currency = maxi(0, currency + amount)
+	_save()
+	currency_changed.emit(currency)
+
+
+## Éclats attribués en fin de partie : une base pour avoir joué, un bonus de
+## victoire — comme l'XP, mais un rythme plus lent (façon PI/BE de LoL) pour
+## que débloquer un héros ou payer une Arkanite prenne plusieurs matchs.
+func award_match_currency(player_won: bool) -> int:
+	var amount: int = 15
+	if player_won:
+		amount += 10
+	add_currency(amount)
+	return amount
+
+
 ## Marque un héros comme joué (choix validé dans un lobby) : débloque
 ## définitivement les Arkanites liées à ce héros. Sans effet si déjà marqué.
 func mark_hero_played(hero_name: String) -> void:
@@ -129,19 +165,29 @@ func get_arkanite_fragments(card_id: String) -> int:
 
 ## Une Arkanite de type Éveil (consommable) n'a pas de notion de possession
 ## fragmentée : seul son niveau requis (géré ailleurs) la conditionne. Pour
-## les équipables (Maîtrise/Invocation), possédée = fragments complétés ou
-## octroyée directement (coffre de palier).
+## les équipables (Maîtrise/Invocation), possédée = achetée avec des Éclats
+## (try_unlock_arkanite) ou octroyée directement (coffre de palier) — les
+## fragments seuls ne suffisent plus, voir is_arkanite_ready().
 func owns_arkanite(card: ArkaniteCard) -> bool:
 	_ensure_loaded()
 	if card == null:
 		return false
 	if not card.is_equipable:
 		return true
-	return owned_arkanites.has(card.id) or get_arkanite_fragments(card.id) >= card.fragments_required
+	return owned_arkanites.has(card.id)
 
 
-## Ajoute des fragments à une Arkanite équipable ; bascule automatiquement en
-## "possédée" une fois le seuil atteint. Sans effet si déjà possédée.
+## Fragments complétés mais pas encore payée : prête à être débloquée contre
+## des Éclats via try_unlock_arkanite().
+func is_arkanite_ready(card: ArkaniteCard) -> bool:
+	if card == null or not card.is_equipable or owns_arkanite(card):
+		return false
+	return get_arkanite_fragments(card.id) >= card.fragments_required
+
+
+## Ajoute des fragments à une Arkanite équipable, plafonnés à
+## fragments_required (elle devient alors "prête", voir is_arkanite_ready).
+## Sans effet si déjà possédée.
 func add_arkanite_fragments(card_id: String, amount: int) -> void:
 	_ensure_loaded()
 	if amount <= 0 or card_id == "" or owned_arkanites.has(card_id):
@@ -149,17 +195,28 @@ func add_arkanite_fragments(card_id: String, amount: int) -> void:
 	var card := ArkaniteDB.get_by_id(card_id)
 	if card == null:
 		return
-	var total: int = get_arkanite_fragments(card_id) + amount
-	if total >= card.fragments_required:
-		owned_arkanites.append(card_id)
-		arkanite_fragments.erase(card_id)
-	else:
-		arkanite_fragments[card_id] = total
+	arkanite_fragments[card_id] = mini(get_arkanite_fragments(card_id) + amount, card.fragments_required)
 	_save()
 
 
+## Paye le coût en Éclats (unlock_cost) d'une Arkanite dont les fragments
+## sont complétés, et la fait rejoindre owned_arkanites. Retourne false sans
+## rien changer si elle n'est pas prête ou si les Éclats sont insuffisants.
+func try_unlock_arkanite(card_id: String) -> bool:
+	_ensure_loaded()
+	var card := ArkaniteDB.get_by_id(card_id)
+	if not is_arkanite_ready(card) or currency < card.unlock_cost:
+		return false
+	currency -= card.unlock_cost
+	owned_arkanites.append(card_id)
+	arkanite_fragments.erase(card_id)
+	_save()
+	currency_changed.emit(currency)
+	return true
+
+
 ## Octroie directement une Arkanite équipable (coffre de palier), sans passer
-## par les fragments.
+## par les fragments ni les Éclats.
 func grant_arkanite(card_id: String) -> void:
 	_ensure_loaded()
 	if card_id == "" or owned_arkanites.has(card_id):
@@ -169,15 +226,19 @@ func grant_arkanite(card_id: String) -> void:
 	_save()
 
 
-## Choisit une Arkanite équipable non encore possédée, pertinente pour le
-## héros joué (générique ou spécifique à ce héros), et lui attribue des
-## fragments de fin de match. Retourne un résumé pour l'affichage (vide si
-## le joueur possède déjà tout ce qui est pertinent pour ce héros).
+## Choisit une Arkanite équipable ni possédée ni déjà prête, pertinente pour
+## le héros joué (générique ou spécifique à ce héros), et lui attribue des
+## fragments de fin de match — avec seulement FRAGMENT_DROP_CHANCE de chances
+## de droper quelque chose à chaque match. Retourne un résumé pour
+## l'affichage (vide si pas de chance cette fois, ou si tout est déjà
+## possédé/prêt pour ce héros).
 func award_match_arkanite_fragments(player_won: bool, hero_name: String) -> Dictionary:
 	_ensure_loaded()
+	if randf() >= FRAGMENT_DROP_CHANCE:
+		return {}
 	var locked: Array[ArkaniteCard] = []
 	for card in ArkaniteDB.get_equipable_for_hero(hero_name):
-		if not owns_arkanite(card):
+		if not owns_arkanite(card) and not is_arkanite_ready(card):
 			locked.append(card)
 	if locked.is_empty():
 		return {}
@@ -191,7 +252,7 @@ func award_match_arkanite_fragments(player_won: bool, hero_name: String) -> Dict
 		"amount": amount,
 		"fragments": get_arkanite_fragments(card.id),
 		"required": card.fragments_required,
-		"unlocked": owned_arkanites.has(card.id),
+		"ready": is_arkanite_ready(card),
 	}
 
 
@@ -250,6 +311,7 @@ func unequip_arkanite(hero_name: String, card_id: String) -> void:
 func _load() -> void:
 	level = 1
 	xp = 0
+	currency = 0
 	played_heroes = []
 	arkanite_fragments = {}
 	owned_arkanites = []
@@ -266,6 +328,7 @@ func _load() -> void:
 		return
 	level = clampi(int(parsed.get("level", 1)), 1, MAX_LEVEL)
 	xp = maxi(0, int(parsed.get("xp", 0)))
+	currency = maxi(0, int(parsed.get("currency", 0)))
 	for hero_name in parsed.get("played_heroes", []):
 		played_heroes.append(str(hero_name))
 	var fragments_data: Variant = parsed.get("arkanite_fragments", {})
@@ -290,6 +353,7 @@ func _save() -> void:
 	file.store_string(JSON.stringify({
 		"level": level,
 		"xp": xp,
+		"currency": currency,
 		"played_heroes": played_heroes,
 		"arkanite_fragments": arkanite_fragments,
 		"owned_arkanites": owned_arkanites,

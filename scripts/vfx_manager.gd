@@ -264,7 +264,7 @@ void fragment() {
 	parent.add_child(decal)
 	var tween := decal.create_tween()
 	tween.tween_property(decal, "scale", Vector3.ONE * 1.6, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(mat, "alpha_factor", 0.0, 0.5).set_delay(0.15)
+	tween.parallel().tween_property(mat, "shader_parameter/alpha_factor", 0.0, 0.5).set_delay(0.15)
 
 func spawn_eren_fire_projectile(projectile: Node3D, direction: Vector3) -> Node3D:
 	if projectile == null or EREN_FIRE_PROJECTILE_VFX == null:

@@ -91,6 +91,24 @@ const MODE_DETAILS := {
 		"map": "AU CHOIX",
 	},
 }
+## Découpe un texte en lignes d'au plus `max_chars` caractères, en coupant
+## uniquement entre les mots. Utilisé à la place de Label.autowrap_mode qui
+## ne renvoyait pas le texte à la ligne correctement dans le panneau de
+## détails du mode (débordement hors du panneau).
+func _wrap_text_lines(text: String, max_chars: int) -> String:
+	var lines: PackedStringArray = []
+	var current := ""
+	for word in text.split(" "):
+		var candidate := (current + " " + word) if current != "" else word
+		if candidate.length() > max_chars and current != "":
+			lines.append(current)
+			current = word
+		else:
+			current = candidate
+	if current != "":
+		lines.append(current)
+	return "\n".join(lines)
+
 const MODE_CARD_HEIGHT_CATEGORY: float = 110.0
 ## 5 cartes + le panneau latéral doivent tenir sous le bas du cadre
 ## principal : à 92px la liste débordait hors du cadre (visible en bas
@@ -793,9 +811,12 @@ func _show_arena_modes() -> void:
 	side.add_child(_label("MODE SÉLECTIONNÉ", 10, Color("6fb88a"), Vector2(18, 16), Vector2(254, 18)))
 	side.add_child(_label(selected_mode, 22, mode_accent, Vector2(18, 40), Vector2(254, 30)))
 
-	var desc_label := _label(str(details.get("desc", "")), 11, Color("c4b394"), Vector2(18, 78), Vector2(254, 84))
-	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc_label.clip_text = true
+	# autowrap_mode seul ne suffisait pas ici (le texte débordait toujours
+	# sur une seule ligne) : on découpe nous-mêmes le texte en lignes avant
+	# de l'assigner, ce qui garantit le retour à la ligne quel que soit le
+	# comportement du Label.
+	var desc_text := _wrap_text_lines(str(details.get("desc", "")), 32)
+	var desc_label := _label(desc_text, 11, Color("c4b394"), Vector2(18, 78), Vector2(254, 84))
 	side.add_child(desc_label)
 
 	side.add_child(_label("JOUEURS", 9, Color("7a6a4a"), Vector2(18, 172), Vector2(120, 16)))

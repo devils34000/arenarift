@@ -529,9 +529,9 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.5)
 	ring_tween.parallel().tween_property(ring_mat, "emission_energy_multiplier", 0.0, 0.5)
 
-	# Pluie verte qui tombe dans toute la zone.
+	# Pluie verte dense qui tombe dans toute la zone.
 	var rain := GPUParticles3D.new()
-	rain.amount = 140
+	rain.amount = 320
 	rain.lifetime = 1.1
 	rain.one_shot = false
 	rain.emitting = true
@@ -548,28 +548,49 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	rain_pm.initial_velocity_min = 5.0
 	rain_pm.initial_velocity_max = 7.0
 	rain_pm.gravity = Vector3(0, -6.0, 0)
-	rain_pm.scale_min = 0.5
-	rain_pm.scale_max = 1.1
+	rain_pm.scale_min = 0.6
+	rain_pm.scale_max = 1.3
 	rain_pm.particle_flag_align_y = true
 	rain_pm.color = HEAL_SECONDARY
 	rain.process_material = rain_pm
 	rain.position.y = 4.5
 	root.add_child(rain)
+
+	# Une seconde couche de pluie plus fine, plus rapide, pour densifier l'ensemble.
+	var rain2 := GPUParticles3D.new()
+	rain2.amount = 220
+	rain2.lifetime = 0.8
+	rain2.one_shot = false
+	rain2.emitting = true
+	rain2.preprocess = 0.2
+	rain2.draw_pass_1 = _rain_drop_mesh(HEAL_PRIMARY)
+	var rain2_pm := rain_pm.duplicate() as ParticleProcessMaterial
+	rain2_pm.initial_velocity_min = 7.5
+	rain2_pm.initial_velocity_max = 10.0
+	rain2_pm.scale_min = 0.35
+	rain2_pm.scale_max = 0.8
+	rain2_pm.color = HEAL_PRIMARY
+	rain2.process_material = rain2_pm
+	rain2.position.y = 3.6
+	root.add_child(rain2)
+
 	get_tree().create_timer(duration - 0.3).timeout.connect(func():
 		if is_instance_valid(rain):
 			rain.emitting = false
+		if is_instance_valid(rain2):
+			rain2.emitting = false
 	)
 
-	# Volutes de fumée verte qui montent depuis le sol, réparties dans la zone.
+	# Volutes de fumée verte qui montent depuis le sol, réparties dans toute la zone.
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	for i in range(8):
+	for i in range(14):
 		var a := rng.randf_range(0.0, TAU)
-		var dist := rng.randf_range(0.0, r * 0.85)
+		var dist := rng.randf_range(0.0, r * 0.9)
 		var offset := Vector3(cos(a) * dist, 0.05, sin(a) * dist)
 		var tint := HEAL_SMOKE.lerp(HEAL_SECONDARY, rng.randf_range(0.2, 0.6))
-		tint.a = rng.randf_range(0.55, 0.8)
-		var size := rng.randf_range(1.4, 2.6)
+		tint.a = rng.randf_range(0.55, 0.85)
+		var size := rng.randf_range(1.5, 3.0)
 		var puff := MeshInstance3D.new()
 		puff.mesh = _soft_puff_mesh(Vector2(size, size), tint)
 		puff.position = offset
@@ -577,10 +598,11 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 		root.add_child(puff)
 		var puff_mat := puff.mesh.material as ShaderMaterial
 		var puff_tween := puff.create_tween()
+		puff_tween.tween_interval(rng.randf_range(0.0, 0.5))
 		puff_tween.set_parallel(true)
-		puff_tween.tween_property(puff, "scale", Vector3.ONE * rng.randf_range(1.3, 2.0), duration * 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		puff_tween.tween_property(puff, "position:y", offset.y + rng.randf_range(0.8, 1.6), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		puff_tween.tween_property(puff_mat, "shader_parameter/alpha_factor", 0.0, 0.6).set_delay(duration - 0.6)
+		puff_tween.tween_property(puff, "scale", Vector3.ONE * rng.randf_range(1.3, 2.1), duration * 0.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		puff_tween.tween_property(puff, "position:y", offset.y + rng.randf_range(0.8, 1.8), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		puff_tween.tween_property(puff_mat, "shader_parameter/alpha_factor", 0.0, 0.6).set_delay(maxf(duration - 0.6, 0.1))
 		puff_tween.set_parallel(false)
 
 	# Petit flash lumineux vert au centre pour marquer l'activation.
@@ -979,9 +1001,10 @@ func spawn_maylinh_heal(parent: Node, position: Vector3) -> Node3D:
 	return circle
 
 func spawn_maylinh_flee(parent: Node, position: Vector3, scale_value: float = 1.0) -> Node3D:
-	# Poof de fumée façon téléportation ninja — utilisé au départ ET à l'arrivée.
+	# Gros nuage de fumée façon grenade fumigène CS:GO — utilisé au départ ET à l'arrivée.
 	if parent == null:
 		return null
+	var s := scale_value * 2.2
 	var duration := 2.0
 	var root := Node3D.new()
 	root.name = "MaylinhSmokeFX"
@@ -990,47 +1013,65 @@ func spawn_maylinh_flee(parent: Node, position: Vector3, scale_value: float = 1.
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	for i in range(7):
-		var tint := SMOKE_LIGHT.lerp(SMOKE_DARK, rng.randf())
-		tint.a = rng.randf_range(0.55, 0.85)
-		var size := rng.randf_range(0.9, 1.7) * scale_value
+
+	# Bouffée initiale qui gonfle très vite pour donner l'impact du "pop".
+	var core := MeshInstance3D.new()
+	var core_tint := Color(SMOKE_LIGHT.r, SMOKE_LIGHT.g, SMOKE_LIGHT.b, 0.9)
+	core.mesh = _soft_puff_mesh(Vector2(2.4, 2.4) * s, core_tint)
+	core.position = Vector3.UP * 0.8 * s
+	core.scale = Vector3.ONE * 0.1
+	root.add_child(core)
+	var core_mat := core.mesh.material as ShaderMaterial
+	var core_tween := core.create_tween()
+	core_tween.tween_property(core, "scale", Vector3.ONE * 1.6, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	core_tween.tween_interval(duration - 0.9)
+	core_tween.tween_property(core_mat, "shader_parameter/alpha_factor", 0.0, 0.68)
+
+	# Grosse masse de volutes qui s'accumulent en un nuage large et épais.
+	var puff_count := 16
+	for i in range(puff_count):
+		var tint := SMOKE_LIGHT.lerp(SMOKE_DARK, rng.randf_range(0.0, 0.55))
+		tint.a = rng.randf_range(0.65, 0.92)
+		var size := rng.randf_range(1.8, 3.6) * s
 		var puff := MeshInstance3D.new()
 		puff.mesh = _soft_puff_mesh(Vector2(size, size), tint)
-		var offset := Vector3(rng.randf_range(-0.5, 0.5), rng.randf_range(0.1, 0.5), rng.randf_range(-0.5, 0.5)) * scale_value
+		var offset := Vector3(rng.randf_range(-1.3, 1.3), rng.randf_range(0.1, 1.6), rng.randf_range(-1.3, 1.3)) * s
 		puff.position = offset
-		puff.scale = Vector3.ONE * 0.15
+		puff.scale = Vector3.ONE * 0.1
 		root.add_child(puff)
 		var puff_mat := puff.mesh.material as ShaderMaterial
-		var rise := rng.randf_range(0.8, 1.6) * scale_value
+		var rise := rng.randf_range(0.5, 1.3) * s
+		var start_delay := rng.randf_range(0.0, 0.25)
 		var tween := puff.create_tween()
+		tween.tween_interval(start_delay)
 		tween.set_parallel(true)
-		tween.tween_property(puff, "scale", Vector3.ONE * rng.randf_range(1.2, 1.9), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(puff, "scale", Vector3.ONE * rng.randf_range(1.4, 2.3), 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.tween_property(puff, "position:y", offset.y + rise, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		tween.tween_property(puff_mat, "shader_parameter/alpha_factor", 0.0, 0.7).set_delay(duration - 0.7)
+		tween.tween_property(puff_mat, "shader_parameter/alpha_factor", 0.0, 0.75).set_delay(maxf(duration - start_delay - 0.75, 0.1))
 		tween.set_parallel(false)
 
-	# Bouffée dense au moment précis du "poof".
+	# Bouffée dense de particules au moment précis du "poof".
 	var burst := GPUParticles3D.new()
-	burst.amount = 40
-	burst.lifetime = 0.5
+	burst.amount = 90
+	burst.lifetime = 0.7
 	burst.one_shot = true
 	burst.emitting = true
 	burst.explosiveness = 0.9
-	burst.draw_pass_1 = _soft_puff_mesh(Vector2(0.35, 0.35) * scale_value, Color(SMOKE_LIGHT.r, SMOKE_LIGHT.g, SMOKE_LIGHT.b, 0.8))
+	burst.draw_pass_1 = _soft_puff_mesh(Vector2(0.6, 0.6) * s, Color(SMOKE_LIGHT.r, SMOKE_LIGHT.g, SMOKE_LIGHT.b, 0.85))
 	var pm := ParticleProcessMaterial.new()
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	pm.emission_sphere_radius = 0.25 * scale_value
+	pm.emission_sphere_radius = 0.4 * s
 	pm.direction = Vector3(0, 1, 0)
-	pm.spread = 130.0
-	pm.initial_velocity_min = 0.6
-	pm.initial_velocity_max = 1.6
-	pm.gravity = Vector3(0, 0.4, 0)
-	pm.scale_min = 0.6
-	pm.scale_max = 1.3
+	pm.spread = 150.0
+	pm.initial_velocity_min = 1.0 * s
+	pm.initial_velocity_max = 2.6 * s
+	pm.gravity = Vector3(0, 0.5, 0)
+	pm.scale_min = 0.7
+	pm.scale_max = 1.6
 	burst.process_material = pm
 	root.add_child(burst)
 
-	get_tree().create_timer(duration + 0.2).timeout.connect(func():
+	get_tree().create_timer(duration + 0.3).timeout.connect(func():
 		if is_instance_valid(root):
 			root.queue_free()
 	)

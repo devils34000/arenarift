@@ -2520,7 +2520,12 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		vfx_manager.spawn_eren_fire_nova(self, visual_origin, 1.45, false)
 		_play_sfx(DASH_SFX, visual_origin, -3.0)
 	elif kind == "heal":
-		vfx_manager.spawn_maylinh_elemental_heal(self, visual_origin, float(caster.get("maylinh_heal_radius")))
+		# Zone posée au sol : on recale sur la hauteur réelle du personnage plutôt
+		# que sur visual_origin, qui peut être décalé en hauteur via _visual_root
+		# et faisait flotter le halo/la pluie au-dessus du sol.
+		var heal_ground_position := visual_origin
+		heal_ground_position.y = caster.global_position.y
+		vfx_manager.spawn_maylinh_elemental_heal(self, heal_ground_position, float(caster.get("maylinh_heal_radius")))
 		_play_sfx(TELEPORT_SFX, visual_origin, -8.0)
 	elif kind == "flee":
 		vfx_manager.spawn_maylinh_flee(self, visual_origin)

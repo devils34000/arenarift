@@ -17,6 +17,32 @@ const EREN_FIRE_AREA_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/Ele
 const EREN_FIRE_CAST_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ElementalMagicFX/effects/cast/vfx_fire_cast_01.tscn")
 const EREN_BIG_IMPACT_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/StylizedHitFX/effects/big_impact/vfx_big_impact_01.tscn")
 
+# Pack Binbun générique — réutilisé pour toutes les autres compétences (Aeris, Kaithlyn,
+# Maylinh, coups génériques) afin qu'elles aient le même niveau de finition que le feu d'Eren.
+const BATTLE_CHARGE_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/charge/vfx_blank_charge.tscn")
+const BATTLE_SHIELD_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/shield/vfx_blank_shield_01.tscn")
+const BATTLE_SLASH_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/slash/vfx_blank_slash.tscn")
+const BATTLE_SWING_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/swing/vfx_blank_swing.tscn")
+const HIT_01_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/StylizedHitFX/effects/hit/vfx_hit_01.tscn")
+const HIT_02_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/StylizedHitFX/effects/hit/vfx_hit_02.tscn")
+const IMPACT_01_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/StylizedHitFX/effects/impact/vfx_impact_01.tscn")
+const IMPACT_02_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/StylizedHitFX/effects/impact/vfx_impact_02.tscn")
+const BIG_IMPACT_02_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/StylizedHitFX/effects/big_impact/vfx_big_impact_02.tscn")
+const ELEMENTAL_CAST_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ElementalMagicFX/effects/cast/vfx_fire_cast_01.tscn")
+const ELEMENTAL_AREA_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ElementalMagicFX/effects/area/vfx_fire_area_01.tscn")
+
+# Palettes par personnage — mêmes teintes que l'ancien rendu procédural, appliquées aux vrais VFX.
+const AERIS_PRIMARY := Color("62d8ff")
+const AERIS_SECONDARY := Color("d9f7ff")
+const AERIS_TERTIARY := Color("2f7fbf")
+const MAYLINH_PRIMARY := Color("c45cff")
+const MAYLINH_SECONDARY := Color("f2b6ff")
+const COMBAT_PRIMARY := Color("ff9d2e")
+const COMBAT_SECONDARY := Color("ffe8b0")
+const COMBAT_TERTIARY := Color("ffb52e")
+const DAMAGE_PRIMARY := Color("ff3b30")
+const DAMAGE_SECONDARY := Color("ffb0a8")
+
 var eren_trail_vfx_clock: float = 0.0
 
 func spawn_teleport_start(parent: Node, position: Vector3, scale_value: float = 0.75) -> Node3D:
@@ -224,371 +250,115 @@ func _spawn_external(parent: Node, packed: PackedScene, position: Vector3, direc
 	)
 	return fx
 
-# VFX procéduraux + VFX Binbun validés.
-# Eren utilise désormais exclusivement les effets réels du pack ExplosionFXFree.
+# VFX Binbun validés — tous les sorts (Eren, Aeris, Kaithlyn, Maylinh, coups génériques)
+# utilisent désormais les vrais effets à particules du pack, simplement retintés par héros.
+
+func _spawn_tinted(parent: Node, scene: PackedScene, position: Vector3, direction: Vector3, scale_value: float, lifetime: float, primary: Color, secondary: Color, tertiary: Color = Color(0, 0, 0, 0), emission_value: float = 3.0, light_energy_value: float = 5.0) -> Node3D:
+	if parent == null or scene == null:
+		return null
+	var fx := scene.instantiate() as Node3D
+	if fx == null:
+		return null
+	parent.add_child(fx)
+	fx.global_position = position
+	fx.scale = Vector3.ONE * scale_value
+	if direction.length_squared() > 0.001:
+		var d := direction.normalized()
+		fx.rotation.y = atan2(d.x, d.z)
+	fx.set("primary_color", primary)
+	fx.set("secondary_color", secondary)
+	if tertiary.a > 0.0:
+		fx.set("tertiary_color", tertiary)
+	fx.set("emission", emission_value)
+	fx.set("light_color", primary)
+	fx.set("light_energy", light_energy_value)
+	get_tree().create_timer(lifetime).timeout.connect(func():
+		if is_instance_valid(fx):
+			fx.queue_free()
+	)
+	return fx
 
 func spawn_orb(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	return _burst(parent, position, Color("b66cff"), 0.38, 0.22)
+	return _spawn_tinted(parent, IMPACT_01_VFX, position, direction, 0.7, 0.3, Color("b66cff"), Color("e6c9ff"), Color(0, 0, 0, 0), 3.0, 5.0)
 
 func spawn_hit(parent: Node, position: Vector3, big: bool = false) -> Node3D:
-	return _impact(parent, position, Color("ff4d4d"), 1.15 if big else 0.8, 0.24)
+	var scene := BIG_IMPACT_02_VFX if big else HIT_01_VFX
+	return _spawn_tinted(parent, scene, position, Vector3.ZERO, 1.1 if big else 0.8, 0.4, DAMAGE_PRIMARY, DAMAGE_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.5)
 
 func spawn_explosion(parent: Node, position: Vector3, scale_value: float = 1.0) -> Node3D:
-	return _impact(parent, position, Color("ff8a18"), 1.0 * scale_value, 0.32)
+	return _spawn_tinted(parent, IMPACT_01_VFX, position + Vector3.UP * 0.05, Vector3.ZERO, 1.1 * scale_value, 0.55, COMBAT_PRIMARY, COMBAT_SECONDARY, Color(0, 0, 0, 0), 3.2, 6.0)
 
 func spawn_charge(parent: Node, position: Vector3, scale_value: float = 1.0) -> Node3D:
-	return _impact(parent, position, Color("ff8a18"), 0.75 * scale_value, 0.22)
+	return _spawn_tinted(parent, BATTLE_CHARGE_VFX, position, Vector3.ZERO, 0.6 * scale_value, 0.5, COMBAT_PRIMARY, COMBAT_SECONDARY, COMBAT_TERTIARY, 3.0, 4.0)
 
 func spawn_dash(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	var root := _root(parent, position, "DashFX")
-	var d := direction.normalized()
-	if d.length_squared() < 0.001:
-		d = Vector3(0, 0, -1)
-	root.rotation.y = atan2(d.x, d.z)
-	var mat := _mat(Color("ff7b18"), 7.0)
-	for i in range(4):
-		var streak := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(0.18, 0.12, 1.0 + i * 0.35)
-		streak.mesh = box
-		streak.position = Vector3(0, 0.18 + i * 0.05, 0.25 + i * 0.42)
-		streak.rotation_degrees.y = (i - 1) * 8.0
-		streak.material_override = mat
-		root.add_child(streak)
-	_tween_free(root, 0.28)
-	return root
+	return _spawn_tinted(parent, BATTLE_SWING_VFX, position, direction, 0.9, 0.32, COMBAT_PRIMARY, COMBAT_SECONDARY, COMBAT_TERTIARY, 3.2, 4.0)
 
 func spawn_axe_plant(parent: Node, position: Vector3) -> Node3D:
-	var root := _root(parent, position + Vector3.UP * 0.03, "AxePlantFX")
-	var mat := _mat(Color("ff9d2e"), 8.0)
-	var ring := _torus(root, 0.18, 0.52, mat)
-	ring.rotation_degrees.x = 90.0
-	var shock := _torus(root, 0.42, 0.48, mat)
-	shock.rotation_degrees.x = 90.0
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(ring, "scale", Vector3.ONE * 1.8, 0.26)
-	tween.tween_property(shock, "scale", Vector3.ONE * 2.2, 0.22)
-	tween.tween_property(mat, "emission_energy_multiplier", 0.0, 0.26)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, BATTLE_SHIELD_VFX, position + Vector3.UP * 0.03, Vector3.ZERO, 1.05, 0.55, COMBAT_PRIMARY, COMBAT_TERTIARY, Color("ff5a12"), 3.4, 5.0)
 
 func spawn_axe_hit(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	return _impact(parent, position + Vector3.UP * 0.65, Color("ff3b30"), 1.05, 0.28)
+	return _spawn_tinted(parent, BIG_IMPACT_02_VFX, position + Vector3.UP * 0.6, direction, 0.85, 0.5, DAMAGE_PRIMARY, Color("ff9a24"), Color(0, 0, 0, 0), 2.8, 5.5)
 
 func spawn_damage_flash(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	var root := _root(parent, position + Vector3.UP * 0.7, "DamageRedFlashFX")
-	var mat := _mat(Color(1.0, 0.03, 0.02, 0.95), 10.0)
-	var flash := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.45
-	sphere.height = 0.9
-	flash.mesh = sphere
-	flash.material_override = mat
-	root.add_child(flash)
-	var ring := _torus(root, 0.34, 0.5, mat)
-	ring.rotation_degrees.x = 90.0
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(flash, "scale", Vector3.ONE * 0.08, 0.14)
-	tween.tween_property(ring, "scale", Vector3.ONE * 1.8, 0.18)
-	tween.tween_property(mat, "emission_energy_multiplier", 0.0, 0.18)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, HIT_02_VFX, position + Vector3.UP * 0.65, direction, 0.6, 0.3, DAMAGE_PRIMARY, DAMAGE_SECONDARY, Color(0, 0, 0, 0), 3.0, 5.0)
 
 func spawn_axe_swing(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	return _melee(parent, position, direction, Color("ff9b2f"), 1.35, 0.22)
+	return _spawn_tinted(parent, BATTLE_SLASH_VFX, position + Vector3.UP * 0.6, direction, 1.15, 0.32, COMBAT_PRIMARY, COMBAT_SECONDARY, COMBAT_TERTIARY, 3.4, 4.5)
 
 func spawn_shield_bash(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	return _melee(parent, position, direction, Color("ffd36a"), 1.1, 0.24)
+	return _spawn_tinted(parent, BATTLE_SHIELD_VFX, position, direction, 0.85, 0.4, Color("ffd36a"), COMBAT_TERTIARY, COMBAT_PRIMARY, 3.0, 4.5)
 
 func spawn_shield_block(parent: Node, position: Vector3) -> Node3D:
-	var root := _root(parent, position, "KaithlynShieldFX")
-	var mat := _mat(Color("ffb52e"), 6.0)
-	var ring := _torus(root, 0.95, 1.05, mat)
-	ring.rotation_degrees.x = 90.0
-	var ring2 := _torus(root, 0.72, 0.78, mat)
-	ring2.rotation_degrees.x = 90.0
-	ring2.position.y = 0.35
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(ring, "rotation_degrees", Vector3(90, 0, 360), 0.65)
-	tween.tween_property(ring2, "rotation_degrees", Vector3(90, 360, 0), 0.65)
-	tween.tween_property(mat, "emission_energy_multiplier", 0.0, 0.7)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, BATTLE_SHIELD_VFX, position, Vector3.ZERO, 1.3, 0.7, Color("ffd36a"), COMBAT_TERTIARY, COMBAT_PRIMARY, 2.6, 4.0)
 
 func spawn_shield_hit(parent: Node, position: Vector3) -> Node3D:
-	return _impact(parent, position, Color("ffd24a"), 0.95, 0.2)
+	return _spawn_tinted(parent, HIT_01_VFX, position, Vector3.ZERO, 0.95, 0.32, Color("ffd24a"), COMBAT_SECONDARY, Color(0, 0, 0, 0), 3.0, 5.0)
 
 
 # =========================
 # VFX HERO-SPECIFIQUES
 # =========================
 func spawn_aeris_orb(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	var root := _root(parent, position, "AerisArcBoltFX")
-	var cyan := _mat(Color("62d8ff"), 9.0)
-	var white := _mat(Color("d9f7ff"), 12.0)
-	var core := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.30
-	sphere.height = 0.60
-	core.mesh = sphere
-	core.material_override = white
-	root.add_child(core)
-	var ring := _torus(root, 0.36, 0.44, cyan)
-	ring.rotation_degrees.x = 90.0
-	var ring2 := _torus(root, 0.24, 0.30, cyan)
-	ring2.rotation_degrees.y = 90.0
-	var d := direction.normalized()
-	if d.length_squared() < 0.001:
-		d = Vector3(0, 0, -1)
-	root.rotation.y = atan2(d.x, d.z)
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(core, "scale", Vector3.ONE * 0.18, 0.30)
-	tween.tween_property(ring, "scale", Vector3.ONE * 1.9, 0.30)
-	tween.tween_property(ring2, "scale", Vector3.ONE * 1.55, 0.30)
-	tween.tween_property(cyan, "emission_energy_multiplier", 0.0, 0.30)
-	tween.tween_property(white, "emission_energy_multiplier", 0.0, 0.30)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, ELEMENTAL_CAST_VFX, position + Vector3.UP * 0.06, direction, 1.05, 0.5, AERIS_PRIMARY, AERIS_SECONDARY, AERIS_TERTIARY, 3.4, 5.0)
 
 func spawn_aeris_hit(parent: Node, position: Vector3) -> Node3D:
-	return _arcane_impact(parent, position, Color("66dfff"), Color("e8fbff"), 1.0)
+	return _spawn_tinted(parent, IMPACT_02_VFX, position, Vector3.ZERO, 0.85, 0.4, AERIS_PRIMARY, AERIS_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.5)
 
 func spawn_maylinh_hit(parent: Node, position: Vector3) -> Node3D:
-	return _arcane_impact(parent, position, Color("c45cff"), Color("f2b6ff"), 0.95)
+	return _spawn_tinted(parent, HIT_01_VFX, position, Vector3.ZERO, 0.8, 0.36, MAYLINH_PRIMARY, MAYLINH_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.0)
 
 func spawn_aeris_dash(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	var root := _root(parent, position, "AerisDashFX")
-	var mat := _mat(Color("55cfff"), 8.0)
-	var d := direction.normalized()
-	if d.length_squared() < 0.001:
-		d = Vector3(0, 0, -1)
-	root.rotation.y = atan2(d.x, d.z)
-	for i in range(3):
-		var ring := _torus(root, 0.42 + i * 0.18, 0.49 + i * 0.18, mat)
-		ring.rotation_degrees.x = 90.0
-		ring.position.z = 0.18 + i * 0.30
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(root, "scale", Vector3(1.8, 1.8, 1.8), 0.28)
-	tween.tween_property(mat, "emission_energy_multiplier", 0.0, 0.28)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, BATTLE_SWING_VFX, position, direction, 1.0, 0.34, AERIS_PRIMARY, AERIS_SECONDARY, AERIS_TERTIARY, 3.2, 4.5)
 
 func spawn_aeris_teleport(parent: Node, position: Vector3, arriving: bool = false) -> Node3D:
-	var root := _root(parent, position + Vector3.UP * 0.05, "AerisTeleportFX")
-	var blue := _mat(Color("4caeff"), 8.0)
-	var violet := _mat(Color("8c6cff"), 7.0)
-	var ring := _torus(root, 0.55, 0.68, blue)
-	ring.rotation_degrees.x = 90.0
-	var ring2 := _torus(root, 0.85, 0.94, violet)
-	ring2.rotation_degrees.x = 90.0
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(ring, "scale", Vector3.ONE * (2.0 if arriving else 1.4), 0.35)
-	tween.tween_property(ring2, "scale", Vector3.ONE * 1.8, 0.42)
-	tween.tween_property(blue, "emission_energy_multiplier", 0.0, 0.42)
-	tween.tween_property(violet, "emission_energy_multiplier", 0.0, 0.42)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, BATTLE_SHIELD_VFX, position + Vector3.UP * 0.05, Vector3.ZERO, 1.5 if arriving else 1.1, 0.45, AERIS_PRIMARY, Color("8c6cff"), AERIS_SECONDARY, 3.4, 5.0)
 
 func spawn_maylinh_spirit(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	var root := _root(parent, position, "MaylinhSpiritFX")
-	var purple := _mat(Color("c05cff"), 9.0)
-	var pink := _mat(Color("f0a1ff"), 8.0)
-	var core := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.26
-	sphere.height = 0.52
-	core.mesh = sphere
-	core.material_override = pink
-	root.add_child(core)
-	for i in range(4):
-		var shard := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(0.10, 0.10, 0.52)
-		shard.mesh = box
-		shard.position = Vector3(cos(TAU * i / 4.0) * 0.38, sin(TAU * i / 4.0) * 0.25, 0.0)
-		shard.rotation_degrees = Vector3(0, i * 90.0, 35.0)
-		shard.material_override = purple
-		root.add_child(shard)
-	var d := direction.normalized()
-	if d.length_squared() < 0.001:
-		d = Vector3(0, 0, -1)
-	root.rotation.y = atan2(d.x, d.z)
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(core, "scale", Vector3.ONE * 0.12, 0.34)
-	tween.tween_property(root, "rotation:y", root.rotation.y + TAU * 0.75, 0.34)
-	tween.tween_property(purple, "emission_energy_multiplier", 0.0, 0.34)
-	tween.tween_property(pink, "emission_energy_multiplier", 0.0, 0.34)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, BATTLE_SLASH_VFX, position, direction, 0.85, 0.34, MAYLINH_PRIMARY, MAYLINH_SECONDARY, Color("6a1fbf"), 3.2, 4.5)
 
 func spawn_maylinh_heal(parent: Node, position: Vector3) -> Node3D:
-	var root := _root(parent, position + Vector3.UP * 0.04, "MaylinhHealFX")
-	var green := _mat(Color("63f3b0"), 8.0)
-	var gold := _mat(Color("d9ff9a"), 6.0)
-	var ring := _torus(root, 1.0, 1.12, green)
-	ring.rotation_degrees.x = 90.0
-	var ring2 := _torus(root, 1.65, 1.75, gold)
-	ring2.rotation_degrees.x = 90.0
-	for i in range(6):
-		var mote := MeshInstance3D.new()
-		var sphere := SphereMesh.new()
-		sphere.radius = 0.07
-		sphere.height = 0.14
-		mote.mesh = sphere
-		mote.position = Vector3(cos(TAU*i/6.0)*0.8, 0.15, sin(TAU*i/6.0)*0.8)
-		mote.material_override = gold
-		root.add_child(mote)
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(ring, "scale", Vector3.ONE * 1.45, 0.55)
-	tween.tween_property(ring2, "scale", Vector3.ONE * 1.7, 0.65)
-	tween.tween_property(root, "position:y", 0.65, 0.65)
-	tween.tween_property(green, "emission_energy_multiplier", 0.0, 0.65)
-	tween.tween_property(gold, "emission_energy_multiplier", 0.0, 0.65)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	var circle_scene := load("res://scenes/vfx/free_magic_circle.tscn") as PackedScene
+	if circle_scene == null:
+		return null
+	var circle := circle_scene.instantiate() as Node3D
+	if circle == null:
+		return null
+	parent.add_child(circle)
+	circle.global_position = position + Vector3.UP * 0.035
+	circle.scale = Vector3.ONE * 1.6
+	circle.set("circle_color", Color("63f3b0"))
+	circle.set("circle_scale", 2.0)
+	circle.set("spiral_count", 10)
+	circle.set("duration", 1.6)
+	get_tree().create_timer(1.7).timeout.connect(func():
+		if is_instance_valid(circle):
+			circle.queue_free()
+	)
+	return circle
 
 func spawn_maylinh_flee(parent: Node, position: Vector3) -> Node3D:
-	var root := _root(parent, position + Vector3.UP * 0.04, "MaylinhFleeFX")
-	var purple := _mat(Color("b95cff"), 9.0)
-	var white := _mat(Color("e7c7ff"), 7.0)
-	for i in range(3):
-		var ring := _torus(root, 0.42 + i * 0.16, 0.50 + i * 0.16, purple if i < 2 else white)
-		ring.rotation_degrees.x = 90.0
-		ring.position.y = 0.15 + i * 0.28
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(root, "scale", Vector3(1.8, 1.8, 1.8), 0.38)
-	tween.tween_property(purple, "emission_energy_multiplier", 0.0, 0.38)
-	tween.tween_property(white, "emission_energy_multiplier", 0.0, 0.38)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
+	return _spawn_tinted(parent, ELEMENTAL_AREA_VFX, position + Vector3.UP * 0.04, Vector3.ZERO, 1.0, 0.4, MAYLINH_PRIMARY, Color("e7c7ff"), Color("6a1fbf"), 3.4, 4.5)
 
 func spawn_maylinh_cage(parent: Node, position: Vector3) -> Node3D:
-	var root := _root(parent, position, "MaylinhSpiritCageFX")
-	var purple := _mat(Color("a95cff"), 8.0)
-	for i in range(8):
-		var pillar := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(0.10, 2.4, 0.10)
-		pillar.mesh = box
-		pillar.position = Vector3(cos(TAU*i/8.0)*1.15, 1.2, sin(TAU*i/8.0)*1.15)
-		pillar.material_override = purple
-		root.add_child(pillar)
-	var ring := _torus(root, 1.0, 1.12, purple)
-	ring.rotation_degrees.x = 90.0
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(root, "rotation:y", TAU * 0.25, 2.0)
-	tween.tween_property(purple, "emission_energy_multiplier", 0.0, 2.0)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
-
-func _arcane_impact(parent: Node, position: Vector3, color_a: Color, color_b: Color, radius: float) -> Node3D:
-	var root := _root(parent, position, "ArcaneImpactFX")
-	var mat_a := _mat(color_a, 9.0)
-	var mat_b := _mat(color_b, 10.0)
-	var ring := _torus(root, radius * 0.35, radius * 0.48, mat_a)
-	ring.rotation_degrees.x = 90.0
-	var ring2 := _torus(root, radius * 0.58, radius * 0.68, mat_b)
-	ring2.rotation_degrees.x = 90.0
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(ring, "scale", Vector3.ONE * 2.0, 0.22)
-	tween.tween_property(ring2, "scale", Vector3.ONE * 1.5, 0.28)
-	tween.tween_property(mat_a, "emission_energy_multiplier", 0.0, 0.28)
-	tween.tween_property(mat_b, "emission_energy_multiplier", 0.0, 0.28)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
-
-func _root(parent: Node, position: Vector3, node_name: String) -> Node3D:
-	var root := Node3D.new()
-	root.name = node_name
-	parent.add_child(root)
-	root.global_position = position
-	return root
-
-func _mat(color: Color, energy: float) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.emission_enabled = true
-	mat.emission = Color(color.r, color.g, color.b, 1.0)
-	mat.emission_energy_multiplier = energy
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	return mat
-
-func _torus(root: Node3D, inner: float, outer: float, mat: Material) -> MeshInstance3D:
-	var node := MeshInstance3D.new()
-	var mesh := TorusMesh.new()
-	mesh.inner_radius = inner
-	mesh.outer_radius = outer
-	mesh.rings = 32
-	mesh.ring_segments = 12
-	node.mesh = mesh
-	node.material_override = mat
-	root.add_child(node)
-	return node
-
-func _burst(parent: Node, position: Vector3, color: Color, radius: float, duration: float) -> Node3D:
-	var root := _root(parent, position, "BurstFX")
-	var mat := _mat(color, 7.0)
-	var ring := _torus(root, radius * 0.55, radius, mat)
-	ring.rotation_degrees.x = 90.0
-	var sphere := MeshInstance3D.new()
-	var sm := SphereMesh.new()
-	sm.radius = radius * 0.45
-	sm.height = radius * 0.9
-	sphere.mesh = sm
-	sphere.material_override = mat
-	root.add_child(sphere)
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(ring, "scale", Vector3.ONE * 1.8, duration)
-	tween.tween_property(sphere, "scale", Vector3.ONE * 0.1, duration)
-	tween.tween_property(mat, "emission_energy_multiplier", 0.0, duration)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
-
-func _impact(parent: Node, position: Vector3, color: Color, radius: float, duration: float) -> Node3D:
-	return _burst(parent, position, color, radius, duration)
-
-func _melee(parent: Node, position: Vector3, direction: Vector3, color: Color, radius: float, duration: float) -> Node3D:
-	var root := _root(parent, position + Vector3.UP * 0.75, "MeleeFX")
-	var d := direction.normalized()
-	if d.length_squared() < 0.001:
-		d = Vector3(0, 0, -1)
-	root.rotation.y = atan2(d.x, d.z)
-	var mat := _mat(color, 6.0)
-	var arc := _torus(root, radius * 0.55, radius, mat)
-	arc.rotation_degrees.x = 90.0
-	arc.scale = Vector3(1.0, 0.35, 1.0)
-	var tween := root.create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(arc, "scale", Vector3(1.6, 0.15, 1.6), duration)
-	tween.tween_property(mat, "emission_energy_multiplier", 0.0, duration)
-	tween.set_parallel(false)
-	tween.tween_callback(root.queue_free)
-	return root
-
-func _tween_free(node: Node, duration: float) -> void:
-	var tween := node.create_tween()
-	tween.tween_callback(node.queue_free).set_delay(duration)
+	return _spawn_tinted(parent, ELEMENTAL_AREA_VFX, position, Vector3.ZERO, 1.6, 2.0, MAYLINH_PRIMARY, Color("6a1fbf"), Color("e7c7ff"), 2.6, 4.0)

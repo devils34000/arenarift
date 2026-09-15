@@ -17,6 +17,9 @@ var _lobby_seconds_left_local: float = 30.0
 var _lobby_countdown_label: Label
 var _lobby_status_box: VBoxContainer
 var _lobby_validate_button: Button
+## Message affiché une fois en haut du prochain _show_arena_modes() (ex :
+## annulation du lobby), puis effacé.
+var _transient_status_message: String = ""
 
 var page := "HOME"
 var content: VBoxContainer
@@ -659,6 +662,10 @@ func _show_arena_modes() -> void:
 	back_btn.add_theme_color_override("font_color", Color("c9a24d"))
 	back_btn.pressed.connect(_show_home)
 	content.add_child(back_btn)
+
+	if _transient_status_message != "":
+		content.add_child(_label(_transient_status_message, 11, Color("ff8a8a"), Vector2.ZERO, Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER))
+		_transient_status_message = ""
 
 	var row := HBoxContainer.new()
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -1981,6 +1988,8 @@ func _show_hero_select_lobby() -> void:
 		Network.lobby_state_changed.connect(_on_lobby_state_changed)
 	if not Network.lobby_match_ready.is_connected(_on_lobby_match_ready):
 		Network.lobby_match_ready.connect(_on_lobby_match_ready)
+	if not Network.lobby_cancelled.is_connected(_on_lobby_cancelled):
+		Network.lobby_cancelled.connect(_on_lobby_cancelled)
 	_build_hero_select_lobby_ui()
 	_refresh_lobby_status_ui(Network.lobby_picks)
 
@@ -2123,11 +2132,28 @@ func _refresh_lobby_status_ui(picks: Dictionary) -> void:
 ## écoulé) : on lance la partie avec le héros actuellement choisi.
 func _on_lobby_match_ready() -> void:
 	_lobby_active_screen = false
+	_disconnect_lobby_signals()
+	_launch()
+
+
+## Un joueur n'a pas validé son héros à temps (à partir de 2 joueurs
+## présents) : le serveur dédié annule et s'éteint. On se déconnecte
+## proprement et on revient à l'écran de sélection de mode avec le motif.
+func _on_lobby_cancelled(reason: String) -> void:
+	_lobby_active_screen = false
+	_disconnect_lobby_signals()
+	Network.call("close")
+	_transient_status_message = "PARTIE ANNULÉE  •  %s" % reason
+	_show_arena_modes()
+
+
+func _disconnect_lobby_signals() -> void:
 	if Network.lobby_state_changed.is_connected(_on_lobby_state_changed):
 		Network.lobby_state_changed.disconnect(_on_lobby_state_changed)
 	if Network.lobby_match_ready.is_connected(_on_lobby_match_ready):
 		Network.lobby_match_ready.disconnect(_on_lobby_match_ready)
-	_launch()
+	if Network.lobby_cancelled.is_connected(_on_lobby_cancelled):
+		Network.lobby_cancelled.disconnect(_on_lobby_cancelled)
 
 
 func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color, spells: String, on_pick: Callable = Callable()) -> Panel:

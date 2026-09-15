@@ -16,6 +16,13 @@ signal lobby_state_changed(picks: Dictionary, seconds_left: float)
 ## Émis côté client quand le serveur donne le feu vert (tout le monde prêt,
 ## ou temps écoulé) : le menu doit alors lancer la partie (_launch()).
 signal lobby_match_ready()
+## Émis côté client quand le serveur annule la partie (un joueur n'a pas
+## validé son héros à temps) : le menu doit se déconnecter et revenir en
+## arrière avec le message donné en raison.
+signal lobby_cancelled(reason: String)
+## Émis côté serveur uniquement (dedicated_server.gd s'y abonne) pour
+## déclencher la fermeture propre du process après annulation du lobby.
+signal lobby_cancelled_server_side(reason: String)
 
 const DEFAULT_PORT := 2456
 const MAX_PLAYERS := 8
@@ -318,9 +325,38 @@ func lobby_unregister_peer(peer_id: int) -> void:
 func _on_lobby_timeout() -> void:
 	if not multiplayer.is_server() or not lobby_active:
 		return
-	# Temps écoulé : on lance quel que soit l'état des picks (chacun garde
-	# son choix actuel, AERIS par défaut si personne n'a rien choisi).
+	# À partir de 2 joueurs (un vrai duel/équipe), si l'un d'eux n'a pas
+	# validé à temps, la partie est annulée plutôt que lancée avec un choix
+	# par défaut qu'il n'a pas fait lui-même. Un joueur seul (partie
+	# complétée par des bots) n'est jamais annulé pour ça : il n'y a
+	# personne d'autre en attente de lui.
+	if lobby_picks.size() >= 2:
+		var all_ready := true
+		for pid in lobby_picks.keys():
+			if not bool((lobby_picks[pid] as Dictionary).get("ready", false)):
+				all_ready = false
+				break
+		if not all_ready:
+			_cancel_lobby("Un joueur n'a pas validé son héros à temps.")
+			return
 	_finish_lobby()
+
+## Annule le lobby (et donc la partie) : diffuse la raison à tous les
+## clients puis prévient dedicated_server.gd (signal local) pour qu'il
+## referme la partie côté matchmaking et éteigne le process.
+func _cancel_lobby(reason: String) -> void:
+	if not lobby_active:
+		return
+	lobby_active = false
+	_lobby_timer.stop()
+	lobby_cancel.rpc(reason)
+	lobby_cancelled_server_side.emit(reason)
+	lobby_picks.clear()
+
+@rpc("authority", "call_remote", "reliable")
+func lobby_cancel(reason: String) -> void:
+	lobby_active = false
+	lobby_cancelled.emit(reason)
 
 ## Envoyé par un client (rpc_id(1, ...)) à chaque changement de héros
 ## (ready=false, aperçu live pour les autres joueurs du lobby) et à la

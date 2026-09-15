@@ -40,6 +40,7 @@ func _ready() -> void:
 
 	Network.peer_arrived.connect(_on_peer_arrived)
 	Network.peer_left.connect(_on_peer_left)
+	Network.lobby_cancelled_server_side.connect(_on_lobby_cancelled)
 
 	_parse_arguments()
 
@@ -171,6 +172,14 @@ func _on_peer_left(peer_id: int) -> void:
 				return
 			_shutdown()
 		)
+
+
+## Un joueur n'a pas validé son héros à temps dans le lobby : la partie est
+## annulée avant même d'avoir commencé (Network a déjà prévenu les clients
+## via la RPC lobby_cancel). Le serveur dédié n'a plus de raison d'exister.
+func _on_lobby_cancelled(reason: String) -> void:
+	print("LOBBY ANNULÉ :", reason)
+	_shutdown()
 
 
 func _shutdown() -> void:

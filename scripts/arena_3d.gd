@@ -6,18 +6,20 @@ class MOBAAbilityIcon extends Control:
 	var cooldown_left: float = 0.0
 	var cooldown_max: float = 1.0
 	var radius: float = 30.0
-	## Petit indice sous l'icône : texte clavier/souris (ex: "CLIC G.", "E",
-	## "A") par défaut, remplacé par l'icône du bouton manette correspondante
-	## dès qu'une manette est utilisée (voir set_input_mode, appelé en
-	## continu depuis _update_hud() avec last_input_was_controller). Posé sur
-	## un petit fond sombre (key_chip) : flottant directement sur la scène
-	## 3D, le texte clair devenait illisible dès que l'arrière-plan était
-	## clair (blanc/gris) au même endroit.
+	## Petit indice sous l'icône, dans un médaillon rond : texte clavier/
+	## souris (ex: "LMB", "E", "A") par défaut, remplacé par le texte du
+	## bouton manette correspondant (ex: "RT", "RB", "A") dès qu'une manette
+	## est utilisée (voir set_input_mode, appelé en continu depuis
+	## _update_hud() avec last_input_was_controller). Même médaillon, même
+	## style dans les deux cas — juste le texte qui change — plutôt qu'une
+	## icône manette importée : trop grosse/mal proportionnée à cette
+	## échelle une fois posée sur le médaillon.
 	var key_label: Label
-	var key_icon: TextureRect
 	var key_chip: Panel
+	var _keyboard_key_text: String = ""
+	var _controller_key_text: String = ""
 
-	func setup(texture: Texture2D, color: Color, size: float, key_text: String = "", controller_icon_path: String = "") -> void:
+	func setup(texture: Texture2D, color: Color, size: float, keyboard_key_text: String = "", controller_key_text: String = "") -> void:
 		icon_texture = texture
 		accent_color = color
 		custom_minimum_size = Vector2(size, size + 10.0)
@@ -26,15 +28,15 @@ class MOBAAbilityIcon extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		queue_redraw()
 
-		var has_key := key_text != ""
-		var has_icon := controller_icon_path != "" and ResourceLoader.exists(controller_icon_path)
-		if not has_key and not has_icon:
+		_keyboard_key_text = keyboard_key_text
+		_controller_key_text = controller_key_text
+		if keyboard_key_text == "" and controller_key_text == "":
 			return
 
 		# Petit médaillon rond façon MOBA, à cheval sur le coin bas-droit de
 		# l'icône plutôt qu'une bande flottant en dessous — plus soigné, et
 		# prend moins de place verticale.
-		var badge_diameter := 24.0
+		var badge_diameter := 22.0
 		key_chip = Panel.new()
 		key_chip.position = Vector2(size - badge_diameter * 0.78, size - badge_diameter * 0.62)
 		key_chip.size = Vector2(badge_diameter, badge_diameter)
@@ -50,39 +52,27 @@ class MOBAAbilityIcon extends Control:
 		key_chip.add_theme_stylebox_override("panel", chip_style)
 		add_child(key_chip)
 
-		if has_key:
-			key_label = Label.new()
-			key_label.text = key_text
-			key_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			key_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			key_label.clip_text = true
-			key_label.add_theme_font_size_override("font_size", 8 if key_text.length() > 1 else 12)
-			key_label.add_theme_color_override("font_color", Color("ffffff"))
-			key_label.add_theme_constant_override("outline_size", 2)
-			key_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.8))
-			key_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			key_chip.add_child(key_label)
+		key_label = Label.new()
+		key_label.text = keyboard_key_text
+		key_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		key_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		key_label.clip_text = true
+		key_label.add_theme_font_size_override("font_size", 8 if keyboard_key_text.length() > 1 else 12)
+		key_label.add_theme_color_override("font_color", Color("ffffff"))
+		key_label.add_theme_constant_override("outline_size", 2)
+		key_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.8))
+		key_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		key_chip.add_child(key_label)
 
-		if has_icon:
-			key_icon = TextureRect.new()
-			key_icon.texture = load(controller_icon_path) as Texture2D
-			key_icon.size = Vector2(16.0, 16.0)
-			key_icon.position = (Vector2(badge_diameter, badge_diameter) - key_icon.size) * 0.5
-			key_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			key_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			key_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			key_icon.visible = false
-			key_chip.add_child(key_icon)
-
-	## Bascule entre l'indice clavier (texte) et l'indice manette (icône)
-	## selon le dernier type d'entrée utilisé par le joueur.
+	## Bascule le texte du médaillon entre l'indice clavier et l'indice
+	## manette selon le dernier type d'entrée utilisé par le joueur.
 	func set_input_mode(controller: bool) -> void:
-		var show_controller := controller and key_icon != null
-		if key_icon != null:
-			key_icon.visible = show_controller
-		if key_label != null:
-			key_label.visible = not show_controller
+		if key_label == null:
+			return
+		var text := _controller_key_text if controller and _controller_key_text != "" else _keyboard_key_text
+		key_label.text = text
+		key_label.add_theme_font_size_override("font_size", 8 if text.length() > 1 else 12)
 
 	func set_cooldown(value: float, maximum: float) -> void:
 		cooldown_left = maxf(0.0, value)
@@ -4482,24 +4472,24 @@ func _add_skill_card(parent: Node, position: Vector2, key: String, skill_name: S
 	icon.position = position
 	var texture := load(icon_path) as Texture2D
 
-	# Indice clavier/souris + icône manette équivalente, selon le sort réel
-	# (voir project.godot : spell_orb = clic gauche/RT, spell_nova = E/RB,
+	# Indice clavier/souris + indice manette (texte court, même médaillon —
+	# voir project.godot : spell_orb = clic gauche/RT, spell_nova = E/RB,
 	# spell_dash = A/bouton sud).
 	var playstation := _controller_is_playstation()
-	var key_text := key
-	var controller_icon_path := ""
+	var keyboard_key_text := key
+	var controller_key_text := ""
 	match node_name:
 		"Orb":
-			key_text = "LMB"
-			controller_icon_path = "res://assets/input_controler/PlayStation Series/Default/playstation_trigger_r2.png" if playstation else "res://assets/input_controler/Xbox Series/Default/xbox_rt.png"
+			keyboard_key_text = "LMB"
+			controller_key_text = "R2" if playstation else "RT"
 		"Nova", "Teleport":
-			key_text = "E"
-			controller_icon_path = "res://assets/input_controler/PlayStation Series/Default/playstation_trigger_r1.png" if playstation else "res://assets/input_controler/Xbox Series/Default/xbox_rb.png"
+			keyboard_key_text = "E"
+			controller_key_text = "R1" if playstation else "RB"
 		"Dash":
-			key_text = "A"
-			controller_icon_path = "res://assets/input_controler/PlayStation Series/Default/playstation_button_cross.png" if playstation else "res://assets/input_controler/Xbox Series/Default/xbox_button_a.png"
+			keyboard_key_text = "A"
+			controller_key_text = "X" if playstation else "A"
 
-	icon.setup(texture, color, card_size, key_text, controller_icon_path)
+	icon.setup(texture, color, card_size, keyboard_key_text, controller_key_text)
 	parent.add_child(icon)
 
 	match node_name:

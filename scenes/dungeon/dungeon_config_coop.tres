@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomEntrance.tscn" id="3_entrance"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomBoss.tscn" id="4_boss"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomCorridor.tscn" id="5_corridor"]
-[ext_resource type="PackedScene" path="res://scenes/dungeon/RoomJunction.tscn" id="6_junction"]
+[ext_resource type="PackedScene" path="res://scenes/dungeon/RoomJunctionKB.tscn" id="6_junction"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomDeadEndA.tscn" id="7_deada"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomDeadEndB.tscn" id="8_deadb"]
 

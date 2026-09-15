@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DungeonConfig" load_steps=11 format=3 uid="uid://bdungcfgcoop1"]
+[gd_resource type="Resource" script_class="DungeonConfig" load_steps=13 format=3 uid="uid://bdungcfgcoop1"]
 
 [ext_resource type="Script" path="res://addons/dungeon_crawler_3d/resources/dungeon_config.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://addons/dungeon_crawler_3d/resources/room_data.gd" id="2_data"]
@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomDeadEndA.tscn" id="7_deada"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomDeadEndB.tscn" id="8_deadb"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomCorridorTurn.tscn" id="9_turn"]
+[ext_resource type="PackedScene" path="res://scenes/dungeon/pickups/DungeonKey.tscn" id="10_key"]
+[ext_resource type="PackedScene" path="res://scenes/dungeon/pickups/DungeonLockedDoor.tscn" id="11_door"]
 
 [sub_resource type="Resource" id="RoomData_entrance"]
 script = ExtResource("2_data")
@@ -67,6 +69,6 @@ boss_pool = Array[RoomData]([SubResource("RoomData_boss")])
 corridor_pool = Array[RoomData]([SubResource("RoomData_corridor"), SubResource("RoomData_turn")])
 junction_pool = Array[RoomData]([SubResource("RoomData_junction")])
 dead_end_pool = Array[RoomData]([SubResource("RoomData_deada"), SubResource("RoomData_deadb")])
-key_scenes = {}
-locked_door_scenes = {}
+key_scenes = {"dungeon_key": ExtResource("10_key")}
+locked_door_scenes = {"dungeon_key": ExtResource("11_door")}
 global_prop_limits = {}

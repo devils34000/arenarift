@@ -6,15 +6,55 @@ class MOBAAbilityIcon extends Control:
 	var cooldown_left: float = 0.0
 	var cooldown_max: float = 1.0
 	var radius: float = 30.0
+	## Petit indice sous l'icône : texte clavier/souris (ex: "CLIC G.", "E",
+	## "A") par défaut, remplacé par l'icône du bouton manette correspondante
+	## dès qu'une manette est utilisée (voir set_input_mode, appelé en
+	## continu depuis _update_hud() avec last_input_was_controller).
+	var key_label: Label
+	var key_icon: TextureRect
 
-	func setup(texture: Texture2D, color: Color, size: float) -> void:
+	func setup(texture: Texture2D, color: Color, size: float, key_text: String = "", controller_icon_path: String = "") -> void:
 		icon_texture = texture
 		accent_color = color
-		custom_minimum_size = Vector2(size, size)
+		custom_minimum_size = Vector2(size, size + 16.0)
 		self.size = Vector2(size, size)
 		radius = size * 0.42
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		queue_redraw()
+
+		if key_text != "":
+			key_label = Label.new()
+			key_label.text = key_text
+			key_label.position = Vector2(0.0, size + 3.0)
+			key_label.size = Vector2(size, 14.0)
+			key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			key_label.clip_text = true
+			key_label.add_theme_font_size_override("font_size", 9)
+			key_label.add_theme_color_override("font_color", Color("c9d6e8"))
+			key_label.add_theme_constant_override("outline_size", 2)
+			key_label.add_theme_color_override("font_outline_color", Color("07111f"))
+			key_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(key_label)
+
+		if controller_icon_path != "" and ResourceLoader.exists(controller_icon_path):
+			key_icon = TextureRect.new()
+			key_icon.texture = load(controller_icon_path) as Texture2D
+			key_icon.position = Vector2(size * 0.5 - 9.0, size + 2.0)
+			key_icon.size = Vector2(18.0, 18.0)
+			key_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			key_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			key_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			key_icon.visible = false
+			add_child(key_icon)
+
+	## Bascule entre l'indice clavier (texte) et l'indice manette (icône)
+	## selon le dernier type d'entrée utilisé par le joueur.
+	func set_input_mode(controller: bool) -> void:
+		var show_controller := controller and key_icon != null
+		if key_icon != null:
+			key_icon.visible = show_controller
+		if key_label != null:
+			key_label.visible = not show_controller
 
 	func set_cooldown(value: float, maximum: float) -> void:
 		cooldown_left = maxf(0.0, value)
@@ -339,6 +379,15 @@ func _process(delta: float) -> void:
 		_update_client_round_transition_visual(delta)
 		_update_network_visuals(delta)
 		_update_hud()
+		# Oubli qui cassait le stick droit en partie réseau : _update_camera()
+		# ne fait que repositionner la caméra à partir de camera_yaw/pitch,
+		# c'est _update_controller_input() qui les modifie à partir du stick
+		# droit. Cette branche (client en partie réseau, donc quasi tous les
+		# joueurs réels) appelait la première sans jamais appeler la seconde —
+		# la souris fonctionnait (mise à jour par événement dans
+		# _unhandled_input, indépendante de cette boucle), mais le stick
+		# droit n'avait plus aucun effet.
+		_update_controller_input(delta)
 		_update_camera(delta)
 		_update_thrown_axes(delta)
 		_update_thrown_daggers(delta)
@@ -4212,8 +4261,11 @@ func _build_hud() -> void:
 	passive_label = _label("", "0/3", Vector2(0, 22), Vector2(68, 34), 17, Color("ffe6a3"), HORIZONTAL_ALIGNMENT_CENTER)
 	passive_badge.add_child(passive_label)
 
-	# Sorts : uniquement les icônes. Les touches LMB/RMB/SPACE sont volontairement retirées.
-	var skill_y := 644.0
+	# Sorts : icônes avec indice de touche/bouton sous chacune (voir
+	# MOBAAbilityIcon.setup), basculé automatiquement clavier/manette.
+	# skill_y remonté de 644 à 636 pour laisser la place à cet indice sans
+	# déborder du bas de l'écran (viewport 720px de haut).
+	var skill_y := 636.0
 	var skill_size := 64.0
 	var skill_gap := 9.0
 	var skill_x := 536.0
@@ -4332,6 +4384,12 @@ func _update_hud() -> void:
 		nova_cooldown_label.set_cooldown(player.teleport_cooldown, 4.0)
 		dash_cooldown_label.set_cooldown(player.dash_cooldown, 1.3)
 
+	# Bascule texte clavier / icône manette sous les icônes de sort, selon
+	# le dernier type d'entrée réellement utilisé par le joueur.
+	orb_cooldown_label.set_input_mode(last_input_was_controller)
+	nova_cooldown_label.set_input_mode(last_input_was_controller)
+	dash_cooldown_label.set_input_mode(last_input_was_controller)
+
 func _ready_text(cooldown: float) -> String:
 	return "PRÊT" if cooldown <= 0.05 else "%.1f s" % cooldown
 
@@ -4373,12 +4431,42 @@ func _network_client_deathmatch_result(winner_peer_id: int, winner_hero: String,
 	var player_won := winner_peer_id == multiplayer.get_unique_id()
 	_show_match_results(player_won, winner_hero, "KILLS : %d" % maxi(best_kills, 0))
 
+## "xbox" ou "playstation" selon le nom rapporté par la première manette
+## connectée — juste pour choisir la bonne icône de bouton sous les sorts.
+func _controller_is_playstation() -> bool:
+	var pads := Input.get_connected_joypads()
+	if pads.is_empty():
+		return false
+	var joy_name := Input.get_joy_name(pads[0]).to_lower()
+	for needle in ["sony", "playstation", "dualshock", "dualsense", "ps3", "ps4", "ps5"]:
+		if needle in joy_name:
+			return true
+	return false
+
 func _add_skill_card(parent: Node, position: Vector2, key: String, skill_name: String, detail: String, color: Color, node_name: String, card_size: float, icon_path: String) -> void:
 	var icon := MOBAAbilityIcon.new()
 	icon.name = "SkillIcon_" + node_name
 	icon.position = position
 	var texture := load(icon_path) as Texture2D
-	icon.setup(texture, color, card_size)
+
+	# Indice clavier/souris + icône manette équivalente, selon le sort réel
+	# (voir project.godot : spell_orb = clic gauche/RT, spell_nova = E/RB,
+	# spell_dash = A/bouton sud).
+	var playstation := _controller_is_playstation()
+	var key_text := key
+	var controller_icon_path := ""
+	match node_name:
+		"Orb":
+			key_text = "CLIC G."
+			controller_icon_path = "res://assets/input_controler/PlayStation Series/Default/playstation_trigger_r2.png" if playstation else "res://assets/input_controler/Xbox Series/Default/xbox_rt.png"
+		"Nova", "Teleport":
+			key_text = "E"
+			controller_icon_path = "res://assets/input_controler/PlayStation Series/Default/playstation_trigger_r1.png" if playstation else "res://assets/input_controler/Xbox Series/Default/xbox_rb.png"
+		"Dash":
+			key_text = "A"
+			controller_icon_path = "res://assets/input_controler/PlayStation Series/Default/playstation_button_cross.png" if playstation else "res://assets/input_controler/Xbox Series/Default/xbox_button_a.png"
+
+	icon.setup(texture, color, card_size, key_text, controller_icon_path)
 	parent.add_child(icon)
 
 	match node_name:

@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
+[ext_resource type="Script" path="res://scripts/dungeon/dungeon_room_retexture.gd" id="99_retex"]
 [ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/arch_2U.fbx" id="1_arch_2U"]
 [ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/floor_2x2.fbx" id="2_floor_2x2"]
 [ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/wall_plain_2U.fbx" id="3_wall_plain_2U"]
@@ -26,6 +27,7 @@ size = Vector3(0.3, 2, 6)
 
 
 [node name="RoomBoss" type="Node3D"]
+script = ExtResource("99_retex")
 
 [node name="Floor_0" parent="." instance=ExtResource("2_floor_2x2")]
 transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, -2, 0, -2)

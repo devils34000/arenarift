@@ -1,5 +1,6 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
+[ext_resource type="Script" path="res://scripts/dungeon/dungeon_room_retexture.gd" id="99_retex"]
 [ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/floor_2x2.fbx" id="1_floor"]
 [ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/wall_X_junction.fbx" id="2_walls"]
 [ext_resource type="Script" path="res://addons/dungeon_crawler_3d/nodes/room_connector_3d.gd" id="3_connector"]
@@ -20,6 +21,7 @@ size = Vector3(0.3, 2, 4)
 size = Vector3(0.3, 2, 4)
 
 [node name="RoomJunctionX" type="Node3D"]
+script = ExtResource("99_retex")
 
 [node name="Floor_NW" parent="." instance=ExtResource("1_floor")]
 transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, -1, 0, -1)

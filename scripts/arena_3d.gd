@@ -2195,6 +2195,7 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	var personal_kills: int = int(player.match_kills) if player != null and is_instance_valid(player) else 0
 	var damage_dealt: int = int(round(player.match_damage_dealt)) if player != null and is_instance_valid(player) else 0
 	var xp_gained: int = PlayerProgress.award_match_xp(player_won, personal_kills)
+	var currency_gained: int = PlayerProgress.award_match_currency(player_won)
 	var arkanite_reward: Dictionary = PlayerProgress.award_match_arkanite_fragments(player_won, selected_hero)
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
@@ -2256,25 +2257,26 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	_add_match_stat_column(stats_panel, Vector2(163, 0), "DÉGÂTS INFLIGÉS", str(damage_dealt), Color("ff8f6b"))
 	_add_match_stat_column(stats_panel, Vector2(316, 0), "XP GAGNÉE", "+%d" % xp_gained, Color("62e6a7"))
 
+	var reward_lines: Array[String] = ["+%d ÉCLATS" % currency_gained]
 	if not arkanite_reward.is_empty():
-		var reward_label := Label.new()
-		reward_label.position = Vector2(70, 258)
-		reward_label.size = Vector2(460, 24)
-		reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var reward_text: String
-		if bool(arkanite_reward.get("unlocked", false)):
-			reward_text = "ARKANITE DÉBLOQUÉE : %s !" % str(arkanite_reward.get("display_name", ""))
+		if bool(arkanite_reward.get("ready", false)):
+			reward_lines.append("ARKANITE PRÊTE : %s  •  débloque-la dans ARKANITES" % str(arkanite_reward.get("display_name", "")))
 		else:
-			reward_text = "+%d FRAGMENTS  •  %s (%d/%d)" % [
+			reward_lines.append("+%d FRAGMENTS  •  %s (%d/%d)" % [
 				int(arkanite_reward.get("amount", 0)),
 				str(arkanite_reward.get("display_name", "")),
 				int(arkanite_reward.get("fragments", 0)),
 				int(arkanite_reward.get("required", 0)),
-			]
-		reward_label.text = reward_text
-		reward_label.add_theme_font_size_override("font_size", 13)
-		reward_label.add_theme_color_override("font_color", Color("c9a24d"))
-		panel.add_child(reward_label)
+			])
+	var reward_label := Label.new()
+	reward_label.position = Vector2(70, 258)
+	reward_label.size = Vector2(460, 24)
+	reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reward_label.clip_text = true
+	reward_label.text = "  •  ".join(reward_lines)
+	reward_label.add_theme_font_size_override("font_size", 13)
+	reward_label.add_theme_color_override("font_color", Color("c9a24d"))
+	panel.add_child(reward_label)
 
 	var return_button := Button.new()
 	return_button.position = Vector2(145, 300)

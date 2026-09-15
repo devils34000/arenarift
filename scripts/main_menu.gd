@@ -3889,7 +3889,7 @@ func _show_arkanites() -> void:
 
 	var played_count: int = PlayerProgress.played_heroes.size()
 	var subtitle := _label(
-		"FAÇONNE TON STYLE  •  HÉROS JOUÉS : %d  •  %s" % [played_count, level_text],
+		"FAÇONNE TON STYLE  •  HÉROS JOUÉS : %d  •  %s  •  %d ÉCLATS" % [played_count, level_text, PlayerProgress.get_currency()],
 		10,
 		Color("b8935a"),
 		Vector2(0, 44),
@@ -3971,21 +3971,35 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 
 	if card.is_equipable:
 		# Maîtrise/Invocation se possèdent via les fragments gagnés en fin de
-		# match (ou un coffre de palier) — l'équipement sur un héros se gère
-		# désormais dans l'onglet LOADOUT, pas ici.
+		# match (ou un coffre de palier), puis un paiement en Éclats une fois
+		# les fragments complétés — l'équipement sur un héros se gère lui,
+		# désormais, dans l'onglet LOADOUT, pas ici.
 		var owned: bool = PlayerProgress.owns_arkanite(card)
-		var status_text: String
-		var status_color: Color
+		var ready: bool = PlayerProgress.is_arkanite_ready(card)
 		if owned:
-			status_text = "POSSÉDÉE  •  ÉQUIPE-LA DANS LOADOUT"
-			status_color = Color("62e6a7")
+			var status_label := _label("POSSÉDÉE  •  ÉQUIPE-LA DANS LOADOUT", 8, Color("62e6a7"), Vector2(86, 90), Vector2(196, 16))
+			status_label.clip_text = true
+			row.add_child(status_label)
+		elif ready:
+			var can_afford: bool = PlayerProgress.get_currency() >= card.unlock_cost
+			var unlock_button := _button("DÉBLOQUER (%d ÉCLATS)" % card.unlock_cost, Vector2(196, 22), true)
+			unlock_button.position = Vector2(86, 88)
+			unlock_button.clip_text = true
+			unlock_button.add_theme_font_size_override("font_size", 8)
+			unlock_button.disabled = not can_afford
+			if not can_afford:
+				unlock_button.text = "ÉCLATS INSUFFISANTS (%d)" % card.unlock_cost
+			var card_id := card.id
+			unlock_button.pressed.connect(func():
+				PlayerProgress.try_unlock_arkanite(card_id)
+				_show_arkanites_deferred()
+			)
+			row.add_child(unlock_button)
 		else:
 			var fragments: int = PlayerProgress.get_arkanite_fragments(card.id)
-			status_text = "%d/%d FRAGMENTS" % [fragments, card.fragments_required]
-			status_color = Color("9a8760")
-		var status_label := _label(status_text, 8, status_color, Vector2(86, 90), Vector2(196, 16))
-		status_label.clip_text = true
-		row.add_child(status_label)
+			var status_label := _label("%d/%d FRAGMENTS" % [fragments, card.fragments_required], 8, Color("9a8760"), Vector2(86, 90), Vector2(196, 16))
+			status_label.clip_text = true
+			row.add_child(status_label)
 	else:
 		var use_button := _button("UTILISER", Vector2(120, 22), false)
 		use_button.position = Vector2(86, 88)
@@ -4045,7 +4059,7 @@ func _show_loadout() -> void:
 	title.text = "LOADOUT"
 
 	var subtitle := _label(
-		"ÉQUIPE TES ARKANITES PAR HÉROS  •  %d EMPLACEMENTS" % PlayerProgress.LOADOUT_MAX_SLOTS,
+		"ÉQUIPE TES ARKANITES PAR HÉROS  •  %d EMPLACEMENTS  •  %d ÉCLATS" % [PlayerProgress.LOADOUT_MAX_SLOTS, PlayerProgress.get_currency()],
 		10,
 		Color("b8935a"),
 		Vector2(0, 44),
@@ -4217,8 +4231,11 @@ func _loadout_card_row(card: ArkaniteCard, accent: Color) -> Panel:
 
 	var action_button: Button
 	if not owned:
-		var fragments: int = PlayerProgress.get_arkanite_fragments(card.id)
-		action_button = _button("%d/%d FRAGMENTS" % [fragments, card.fragments_required], Vector2(140, 26), false)
+		if PlayerProgress.is_arkanite_ready(card):
+			action_button = _button("PRÊTE  •  VOIR ARKANITES", Vector2(140, 26), false)
+		else:
+			var fragments: int = PlayerProgress.get_arkanite_fragments(card.id)
+			action_button = _button("%d/%d FRAGMENTS" % [fragments, card.fragments_required], Vector2(140, 26), false)
 		action_button.disabled = true
 		action_button.add_theme_font_size_override("font_size", 9)
 	else:

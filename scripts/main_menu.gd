@@ -2396,6 +2396,7 @@ func _on_lobby_validate_pressed() -> void:
 	if _lobby_ready_locked:
 		return
 	_lobby_ready_locked = true
+	PlayerProgress.mark_hero_played(selected_hero)
 	Network.lobby_submit_pick.rpc_id(1, selected_hero, true)
 	_build_hero_select_lobby_ui()
 
@@ -3906,8 +3907,9 @@ func _show_arkanites() -> void:
 		var xp_needed: int = PlayerProgress.xp_to_next_level(player_level)
 		level_text = "NIVEAU %d/%d  •  %d/%d XP" % [player_level, PlayerProgress.MAX_LEVEL, player_xp, xp_needed]
 
+	var played_count: int = PlayerProgress.played_heroes.size()
 	var subtitle := _label(
-		"FAÇONNE TON STYLE  •  HÉROS ACTUEL : %s  •  %s" % [selected_hero, level_text],
+		"FAÇONNE TON STYLE  •  HÉROS JOUÉS : %d  •  %s" % [played_count, level_text],
 		10,
 		Color("b8935a"),
 		Vector2(0, 44),
@@ -3955,7 +3957,10 @@ func _arkanite_column(label_text: String, family: int, all_cards: Array[Arkanite
 
 
 func _arkanite_card_row(card: ArkaniteCard) -> Panel:
-	var relevant_to_selected_hero: bool = card.hero_id == "" or card.hero_id == selected_hero
+	# Une Arkanite liée à un héros (hero_id) se débloque en jouant ce héros
+	# au moins une fois (choix validé dans le lobby), pas seulement en le
+	# sélectionnant dans le menu (qui n'existe plus ici).
+	var relevant_to_selected_hero: bool = card.hero_id == "" or PlayerProgress.has_played_hero(card.hero_id)
 	var accent := card.family_accent_color()
 
 	var row := _panel(Vector2.ZERO, Vector2(290, 118), Color("140f09eb"), accent if relevant_to_selected_hero else Color("352818"), 10)

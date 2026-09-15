@@ -15,6 +15,10 @@ signal xp_changed(xp: int, level: int)
 
 var level: int = 1
 var xp: int = 0
+## Héros déjà sélectionnés (validés) dans un lobby au moins une fois : sert à
+## débloquer les Arkanites liées à un héros (hero_id), maintenant que le
+## choix du personnage se fait dans le lobby de partie et plus dans le menu.
+var played_heroes: Array[String] = []
 var _save_path: String = ""
 var _loaded: bool = false
 
@@ -80,9 +84,25 @@ func award_match_xp(player_won: bool, kills: int) -> int:
 	return amount
 
 
+## Marque un héros comme joué (choix validé dans un lobby) : débloque
+## définitivement les Arkanites liées à ce héros. Sans effet si déjà marqué.
+func mark_hero_played(hero_name: String) -> void:
+	_ensure_loaded()
+	if hero_name == "" or played_heroes.has(hero_name):
+		return
+	played_heroes.append(hero_name)
+	_save()
+
+
+func has_played_hero(hero_name: String) -> bool:
+	_ensure_loaded()
+	return played_heroes.has(hero_name)
+
+
 func _load() -> void:
 	level = 1
 	xp = 0
+	played_heroes = []
 	if not FileAccess.file_exists(_save_path):
 		return
 	var file := FileAccess.open(_save_path, FileAccess.READ)
@@ -95,11 +115,13 @@ func _load() -> void:
 		return
 	level = clampi(int(parsed.get("level", 1)), 1, MAX_LEVEL)
 	xp = maxi(0, int(parsed.get("xp", 0)))
+	for hero_name in parsed.get("played_heroes", []):
+		played_heroes.append(str(hero_name))
 
 
 func _save() -> void:
 	var file := FileAccess.open(_save_path, FileAccess.WRITE)
 	if file == null:
 		return
-	file.store_string(JSON.stringify({"level": level, "xp": xp}))
+	file.store_string(JSON.stringify({"level": level, "xp": xp, "played_heroes": played_heroes}))
 	file.close()

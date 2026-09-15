@@ -2065,7 +2065,27 @@ func _build_hero_select_lobby_ui() -> void:
 	# pour tenir confortablement dans ~500px.
 	var canvas := _panel(Vector2.ZERO, Vector2(946, 500), Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0)
 	canvas.custom_minimum_size = Vector2(946, 500)
+	canvas.clip_contents = true
 	content.add_child(canvas)
+
+	# Fond thématique par héros (le grand artwork complet, pas le recadrage
+	# tête) : change à chaque sélection puisque tout l'écran est reconstruit
+	# par _build_hero_select_lobby_ui(). Assombri par un voile dessus pour
+	# que le texte reste lisible.
+	var bg_path := _hero_art(selected_hero)
+	if bg_path != "":
+		var bg := TextureRect.new()
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bg.texture = load(bg_path) as Texture2D
+		canvas.add_child(bg)
+		var veil := ColorRect.new()
+		veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		veil.color = Color(0.04, 0.03, 0.02, 0.72)
+		veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		canvas.add_child(veil)
 
 	_lobby_countdown_label = _label(str(int(ceil(_lobby_seconds_left_local))), 36, Color("f4c977"), Vector2(0, 0), Vector2(946, 42), HORIZONTAL_ALIGNMENT_CENTER)
 	canvas.add_child(_lobby_countdown_label)

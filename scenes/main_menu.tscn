@@ -7,10 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://b0hppeuywe8wy" path="res://assets/menu_design/champ_select/bordure_steam_cropped.png" id="5_steam_border"]
 [ext_resource type="Texture2D" uid="uid://ble1xlphoiehb" path="res://assets/menu_design/champ_select/bordure_level_cropped.png" id="6_level_border"]
 [ext_resource type="Texture2D" uid="uid://b0le3ivsbxo85" path="res://assets/menu_design/champ_select/bordure_menu_cropped.png" id="7_frame_border"]
-<<<<<<< HEAD
 [ext_resource type="Texture2D" uid="uid://dmj6uytdoh6vt" path="res://assets/menu_design/champ_select/bordure_mode_menu_cropped.png" id="8_side_border"]
-=======
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_mode_menu_cropped.png" id="8_side_border"]
 [ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/deathmatch_button_cropped.png" id="9_deathmatch"]
 [ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/1v1_button_cropped.png" id="10_1v1"]
 [ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/2v2_button_cropped.png" id="11_2v2"]
@@ -53,7 +50,6 @@ content_margin_left = 66.0
 content_margin_right = 34.0
 texture = ExtResource("14_create_party")
 modulate_color = Color(1.05, 1.0, 0.9, 1)
->>>>>>> 0221bfb2892b16db37a4402c72c8e5d337492675
 
 [node name="MainMenu" type="Control" unique_id=1079531850]
 layout_mode = 3
@@ -428,9 +424,6 @@ theme_override_colors/font_color = Color(0.541176, 0.458824, 0.313726, 1)
 theme_override_font_sizes/font_size = 11
 text = "SELECT MODE"
 
-<<<<<<< HEAD
-[node name="SidePanel" type="Panel" parent="MainFrame/ArenaModesScreen/Row" unique_id=1191711645]
-=======
 [node name="DeathmatchCard" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(600, 76)
@@ -481,8 +474,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_custom")
 text = "CUSTOM GAME"
 alignment = 0
 
-[node name="SidePanel" type="Panel" parent="MainFrame/ArenaModesScreen/Row"]
->>>>>>> 0221bfb2892b16db37a4402c72c8e5d337492675
+[node name="SidePanel" type="Panel" parent="MainFrame/ArenaModesScreen/Row" unique_id=1191711645]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(290, 380)
 layout_mode = 2
@@ -580,16 +572,6 @@ offset_right = 271.0
 offset_bottom = 410.0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_launch")
-text = "CRÉER LA PARTY"
-
-[node name="LaunchButton2" type="Button" parent="MainFrame/ArenaModesScreen/Row/SidePanel" unique_id=227232884]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 17.0
-offset_top = 352.0
-offset_right = 271.0
-offset_bottom = 410.0
-mouse_default_cursor_shape = 2
 text = "CRÉER LA PARTY"
 
 [node name="BottomLabel" type="Label" parent="MainFrame/ArenaModesScreen" unique_id=1708393905]

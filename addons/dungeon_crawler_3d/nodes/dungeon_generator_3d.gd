@@ -164,6 +164,16 @@ func _instantiate_rooms(graph: DungeonGraph, prop_manager: DungeonPropManager) -
 		room_instance.transform = world_transform
 		room_instance.name = _room_name(room_data, category, _dungeon_root.get_child_count())
 
+		# FIX (Arena Rift) : la salle doit être dans l'arbre AVANT qu'on essaie
+		# d'attribuer un owner à quoi que ce soit sous elle (portes, clés,
+		# props) — sinon edited_scene_root n'est pas encore un ancêtre de ces
+		# nœuds fraîchement créés et Godot rejette l'assignation avec
+		# "Invalid owner. Owner must be an ancestor in the tree.", en boucle,
+		# une fois par élément touché pendant cette fenêtre.
+		_dungeon_root.add_child(room_instance)
+		if Engine.is_editor_hint():
+			room_instance.owner = get_tree().edited_scene_root
+
 		# Hook for locked doors and doorway/blocker templates inside the room
 		for child in room_instance.find_children("*", "RoomConnector3D", true, false):
 			var connector := child as RoomConnector3D
@@ -192,11 +202,6 @@ func _instantiate_rooms(graph: DungeonGraph, prop_manager: DungeonPropManager) -
 					else:
 						# Clean up unspawned prop placeholder nodes
 						prop_group.queue_free()
-
-		_dungeon_root.add_child(room_instance)
-
-		if Engine.is_editor_hint():
-			room_instance.owner = get_tree().edited_scene_root
 
 
 func _spawn_doorway_or_blocker(connector: RoomConnector3D, room_index: int, graph: DungeonGraph, room_instance: Node3D) -> void:

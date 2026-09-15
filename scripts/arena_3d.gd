@@ -457,6 +457,9 @@ func _build_camera() -> void:
 	add_child(camera)
 	_update_camera(0.0)
 
+const CAMERA_COLLISION_MARGIN: float = 0.35
+const CAMERA_MIN_DISTANCE: float = 1.2
+
 func _update_camera(_delta: float) -> void:
 	if player == null or camera == null:
 		return
@@ -470,15 +473,39 @@ func _update_camera(_delta: float) -> void:
 		cos(camera_yaw) * horizontal_scale
 	)
 
-	var desired: Vector3 = target \
-		+ horizontal * camera_distance \
-		+ Vector3.UP * (-sin(camera_pitch) * camera_distance)
+	var offset: Vector3 = horizontal * camera_distance + Vector3.UP * (-sin(camera_pitch) * camera_distance)
+	var desired_distance: float = offset.length()
+	var offset_dir: Vector3 = offset / desired_distance
 
-	# Lissage indépendant des FPS.
+	# On raccourcit la distance caméra si un mur/obstacle se trouve entre le
+	# joueur et la position désirée, pour éviter que la caméra passe derrière.
+	var actual_distance: float = _camera_collision_distance(target, target + offset, desired_distance)
+	var desired: Vector3 = target + offset_dir * actual_distance
+
+	# Lissage indépendant des FPS. On se rapproche instantanément pour ne
+	# jamais traverser un mur, mais on s'éloigne en douceur une fois l'
+	# obstacle passé.
 	var smoothing: float = 1.0 - exp(-18.0 * _delta)
-	camera.global_position = camera.global_position.lerp(desired, smoothing)
+	if actual_distance < camera.global_position.distance_to(target):
+		camera.global_position = desired
+	else:
+		camera.global_position = camera.global_position.lerp(desired, smoothing)
 
 	camera.look_at(target, Vector3.UP)
+
+func _camera_collision_distance(target: Vector3, desired: Vector3, desired_distance: float) -> float:
+	var space_state := get_world_3d().direct_space_state
+	if space_state == null:
+		return desired_distance
+	var query := PhysicsRayQueryParameters3D.create(target, desired)
+	query.collision_mask = 1
+	if player != null and player is CollisionObject3D:
+		query.exclude = [(player as CollisionObject3D).get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return desired_distance
+	var hit_distance: float = target.distance_to(result.position) - CAMERA_COLLISION_MARGIN
+	return clampf(hit_distance, CAMERA_MIN_DISTANCE, desired_distance)
 
 func _build_world() -> void:
 	# Si la scène de l'arène (arena.tscn / Arena1v1.tscn) contient déjà ses

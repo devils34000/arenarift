@@ -358,7 +358,15 @@ func _input(event: InputEvent) -> void:
 					return
 
 				var focused := viewport.gui_get_focus_owner()
-				if focused is BaseButton and focused.is_visible_in_tree() and not focused.disabled:
+				if focused is OptionButton and focused.is_visible_in_tree() and not focused.disabled:
+					# Cas à part : un OptionButton (menu déroulant MAP/MODE...)
+					# n'ouvre pas son popup via un simple emit_signal("pressed")
+					# comme un bouton normal — il faut appeler show_popup()
+					# directement. Sans ça, la manette pouvait le focus mais
+					# jamais l'ouvrir.
+					viewport.set_input_as_handled()
+					(focused as OptionButton).show_popup()
+				elif focused is BaseButton and focused.is_visible_in_tree() and not focused.disabled:
 					# Marquer l'input AVANT le signal : le signal peut changer de scène
 					# et supprimer ce menu pendant l'exécution.
 					viewport.set_input_as_handled()
@@ -1479,6 +1487,7 @@ func _show_custom_room_lobby() -> void:
 
 	custom_room_panel.add_child(_label("MAP", 9, Color("7a6a4a"), Vector2(230, 60), Vector2(150, 16)))
 	custom_room_map_option = OptionButton.new()
+	custom_room_map_option.focus_mode = Control.FOCUS_ALL
 	custom_room_map_option.position = Vector2(230, 78)
 	custom_room_map_option.size = Vector2(240, 34)
 	for map_def in CUSTOM_ROOM_MAPS:
@@ -1489,6 +1498,7 @@ func _show_custom_room_lobby() -> void:
 
 	custom_room_panel.add_child(_label("MODE", 9, Color("7a6a4a"), Vector2(490, 60), Vector2(150, 16)))
 	custom_room_mode_option = OptionButton.new()
+	custom_room_mode_option.focus_mode = Control.FOCUS_ALL
 	custom_room_mode_option.position = Vector2(490, 78)
 	custom_room_mode_option.size = Vector2(280, 34)
 	for mode_def in CUSTOM_ROOM_MODES:

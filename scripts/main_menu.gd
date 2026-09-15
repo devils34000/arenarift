@@ -432,26 +432,51 @@ func _focus_first_control() -> void:
 		first.grab_focus()
 
 
-## Glyphe texte à préfixer devant un bouton pour indiquer la touche manette
-## qui le déclenche. Pas d'icônes réelles Xbox/PlayStation (droits d'image,
-## et pas d'assets dispo) : juste les lettres "A"/"B" — ce sont d'ailleurs
-## les constantes moteur (JOY_BUTTON_A/B) réellement lues dans le code de
-## confirmation/retour, quel que soit le nom imprimé sur la manette.
-func _controller_button_glyph(kind: String) -> String:
+## Icônes de boutons manette (pack Kenney "Input Prompts", assets/input_controler/).
+const CONTROLLER_ICON_XBOX_CONFIRM := "res://assets/input_controler/Xbox Series/Default/xbox_button_a.png"
+const CONTROLLER_ICON_XBOX_CANCEL := "res://assets/input_controler/Xbox Series/Default/xbox_button_b.png"
+const CONTROLLER_ICON_PLAYSTATION_CONFIRM := "res://assets/input_controler/PlayStation Series/Default/playstation_button_cross.png"
+const CONTROLLER_ICON_PLAYSTATION_CANCEL := "res://assets/input_controler/PlayStation Series/Default/playstation_button_circle.png"
+
+## "xbox" ou "playstation" selon le nom rapporté par la première manette
+## connectée — sert uniquement à choisir la bonne icône de bouton (A/✕,
+## B/○), pas une détection exhaustive de tous les modèles.
+func _controller_brand() -> String:
+	var pads := Input.get_connected_joypads()
+	if pads.is_empty():
+		return "xbox"
+	var joy_name := Input.get_joy_name(pads[0]).to_lower()
+	for needle in ["sony", "playstation", "dualshock", "dualsense", "ps3", "ps4", "ps5"]:
+		if needle in joy_name:
+			return "playstation"
+	return "xbox"
+
+
+## Chemin de l'icône de bouton manette pour "confirm" (bouton sud, A/✕) ou
+## "cancel" (bouton est, B/○), selon la marque de manette détectée.
+func _controller_icon_path(kind: String) -> String:
+	var playstation := _controller_brand() == "playstation"
 	if kind == "confirm":
-		return "[A]  "
+		return CONTROLLER_ICON_PLAYSTATION_CONFIRM if playstation else CONTROLLER_ICON_XBOX_CONFIRM
 	if kind == "cancel":
-		return "[B]  "
+		return CONTROLLER_ICON_PLAYSTATION_CANCEL if playstation else CONTROLLER_ICON_XBOX_CANCEL
 	return ""
 
 
-## Préfixe un texte de bouton par le glyphe manette correspondant, mais
-## seulement si une manette est connectée (sinon le bouton reste tel quel
-## pour un joueur clavier/souris).
-func _with_controller_hint(text: String, kind: String) -> String:
+## Pose l'icône du bouton manette correspondant sur un Button (avant son
+## texte), seulement si une manette est connectée — la retire sinon, pour
+## un joueur clavier/souris.
+func _apply_controller_prompt(button: Button, kind: String) -> void:
 	if not controller_connected:
-		return text
-	return _controller_button_glyph(kind) + text
+		button.icon = null
+		return
+	var path := _controller_icon_path(kind)
+	if path == "":
+		button.icon = null
+		return
+	button.icon = load(path) as Texture2D
+	button.add_theme_constant_override("icon_max_width", 22)
+	button.expand_icon = true
 
 
 func _find_first_focusable(root: Node) -> Control:
@@ -926,7 +951,8 @@ func _show_arena_modes() -> void:
 	map_value.text = str(details.get("map", ""))
 
 	var launch: Button = %LaunchButton
-	launch.text = _with_controller_hint("SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY", "confirm")
+	launch.text = "SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY"
+	_apply_controller_prompt(launch, "confirm")
 	_apply_banner_launch_style(launch)
 	_apply_banner_text_style(launch, 16)
 	if launch.pressed.is_connected(_show_custom_game_home):
@@ -2447,7 +2473,8 @@ func _build_lobby_validate_button() -> Control:
 		_lobby_validate_button.add_theme_font_size_override("font_size", 16)
 		_lobby_validate_button.disabled = true
 	else:
-		_lobby_validate_button.text = _with_controller_hint("VALIDER MON CHOIX", "confirm")
+		_lobby_validate_button.text = "VALIDER MON CHOIX"
+		_apply_controller_prompt(_lobby_validate_button, "confirm")
 		_lobby_validate_button.add_theme_font_size_override("font_size", 19)
 		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
 	return _lobby_validate_button

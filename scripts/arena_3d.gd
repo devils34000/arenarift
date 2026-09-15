@@ -2520,7 +2520,7 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		vfx_manager.spawn_eren_fire_nova(self, visual_origin, 1.45, false)
 		_play_sfx(DASH_SFX, visual_origin, -3.0)
 	elif kind == "heal":
-		vfx_manager.spawn_maylinh_elemental_heal(self, visual_origin)
+		vfx_manager.spawn_maylinh_elemental_heal(self, visual_origin, float(caster.get("maylinh_heal_radius")))
 		_play_sfx(TELEPORT_SFX, visual_origin, -8.0)
 	elif kind == "flee":
 		vfx_manager.spawn_maylinh_flee(self, visual_origin)
@@ -2729,7 +2729,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		spirit.hit.connect(_on_projectile_hit)
 		vfx_manager.spawn_maylinh_elemental_projectile(spirit, direction)
 	elif kind == "heal":
-		vfx_manager.spawn_maylinh_elemental_heal(self, origin)
+		vfx_manager.spawn_maylinh_elemental_heal(self, origin, float(caster.get("maylinh_heal_radius")))
 		_play_sfx(TELEPORT_SFX, origin, -8.0)
 	elif kind == "flee":
 		vfx_manager.spawn_maylinh_flee(self, caster.global_position)
@@ -3498,24 +3498,6 @@ func _update_eren_fire_trails(delta: float) -> void:
 		if killed:
 			_handle_combat_death(fighter, best_owner)
 
-func _spawn_heal_aoe(position: Vector3) -> void:
-	var ring := MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = 3.7
-	torus.outer_radius = 3.9
-	torus.rings = 48
-	torus.ring_segments = 16
-	ring.mesh = torus
-	ring.position = position + Vector3.UP * 0.06
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color("61f0b1")
-	material.emission_enabled = true
-	material.emission = Color("35d995")
-	material.emission_energy_multiplier = 3.5
-	ring.material_override = material
-	add_child(ring)
-	get_tree().create_timer(0.8).timeout.connect(ring.queue_free)
-
 func _spawn_cage_fx(position: Vector3) -> void:
 	# Cage visible et lisible sans dépendre d'un asset externe.
 	var root := Node3D.new()
@@ -3553,42 +3535,6 @@ func _spawn_cage_fx(position: Vector3) -> void:
 	root.add_child(ring)
 
 	get_tree().create_timer(2.1).timeout.connect(root.queue_free)
-
-
-func _spawn_flee_fx(position: Vector3) -> void:
-	var root := Node3D.new()
-	root.name = "MaylinhFleeFX"
-	root.global_position = position + Vector3.UP * 0.04
-	add_child(root)
-
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color("b94cff")
-	material.emission_enabled = true
-	material.emission = Color("8f25ff")
-	material.emission_energy_multiplier = 7.0
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.albedo_color.a = 0.82
-
-	for y in [0.15, 0.75, 1.35]:
-		var ring := MeshInstance3D.new()
-		var torus := TorusMesh.new()
-		torus.inner_radius = 0.48 + y * 0.08
-		torus.outer_radius = 0.60 + y * 0.08
-		torus.rings = 32
-		torus.ring_segments = 12
-		ring.mesh = torus
-		ring.position.y = y
-		ring.material_override = material
-		root.add_child(ring)
-
-	var light := OmniLight3D.new()
-	light.light_color = Color("b94cff")
-	light.light_energy = 5.0
-	light.omni_range = 4.0
-	light.position.y = 1.0
-	root.add_child(light)
-
-	get_tree().create_timer(0.45).timeout.connect(root.queue_free)
 
 
 func _play_sfx(stream: AudioStream, position: Vector3, volume_db: float = 0.0) -> void:

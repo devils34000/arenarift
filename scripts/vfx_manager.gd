@@ -43,6 +43,15 @@ const ICE_PRIMARY := Color("9fe9ff")
 const ICE_SECONDARY := Color("eafeff")
 const ICE_DEEP := Color("4fb8e0")
 
+# Fumée de téléportation Maylinh (violet-gris, façon "poof" de ninja).
+const SMOKE_LIGHT := Color("9a86a8")
+const SMOKE_DARK := Color("2c2233")
+
+# Zone de soin Maylinh — halo/pluie/fumée verte.
+const HEAL_PRIMARY := Color("53f2a0")
+const HEAL_SECONDARY := Color("c9ffdf")
+const HEAL_SMOKE := Color("2f6b4a")
+
 var eren_trail_vfx_clock: float = 0.0
 
 func spawn_teleport_start(parent: Node, position: Vector3, scale_value: float = 0.85) -> Node3D:
@@ -481,49 +490,110 @@ func spawn_maylinh_elemental_projectile(projectile: Node3D, direction: Vector3) 
 	fx.set("emission", 3.5)
 	return fx
 
-func spawn_maylinh_elemental_heal(parent: Node, position: Vector3) -> Node3D:
+func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float = 7.5) -> Node3D:
 	if parent == null:
 		return null
 
-	# Nouveau cercle Free Magic pour le soin de Maylinh.
-	# On le charge dynamiquement afin que le reste du VFX manager reste compatible.
-	var circle_scene := load("res://scenes/vfx/free_magic_circle.tscn") as PackedScene
-	if circle_scene != null:
-		var circle := circle_scene.instantiate() as Node3D
-		if circle != null:
-			parent.add_child(circle)
-			circle.global_position = position + Vector3.UP * 0.035
-			circle.scale = Vector3.ONE * 1.55
-			if circle.has_method("set"):
-				circle.set("circle_color", Color("8cff65"))
-				circle.set("circle_scale", 2.0)
-				circle.set("spiral_count", 0)
-				circle.set("duration", 2.15)
-			get_tree().create_timer(2.2).timeout.connect(func():
-				if is_instance_valid(circle):
-					circle.queue_free()
-			)
-			return circle
+	var duration := 2.0
+	var root := Node3D.new()
+	root.name = "MaylinhHealZoneFX"
+	parent.add_child(root)
+	root.global_position = position + Vector3.UP * 0.02
 
-	# Secours : ancien VFX si la scène Free Magic n'est pas présente.
-	if MAYLINH_ELEMENTAL_AREA_VFX == null:
-		return null
-	var fx := MAYLINH_ELEMENTAL_AREA_VFX.instantiate() as Node3D
-	if fx == null:
-		return null
-	parent.add_child(fx)
-	fx.global_position = position + Vector3.UP * 0.02
-	fx.set("area_radius", 3.0)
-	fx.set("primary_color", Color("b8ff45"))
-	fx.set("secondary_color", Color("55ff2e"))
-	fx.set("tertiary_color", Color("0d7a35"))
-	fx.set("emission", 3.5)
-	fx.set("speed_scale", 1.0)
-	get_tree().create_timer(2.15).timeout.connect(func():
-		if is_instance_valid(fx):
-			fx.queue_free()
+	# Halo vert autour de la zone (contour posé au sol).
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(HEAL_PRIMARY.r, HEAL_PRIMARY.g, HEAL_PRIMARY.b, 0.9)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = HEAL_PRIMARY
+	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = maxf(radius - 0.18, 0.05)
+	torus.outer_radius = radius
+	torus.rings = 48
+	torus.ring_segments = 10
+	ring.mesh = torus
+	ring.rotation_degrees.x = 90.0
+	ring.material_override = ring_mat
+	ring.scale = Vector3.ONE * 0.05
+	ring.position.y = 0.03
+	root.add_child(ring)
+	var ring_tween := root.create_tween()
+	ring_tween.tween_property(ring, "scale", Vector3.ONE, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_interval(duration - 1.0)
+	ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.5)
+
+	# Pluie verte qui tombe dans toute la zone.
+	var rain := GPUParticles3D.new()
+	rain.amount = 140
+	rain.lifetime = 1.1
+	rain.one_shot = false
+	rain.emitting = true
+	rain.preprocess = 0.3
+	rain.draw_pass_1 = _rain_drop_mesh(HEAL_SECONDARY)
+	var rain_pm := ParticleProcessMaterial.new()
+	rain_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
+	rain_pm.emission_ring_axis = Vector3.UP
+	rain_pm.emission_ring_radius = radius
+	rain_pm.emission_ring_inner_radius = 0.0
+	rain_pm.emission_ring_height = 0.0
+	rain_pm.direction = Vector3(0, -1, 0)
+	rain_pm.spread = 4.0
+	rain_pm.initial_velocity_min = 5.0
+	rain_pm.initial_velocity_max = 7.0
+	rain_pm.gravity = Vector3(0, -6.0, 0)
+	rain_pm.scale_min = 0.5
+	rain_pm.scale_max = 1.1
+	rain_pm.particle_flag_align_y = true
+	rain_pm.color = HEAL_SECONDARY
+	rain.process_material = rain_pm
+	rain.position.y = 4.5
+	root.add_child(rain)
+	get_tree().create_timer(duration - 0.3).timeout.connect(func():
+		if is_instance_valid(rain):
+			rain.emitting = false
 	)
-	return fx
+
+	# Volutes de fumée verte qui montent depuis le sol, réparties dans la zone.
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for i in range(6):
+		var a := rng.randf_range(0.0, TAU)
+		var r := rng.randf_range(0.0, radius * 0.85)
+		var offset := Vector3(cos(a) * r, 0.05, sin(a) * r)
+		var tint := HEAL_SMOKE.lerp(HEAL_SECONDARY, rng.randf_range(0.0, 0.4))
+		tint.a = rng.randf_range(0.4, 0.6)
+		var size := rng.randf_range(1.3, 2.3)
+		var puff := MeshInstance3D.new()
+		puff.mesh = _soft_puff_mesh(Vector2(size, size), tint)
+		puff.position = offset
+		puff.scale = Vector3.ONE * 0.15
+		root.add_child(puff)
+		var puff_mat := puff.mesh.material as ShaderMaterial
+		var puff_tween := puff.create_tween()
+		puff_tween.set_parallel(true)
+		puff_tween.tween_property(puff, "scale", Vector3.ONE * rng.randf_range(1.3, 2.0), duration * 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		puff_tween.tween_property(puff, "position:y", offset.y + rng.randf_range(0.8, 1.6), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		puff_tween.tween_property(puff_mat, "shader_parameter/alpha_factor", 0.0, 0.6).set_delay(duration - 0.6)
+		puff_tween.set_parallel(false)
+
+	# Petit flash lumineux vert au centre pour marquer l'activation.
+	var light := OmniLight3D.new()
+	light.light_color = HEAL_PRIMARY
+	light.light_energy = 0.0
+	light.omni_range = radius * 0.6
+	root.add_child(light)
+	var light_tween := root.create_tween()
+	light_tween.tween_property(light, "light_energy", 4.0, 0.25)
+	light_tween.tween_property(light, "light_energy", 0.0, duration - 0.25)
+
+	get_tree().create_timer(duration + 0.4).timeout.connect(func():
+		if is_instance_valid(root):
+			root.queue_free()
+	)
+	return root
 
 func _spawn_external(parent: Node, packed: PackedScene, position: Vector3, direction: Vector3, scale_value: float, lifetime: float) -> Node3D:
 	if packed == null:
@@ -774,6 +844,59 @@ void fragment() {
 	mesh.material = mat
 	return mesh
 
+func _soft_puff_mesh(size: Vector2, tint: Color) -> QuadMesh:
+	# Nuage de fumée doux, billboardé (toujours face caméra), réutilisé pour
+	# la fumée de téléportation de Maylinh et les volutes de sa zone de soin.
+	var mesh := QuadMesh.new()
+	mesh.size = size
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, blend_mix, depth_draw_never, depth_test_disabled, billboard;
+
+uniform vec4 tint : source_color = vec4(1.0);
+uniform float alpha_factor = 1.0;
+
+void fragment() {
+	vec2 c = UV - vec2(0.5);
+	float d = length(c) * 2.0;
+	float soft = 1.0 - smoothstep(0.15, 1.0, d);
+	soft = pow(soft, 1.6);
+	ALBEDO = tint.rgb;
+	ALPHA = soft * tint.a * alpha_factor;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("alpha_factor", 1.0)
+	mesh.material = mat
+	return mesh
+
+func _rain_drop_mesh(tint: Color) -> QuadMesh:
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(0.035, 0.28)
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, blend_add, depth_draw_never, depth_test_disabled;
+
+uniform vec4 tint : source_color = vec4(0.4, 1.0, 0.55, 1.0);
+
+void fragment() {
+	float edge = 1.0 - abs(UV.x - 0.5) * 2.0;
+	float vertical = smoothstep(0.0, 0.15, UV.y) * (1.0 - smoothstep(0.7, 1.0, UV.y));
+	ALBEDO = tint.rgb;
+	EMISSION = tint.rgb * 2.5;
+	ALPHA = edge * vertical;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("tint", tint)
+	mesh.material = mat
+	return mesh
+
 func _spawn_ice_shard_burst(parent: Node, position: Vector3, scale_value: float = 1.0) -> void:
 	if parent == null:
 		return
@@ -844,8 +967,63 @@ func spawn_maylinh_heal(parent: Node, position: Vector3) -> Node3D:
 	)
 	return circle
 
-func spawn_maylinh_flee(parent: Node, position: Vector3) -> Node3D:
-	return _spawn_tinted(parent, ELEMENTAL_AREA_VFX, position + Vector3.UP * 0.04, Vector3.ZERO, 1.0, 0.4, MAYLINH_PRIMARY, Color("e7c7ff"), Color("6a1fbf"), 3.4, 4.5)
+func spawn_maylinh_flee(parent: Node, position: Vector3, scale_value: float = 1.0) -> Node3D:
+	# Poof de fumée façon téléportation ninja — utilisé au départ ET à l'arrivée.
+	if parent == null:
+		return null
+	var duration := 2.0
+	var root := Node3D.new()
+	root.name = "MaylinhSmokeFX"
+	parent.add_child(root)
+	root.global_position = position
+
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for i in range(7):
+		var tint := SMOKE_LIGHT.lerp(SMOKE_DARK, rng.randf())
+		tint.a = rng.randf_range(0.55, 0.85)
+		var size := rng.randf_range(0.9, 1.7) * scale_value
+		var puff := MeshInstance3D.new()
+		puff.mesh = _soft_puff_mesh(Vector2(size, size), tint)
+		var offset := Vector3(rng.randf_range(-0.5, 0.5), rng.randf_range(0.1, 0.5), rng.randf_range(-0.5, 0.5)) * scale_value
+		puff.position = offset
+		puff.scale = Vector3.ONE * 0.15
+		root.add_child(puff)
+		var puff_mat := puff.mesh.material as ShaderMaterial
+		var rise := rng.randf_range(0.8, 1.6) * scale_value
+		var tween := puff.create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(puff, "scale", Vector3.ONE * rng.randf_range(1.2, 1.9), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(puff, "position:y", offset.y + rise, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(puff_mat, "shader_parameter/alpha_factor", 0.0, 0.7).set_delay(duration - 0.7)
+		tween.set_parallel(false)
+
+	# Bouffée dense au moment précis du "poof".
+	var burst := GPUParticles3D.new()
+	burst.amount = 40
+	burst.lifetime = 0.5
+	burst.one_shot = true
+	burst.emitting = true
+	burst.explosiveness = 0.9
+	burst.draw_pass_1 = _soft_puff_mesh(Vector2(0.35, 0.35) * scale_value, Color(SMOKE_LIGHT.r, SMOKE_LIGHT.g, SMOKE_LIGHT.b, 0.8))
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pm.emission_sphere_radius = 0.25 * scale_value
+	pm.direction = Vector3(0, 1, 0)
+	pm.spread = 130.0
+	pm.initial_velocity_min = 0.6
+	pm.initial_velocity_max = 1.6
+	pm.gravity = Vector3(0, 0.4, 0)
+	pm.scale_min = 0.6
+	pm.scale_max = 1.3
+	burst.process_material = pm
+	root.add_child(burst)
+
+	get_tree().create_timer(duration + 0.2).timeout.connect(func():
+		if is_instance_valid(root):
+			root.queue_free()
+	)
+	return root
 
 func spawn_maylinh_cage(parent: Node, position: Vector3) -> Node3D:
 	return _spawn_tinted(parent, ELEMENTAL_AREA_VFX, position, Vector3.ZERO, 1.6, 2.0, MAYLINH_PRIMARY, Color("6a1fbf"), Color("e7c7ff"), 2.6, 4.0)

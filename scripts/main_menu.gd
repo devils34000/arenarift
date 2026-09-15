@@ -209,7 +209,6 @@ var matchmaking_search_button: Button
 const MATCHMAKING_BASE_URL := "http://149.202.91.92:8080"
 
 const SETTINGS_PATH := "user://settings.cfg"
-const MENU_BG_PATH := "res://assets/menu_art/arena_rift_background.jpg"
 const HERO_MODEL_PATHS := {
 	"AERIS": "res://assets/kaykit/Mage.glb",
 	"MAYLINH": "res://assets/kaykit/Rogue_Hooded.glb",
@@ -372,135 +371,41 @@ func _find_first_focusable(root: Node) -> Control:
 # SHELL
 # =========================================================
 
+## Le rail, le cadre principal, les bordures dorées et les cartes
+## Steam/Niveau sont maintenant de VRAIS nœuds dans scenes/main_menu.tscn
+## (retrouvés ici par nom unique, ex. %MainFrame) plutôt que créés par ce
+## script : tu peux donc les sélectionner et les déplacer/redimensionner
+## directement dans l'éditeur Godot, sans repasser par moi à chaque
+## ajustement. Cette fonction ne fait plus que leur appliquer un style
+## (couleurs, police) et remplir les parties dynamiques (boutons de nav,
+## texture des bordures, titre d'écran...).
 func _build_shell() -> void:
 	_apply_global_fonts()
 
-	# Grimoire vivant : fond sombre gravé, braises flottantes, cadre en
-	# pierre/bronze plutôt que verre. Toute la logique de navigation reste
-	# identique, seul l'habillage visuel change.
-	var bg := TextureRect.new()
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var bg_tex := load(MENU_BG_PATH) as Texture2D
-	if bg_tex != null:
-		bg.texture = bg_tex
-	add_child(bg)
-
-	# Vignette sombre façon crypte : assombrit les bords, garde le centre lisible.
-	var cinematic_tint := ColorRect.new()
-	cinematic_tint.color = Color("07050296")
-	cinematic_tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	cinematic_tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(cinematic_tint)
-
-	var ember_glow := ColorRect.new()
-	ember_glow.color = Color("3a1a0640")
-	ember_glow.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	ember_glow.position = Vector2(0, 0)
-	ember_glow.size.y = 180
-	ember_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(ember_glow)
-
 	_build_ember_particles()
 
-	var left_rail := Panel.new()
-	left_rail.position = Vector2(0, 0)
-	left_rail.size = Vector2(244, 720)
-	left_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var left_rail: Panel = %LeftRail
 	left_rail.add_theme_stylebox_override("panel", _box(Color("0d0a07f0"), Color("4a3018"), 0, 1))
-	add_child(left_rail)
 
-	# Filet doré vertical qui longe le bord droit du rail, comme une
-	# baguette de reliure sur un vieux grimoire.
-	var rail_edge := ColorRect.new()
-	rail_edge.color = Color("c9a24d")
-	rail_edge.position = Vector2(242, 0)
-	rail_edge.size = Vector2(2, 720)
-	rail_edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	left_rail.add_child(rail_edge)
-
-		# Logo PNG ARENA RIFT dans le rail de navigation.
-	var brand := TextureRect.new()
-	brand.name = "ArenaRiftLogo"
-	brand.position = Vector2(18, 22)
-	brand.size = Vector2(208, 96)
-
-	brand.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	brand.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-
-	brand.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var logo_texture := load(
-		"res://assets/menu_art/logo_arena_rift.png"
-	) as Texture2D
-
-	if logo_texture != null:
-		brand.texture = logo_texture
-	else:
-		push_warning(
-			"Logo ARENA RIFT introuvable : res://assets/menu_art/logo_arena_rift.png"
-		)
-
-	left_rail.add_child(brand)
-
-	var divider := _label("──────────────", 9, Color("4a3018"), Vector2(18, 132), Vector2(208, 16), HORIZONTAL_ALIGNMENT_CENTER)
-	left_rail.add_child(divider)
-
-	var nav := VBoxContainer.new()
-	nav.position = Vector2(18, 170)
-	nav.size = Vector2(208, 220)
-	nav.add_theme_constant_override("separation", 9)
-	left_rail.add_child(nav)
-
+	var nav: VBoxContainer = %Nav
 	for item in ["PLAY", "HEROES", "ARKANITES", "LOADOUT", "SETTINGS"]:
 		var b := _aaa_nav_button(item, item == "PLAY")
 		nav_buttons[item] = b
 		b.pressed.connect(func(): _navigate_deferred(item))
 		nav.add_child(b)
 
-	left_rail.add_child(_label("V0.1 · PRÉ-ALPHA\nUNE NOUVELLE ÈRE\nSE LÈVE", 9, Color("6b5a3a"), Vector2(34, 650), Vector2(180, 55)))
-
-	# Bordure ornée fournie par le graphiste, par-dessus le panneau plat
-	# existant : ajoutée en dernier pour rester visible au-dessus du contenu
-	# du rail (elle est vide/transparente au centre, donc ne cache rien).
-	_add_border_overlay(left_rail, "res://assets/menu_design/champ_select/bordure_menu_play.png")
+	_set_border_texture(%RailBorder, "res://assets/menu_design/champ_select/bordure_menu_play.png")
 
 	_build_steam_profile()
 
-	# Cadre principal façon pierre gravée : coins asymétriques, filet bronze.
-	var frame := Panel.new()
-	frame.name = "MainFrame"
-	frame.position = Vector2(262, 88)
-	frame.size = Vector2(994, 614)
+	var frame: Panel = %MainFrame
 	frame.add_theme_stylebox_override("panel", _rune_box(Color("110c07eb"), Color("6b4a24"), 2))
-	add_child(frame)
-	_add_border_overlay(frame, "res://assets/menu_design/champ_select/bordure_menu.png")
+	_set_border_texture(%FrameBorder, "res://assets/menu_design/champ_select/bordure_menu.png")
 
-	title = _label("", 30, Color("f3e6c8"), Vector2(24, 20), Vector2(946, 40), HORIZONTAL_ALIGNMENT_CENTER)
+	title = %Title
 	_use_title_font(title)
-	frame.add_child(title)
 
-	# Séparateur orné : losange central entre deux filets, façon sceau.
-	var accent_left := ColorRect.new()
-	accent_left.color = Color("c9a24d")
-	accent_left.position = Vector2(410, 65)
-	accent_left.size = Vector2(58, 1)
-	frame.add_child(accent_left)
-	var accent_right := ColorRect.new()
-	accent_right.color = Color("c9a24d")
-	accent_right.position = Vector2(478, 65)
-	accent_right.size = Vector2(58, 1)
-	frame.add_child(accent_right)
-	var accent_mark := _label("◆", 10, Color("e8b656"), Vector2(465, 58), Vector2(16, 16), HORIZONTAL_ALIGNMENT_CENTER)
-	frame.add_child(accent_mark)
-
-	content = VBoxContainer.new()
-	content.position = Vector2(24, 72)
-	content.size = Vector2(946, 525)
-	content.add_theme_constant_override("separation", 12)
-	frame.add_child(content)
+	content = %Content
 
 
 const FONT_CINZEL_BOLD := "res://assets/menu_design/font/Cintel/static/Cinzel-Bold.ttf"
@@ -554,11 +459,43 @@ func _use_decorative_font(control: Control) -> void:
 var _border_texture_cache: Dictionary = {}
 
 ## Certaines bordures (bordure_menu.png, bordure_steam.png, bordure_level.png)
-## ont une grosse marge transparente/halo laissée dans le canevas source par
-## le graphiste (jusqu'à ~15% de hauteur vide en haut/bas) — étirer le
-## canevas entier sur un panneau fait alors flotter le trait doré loin des
-## bords réels du panneau au lieu de les longer. On recadre donc sur le
-## contenu visible (rectangle non-transparent) avant utilisation.
+## ont un halo à alpha très faible qui traîne sur presque tout le canevas —
+## Image.get_used_rect() seul (alpha > 0) ne l'exclut pas et laissait le
+## trait doré flotter loin des bords réels du panneau une fois étiré. On
+## calcule donc la bbox avec un vrai seuil d'alpha (40/255), sur une version
+## réduite de l'image pour rester rapide au démarrage.
+func _alpha_threshold_rect(image: Image, threshold: int) -> Rect2i:
+	var src_w := image.get_width()
+	var src_h := image.get_height()
+	var scale := 0.15
+	var small_w := maxi(1, int(src_w * scale))
+	var small_h := maxi(1, int(src_h * scale))
+	var small := image.duplicate() as Image
+	small.resize(small_w, small_h, Image.INTERPOLATE_BILINEAR)
+
+	var min_x := small_w
+	var min_y := small_h
+	var max_x := -1
+	var max_y := -1
+	for y in small_h:
+		for x in small_w:
+			if small.get_pixel(x, y).a8 >= threshold:
+				min_x = mini(min_x, x)
+				min_y = mini(min_y, y)
+				max_x = maxi(max_x, x)
+				max_y = maxi(max_y, y)
+
+	if max_x < 0:
+		return Rect2i(0, 0, src_w, src_h)
+
+	var inv := 1.0 / scale
+	var rx0 := clampi(int(min_x * inv), 0, src_w)
+	var ry0 := clampi(int(min_y * inv), 0, src_h)
+	var rx1 := clampi(int((max_x + 1) * inv), 0, src_w)
+	var ry1 := clampi(int((max_y + 1) * inv), 0, src_h)
+	return Rect2i(rx0, ry0, rx1 - rx0, ry1 - ry0)
+
+
 func _cropped_border_texture(path: String) -> Texture2D:
 	if _border_texture_cache.has(path):
 		return _border_texture_cache[path]
@@ -568,7 +505,7 @@ func _cropped_border_texture(path: String) -> Texture2D:
 	var image := base.get_image()
 	var result: Texture2D = base
 	if image != null:
-		var used := image.get_used_rect()
+		var used := _alpha_threshold_rect(image, 40)
 		if used.size.x > 0 and used.size.y > 0:
 			var cropped := image.get_region(used)
 			if cropped != null and cropped.get_width() > 0 and cropped.get_height() > 0:
@@ -577,20 +514,28 @@ func _cropped_border_texture(path: String) -> Texture2D:
 	return result
 
 
+## Assigne une bordure (recadrée sur son contenu visible) à un TextureRect
+## EXISTANT — utilisé pour les bordures de la coquille statique, dont le
+## nœud (position/taille) vit maintenant dans scenes/main_menu.tscn et est
+## éditable directement dans Godot, plutôt que créé par ce script.
+func _set_border_texture(node: TextureRect, path: String) -> void:
+	var tex := _cropped_border_texture(path)
+	if tex == null:
+		push_warning("Bordure introuvable : " + path)
+		return
+	node.texture = tex
+
+
 ## Pose une bordure décorative (image fournie par le graphiste, transparente
-## au centre) par-dessus un panneau existant, étirée exactement sur sa
-## taille. Ajoutée en dernier enfant pour rester visible par-dessus le
-## contenu du panneau — sans risque puisque le centre de l'image est vide.
+## au centre) par-dessus un panneau créé dynamiquement (écrans reconstruits
+## à chaque navigation, ex. le panneau de détails du mode), étirée
+## exactement sur sa taille. Pour la coquille statique du menu, voir
+## _set_border_texture() à la place.
 func _add_border_overlay(parent: Control, path: String) -> void:
 	var tex := _cropped_border_texture(path)
 	if tex == null:
 		push_warning("Bordure introuvable : " + path)
 		return
-	# Confirmé par le joueur (contours bleus fournis) : la bordure doit
-	# toucher exactement les 4 bords du panneau, quitte à légèrement
-	# déformer les losanges d'angle si le ratio ne correspond pas — un
-	# essai avec KEEP_ASPECT_CENTERED laissait un espace vide en haut/bas
-	# sur le cadre principal, ce qui était pire que la légère déformation.
 	var overlay := TextureRect.new()
 	overlay.position = Vector2.ZERO
 	overlay.size = parent.size
@@ -602,10 +547,7 @@ func _add_border_overlay(parent: Control, path: String) -> void:
 
 
 func _build_ember_particles() -> void:
-	var layer := Control.new()
-	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(layer)
+	var layer: Control = %EmberLayer
 
 	for i in 22:
 		var ember := ColorRect.new()
@@ -628,70 +570,34 @@ func _build_ember_particles() -> void:
 		)
 
 
+## Cartes Steam et Niveau : nœuds réels dans scenes/main_menu.tscn (retrouvés
+## par nom unique) — déplaçables/redimensionnables directement dans
+## l'éditeur. Ici on ne fait plus qu'appliquer le style et remplir/mettre à
+## jour le contenu dynamique (avatar, pseudo, XP...).
 func _build_steam_profile() -> void:
-	# Carte Steam : taille d'origine. Le cadre principal ("MainFrame", ajouté
-	# juste après dans _build_shell) est plus haut en z-order et recouvre
-	# tout ce qui dépasserait de cette carte au-delà de y=88 — d'où la carte
-	# "Niveau" séparée juste à côté plutôt que d'agrandir celle-ci vers le bas.
-	steam_profile = _panel(Vector2(1050, 24), Vector2(206, 62), Color("140f09eb"), Color("6b4a24"), 12)
-	steam_profile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(steam_profile)
+	steam_profile = %SteamProfile
+	steam_profile.add_theme_stylebox_override("panel", _simple_box(Color("140f09eb"), Color("6b4a24"), 12))
 
-	var avatar_frame := _panel(Vector2(8, 8), Vector2(45, 45), Color("241a0d"), Color("e8b656"), 12)
-	avatar_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	steam_profile.add_child(avatar_frame)
+	var avatar_frame: Panel = %AvatarFrame
+	avatar_frame.add_theme_stylebox_override("panel", _simple_box(Color("241a0d"), Color("e8b656"), 12))
 
-	steam_avatar = TextureRect.new()
-	steam_avatar.position = Vector2(1, 1)
-	steam_avatar.size = Vector2(43, 43)
-	steam_avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	steam_avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	steam_avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	avatar_frame.add_child(steam_avatar)
+	steam_avatar = %Avatar
+	steam_avatar_fallback = %AvatarFallback
 
-	steam_avatar_fallback = _label("?", 20, Color("e8b656"), Vector2(8, 9), Vector2(28, 25), HORIZONTAL_ALIGNMENT_CENTER)
-	steam_avatar_fallback.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	avatar_frame.add_child(steam_avatar_fallback)
-
-	steam_name_label = _label("STEAM", 12, Color("f3e6c8"), Vector2(64, 8), Vector2(134, 18))
-	steam_name_label.clip_text = true
-	steam_profile.add_child(steam_name_label)
-	steam_status_label = _label("STEAM  •  EN LIGNE", 9, Color("6fb88a"), Vector2(64, 31), Vector2(134, 16))
-	steam_profile.add_child(steam_status_label)
-	_add_border_overlay(steam_profile, "res://assets/menu_design/champ_select/bordure_steam.png")
+	steam_name_label = %NameLabel
+	steam_status_label = %StatusLabel
+	_set_border_texture(%SteamBorder, "res://assets/menu_design/champ_select/bordure_steam.png")
 
 	# Carte "Niveau" séparée, juste à gauche de la carte Steam, sur la même
 	# rangée (même y, même hauteur) pour ne jamais empiéter sur le cadre
 	# principal en dessous.
-	var level_panel := _panel(Vector2(858, 24), Vector2(184, 62), Color("140f09eb"), Color("6b4a24"), 12)
-	level_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(level_panel)
+	var level_panel: Panel = %LevelPanel
+	level_panel.add_theme_stylebox_override("panel", _simple_box(Color("140f09eb"), Color("6b4a24"), 12))
 
-	level_label = _label("NIVEAU 1", 12, Color("e8b656"), Vector2(10, 8), Vector2(100, 18))
-	level_panel.add_child(level_label)
-
-	xp_label = _label("0 / 100 XP", 9, Color("c9a877"), Vector2(10, 27), Vector2(164, 14))
-	level_panel.add_child(xp_label)
-
-	# ProgressBar posait problème (sa taille minimale par thème l'emportait
-	# sur .size et débordait largement du bloc, même avec custom_minimum_size
-	# forcé). Remplacé par deux ColorRect simples : leur taille ne dépend
-	# d'aucun thème, donc aucune surprise possible.
-	var progress_bg := ColorRect.new()
-	progress_bg.position = Vector2(10, 45)
-	progress_bg.size = Vector2(LEVEL_BAR_WIDTH, 8)
-	progress_bg.color = Color("241a0d")
-	progress_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	level_panel.add_child(progress_bg)
-
-	level_progress_fill = ColorRect.new()
-	level_progress_fill.position = Vector2(10, 45)
-	level_progress_fill.size = Vector2(0, 8)
-	level_progress_fill.color = Color("58cfff")
-	level_progress_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	level_panel.add_child(level_progress_fill)
-	level_panel.clip_contents = true
-	_add_border_overlay(level_panel, "res://assets/menu_design/champ_select/bordure_level.png")
+	level_label = %LevelLabel
+	xp_label = %XpLabel
+	level_progress_fill = %ProgressFill
+	_set_border_texture(%LevelBorder, "res://assets/menu_design/champ_select/bordure_level.png")
 
 	_update_level_display()
 	if not PlayerProgress.xp_changed.is_connected(_on_player_xp_changed):
@@ -3853,6 +3759,19 @@ func _show_settings_deferred() -> void:
 
 ## Style "sceau gravé" : bordures fines dorées/bronze, coins asymétriques,
 ## ombre profonde façon pierre ou cuir tanné plutôt que verre lisse.
+## Équivalent du style appliqué par l'ancien helper _panel() (bordure 1px,
+## coins uniformes, sans ombre) — utilisé pour les panneaux qui sont
+## maintenant de vrais nœuds de scène (Steam, Niveau, avatar) plutôt que
+## créés par _panel() lui-même.
+func _simple_box(background: Color, border: Color, radius: int) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = background
+	box.border_color = border
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(radius)
+	return box
+
+
 func _box(background: Color, border: Color, radius: int, width: int) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = background

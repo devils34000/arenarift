@@ -1,6 +1,8 @@
-[gd_scene format=3 uid="uid://d2dk35a842mn0"]
+[gd_scene load_steps=4 format=3 uid="uid://d2dk35a842mn0"]
 
 [ext_resource type="Script" uid="uid://bl5dlyc5hgjjf" path="res://scripts/main_menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/menu_art/arena_rift_background.jpg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/menu_art/logo_arena_rift.png" id="3_logo"]
 
 [node name="MainMenu" type="Control" unique_id=1079531850]
 layout_mode = 3
@@ -10,3 +12,318 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
+
+[node name="Background" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CinematicTint" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.027451, 0.0196078, 0.00784314, 0.588235)
+
+[node name="EmberGlow" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 1280.0
+offset_bottom = 180.0
+mouse_filter = 2
+color = Color(0.227451, 0.101961, 0.0235294, 0.25098)
+
+[node name="EmberLayer" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftRail" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 244.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="RailEdge" type="ColorRect" parent="LeftRail"]
+layout_mode = 0
+offset_left = 242.0
+offset_right = 244.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.788235, 0.635294, 0.301961, 1)
+
+[node name="Brand" type="TextureRect" parent="LeftRail"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 22.0
+offset_right = 226.0
+offset_bottom = 118.0
+mouse_filter = 2
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Divider" type="Label" parent="LeftRail"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 132.0
+offset_right = 226.0
+offset_bottom = 148.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.290196, 0.188235, 0.0941176, 1)
+theme_override_font_sizes/font_size = 9
+text = "──────────────"
+horizontal_alignment = 1
+
+[node name="Nav" type="VBoxContainer" parent="LeftRail"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 170.0
+offset_right = 226.0
+offset_bottom = 390.0
+theme_override_constants/separation = 9
+
+[node name="VersionLabel" type="Label" parent="LeftRail"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 34.0
+offset_top = 650.0
+offset_right = 214.0
+offset_bottom = 705.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.419608, 0.352941, 0.227451, 1)
+theme_override_font_sizes/font_size = 9
+text = "V0.1 · PRÉ-ALPHA
+UNE NOUVELLE ÈRE
+SE LÈVE"
+
+[node name="RailBorder" type="TextureRect" parent="LeftRail"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 244.0
+offset_bottom = 720.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="SteamProfile" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1050.0
+offset_top = 24.0
+offset_right = 1256.0
+offset_bottom = 86.0
+mouse_filter = 2
+
+[node name="AvatarFrame" type="Panel" parent="SteamProfile"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 53.0
+offset_bottom = 53.0
+mouse_filter = 2
+
+[node name="Avatar" type="TextureRect" parent="SteamProfile/AvatarFrame"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 44.0
+offset_bottom = 44.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="AvatarFallback" type="Label" parent="SteamProfile/AvatarFrame"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 8.0
+offset_top = 9.0
+offset_right = 36.0
+offset_bottom = 34.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.909804, 0.713726, 0.337255, 1)
+theme_override_font_sizes/font_size = 20
+text = "?"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="SteamProfile"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 64.0
+offset_top = 8.0
+offset_right = 198.0
+offset_bottom = 26.0
+clip_text = true
+theme_override_colors/font_color = Color(0.952941, 0.901961, 0.784314, 1)
+theme_override_font_sizes/font_size = 12
+text = "STEAM"
+
+[node name="StatusLabel" type="Label" parent="SteamProfile"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 64.0
+offset_top = 31.0
+offset_right = 198.0
+offset_bottom = 47.0
+theme_override_colors/font_color = Color(0.435294, 0.721569, 0.541176, 1)
+theme_override_font_sizes/font_size = 9
+text = "STEAM  •  EN LIGNE"
+
+[node name="SteamBorder" type="TextureRect" parent="SteamProfile"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 206.0
+offset_bottom = 62.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="LevelPanel" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 858.0
+offset_top = 24.0
+offset_right = 1042.0
+offset_bottom = 86.0
+mouse_filter = 2
+clip_contents = true
+
+[node name="LevelLabel" type="Label" parent="LevelPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 110.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(0.909804, 0.713726, 0.337255, 1)
+theme_override_font_sizes/font_size = 12
+text = "NIVEAU 1"
+
+[node name="XpLabel" type="Label" parent="LevelPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 27.0
+offset_right = 174.0
+offset_bottom = 41.0
+theme_override_colors/font_color = Color(0.788235, 0.658824, 0.466667, 1)
+theme_override_font_sizes/font_size = 9
+text = "0 / 100 XP"
+
+[node name="ProgressBg" type="ColorRect" parent="LevelPanel"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 45.0
+offset_right = 174.0
+offset_bottom = 53.0
+mouse_filter = 2
+color = Color(0.141176, 0.101961, 0.0509804, 1)
+
+[node name="ProgressFill" type="ColorRect" parent="LevelPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 45.0
+offset_right = 10.0
+offset_bottom = 53.0
+mouse_filter = 2
+color = Color(0.345098, 0.811765, 1, 1)
+
+[node name="LevelBorder" type="TextureRect" parent="LevelPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 184.0
+offset_bottom = 62.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="MainFrame" type="Panel" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 262.0
+offset_top = 88.0
+offset_right = 1256.0
+offset_bottom = 702.0
+
+[node name="FrameBorder" type="TextureRect" parent="MainFrame"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 994.0
+offset_bottom = 614.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Title" type="Label" parent="MainFrame"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 970.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.952941, 0.901961, 0.784314, 1)
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+
+[node name="AccentLeft" type="ColorRect" parent="MainFrame"]
+layout_mode = 0
+offset_left = 410.0
+offset_top = 65.0
+offset_right = 468.0
+offset_bottom = 66.0
+mouse_filter = 2
+color = Color(0.788235, 0.635294, 0.301961, 1)
+
+[node name="AccentRight" type="ColorRect" parent="MainFrame"]
+layout_mode = 0
+offset_left = 478.0
+offset_top = 65.0
+offset_right = 536.0
+offset_bottom = 66.0
+mouse_filter = 2
+color = Color(0.788235, 0.635294, 0.301961, 1)
+
+[node name="AccentMark" type="Label" parent="MainFrame"]
+layout_mode = 0
+offset_left = 465.0
+offset_top = 58.0
+offset_right = 481.0
+offset_bottom = 74.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.909804, 0.713726, 0.337255, 1)
+theme_override_font_sizes/font_size = 10
+text = "◆"
+horizontal_alignment = 1
+
+[node name="Content" type="VBoxContainer" parent="MainFrame"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 24.0
+offset_top = 72.0
+offset_right = 970.0
+offset_bottom = 597.0
+theme_override_constants/separation = 12

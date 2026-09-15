@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ca4ay3wm3q0vw"
-path="res://.godot/imported/kaithlyn.PNG-b2da95f2336a227c01af45db0f3453bd.ctex"
+uid="uid://0xxs0kxk5way"
+path="res://.godot/imported/eren.png-bc77921ce2468f60025ac6682dd539fe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/menu_art/heroes/square/kaithlyn.PNG"
-dest_files=["res://.godot/imported/kaithlyn.PNG-b2da95f2336a227c01af45db0f3453bd.ctex"]
+source_file="res://assets/menu_art/heroes/square/eren.png"
+dest_files=["res://.godot/imported/eren.png-bc77921ce2468f60025ac6682dd539fe.ctex"]
 
 [params]
 

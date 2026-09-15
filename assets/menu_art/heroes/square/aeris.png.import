@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://0xxs0kxk5way"
-path="res://.godot/imported/eren.PNG-bc77921ce2468f60025ac6682dd539fe.ctex"
+uid="uid://byblo33upryjt"
+path="res://.godot/imported/aeris.png-895fe4ef1aa2f2a74a20b5ec0fbf0b05.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/menu_art/heroes/square/eren.PNG"
-dest_files=["res://.godot/imported/eren.PNG-bc77921ce2468f60025ac6682dd539fe.ctex"]
+source_file="res://assets/menu_art/heroes/square/aeris.png"
+dest_files=["res://.godot/imported/aeris.png-895fe4ef1aa2f2a74a20b5ec0fbf0b05.ctex"]
 
 [params]
 

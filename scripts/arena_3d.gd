@@ -185,13 +185,12 @@ var score_label: Label
 var subtitle_label: Label
 var health_bar_bg: ColorRect
 var health_bar_fill: ColorRect
-const HERO_HEALTH_BAR_WIDTH: float = 174.0
+const HERO_HEALTH_BAR_WIDTH: float = 140.0
 var health_text: Label
 var passive_label: Label
 var passive_caption_label: Label
 var passive_badge: Panel
 var level_badge_label: Label
-var health_max_label: Label
 var hero_accent_color: Color = Color("58cfff")
 var orb_cooldown_label: MOBAAbilityIcon
 var nova_cooldown_label: MOBAAbilityIcon
@@ -4221,37 +4220,50 @@ func _build_hud() -> void:
 	var accent := Color("ff7138") if selected_hero == "EREN" else (Color("ffad55") if selected_hero == "KAITHLYN" else (Color("54e1a7") if selected_hero == "MAYLINH" else Color("58cfff")))
 	hero_accent_color = accent
 
-	# Profil façon "carte de héros" compétitive : portrait circulaire avec
-	# badge de niveau, gros chiffre de vie bien visible, et la ressource
-	# passive en badge circulaire (comme une charge d'ultime) plutôt qu'en
-	# simple bandeau de texte.
-	var hero_panel := _panel(Vector2(20, 606), Vector2(360, 96), Color("07111ff2"), accent.darkened(0.35), 16)
+	# Profil façon "carte de héros" compétitive, habillé du cadre ATH dédié
+	# au héros (assets/ath_design/<héros>/<héros>_ath.png, fourni par
+	# toi) : portrait circulaire avec badge de niveau, barre de vie et
+	# ressource passive en badge circulaire, tous alignés sur les 3 fenêtres
+	# du cadre (mesurées précisément dans l'image source — 2 grands cercles
+	# + 1 petit cercle + une bande centrale). Le cadre est posé PAR-DESSUS
+	# ce contenu (dernier enfant = dessiné au-dessus), ses cercles étant
+	# transparents pour laisser voir le portrait/la ressource au travers.
+	var ATH_SIZE := Vector2(480, 160)
+	# Facteur d'échelle entre le PNG source (2172x724) et la taille affichée.
+	var ATH_SCALE := 480.0 / 2172.0
+	var hero_panel := Control.new()
+	hero_panel.name = "HeroPanel"
+	hero_panel.position = Vector2(16, 552)
+	hero_panel.size = ATH_SIZE
+	hero_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom.add_child(hero_panel)
 
-	var portrait := _panel(Vector2(8, 8), Vector2(80, 80), Color("101e32"), accent, 40)
+	# Grand cercle gauche (portrait) : centre natif (313, 337), rayon 205.
+	var portrait_diam: float = 205.0 * 2.0 * ATH_SCALE
+	var portrait_pos := Vector2(313.0 - 205.0, 337.0 - 205.0) * ATH_SCALE
+	var portrait := _panel(portrait_pos, Vector2(portrait_diam, portrait_diam), Color("101e32"), accent, int(portrait_diam * 0.5))
 	hero_panel.add_child(portrait)
-	portrait.add_child(_label("", hero_name.substr(0, 1), Vector2(0, 14), Vector2(80, 52), 32, accent, HORIZONTAL_ALIGNMENT_CENTER))
+	portrait.add_child(_label("", hero_name.substr(0, 1), Vector2(0, portrait_diam * 0.18), Vector2(portrait_diam, portrait_diam * 0.64), int(portrait_diam * 0.4), accent, HORIZONTAL_ALIGNMENT_CENTER))
 
-	# Badge de niveau, ajouté APRÈS le portrait pour se dessiner par-dessus
-	# son coin bas-droit (comme le badge de niveau des jeux compétitifs).
-	var level_badge := _panel(Vector2(60, 60), Vector2(28, 28), Color("0a1220"), Color("f4c977"), 14)
+	# Petit cercle (badge de niveau) : centre natif (457, 514), rayon 76.
+	var level_diam: float = 76.0 * 2.0 * ATH_SCALE
+	var level_pos := Vector2(457.0 - 76.0, 514.0 - 76.0) * ATH_SCALE
+	var level_badge := _panel(level_pos, Vector2(level_diam, level_diam), Color("0a1220"), Color("f4c977"), int(level_diam * 0.5))
 	hero_panel.add_child(level_badge)
 	var player_progress := get_node_or_null("/root/PlayerProgress")
 	var player_level: int = int(player_progress.call("get_level")) if player_progress != null else 1
-	level_badge_label = _label("", str(player_level), Vector2(0, 5), Vector2(28, 18), 11, Color("f4c977"), HORIZONTAL_ALIGNMENT_CENTER)
+	level_badge_label = _label("", str(player_level), Vector2(0, level_diam * 0.16), Vector2(level_diam, level_diam * 0.68), int(level_diam * 0.5), Color("f4c977"), HORIZONTAL_ALIGNMENT_CENTER)
 	level_badge.add_child(level_badge_label)
 
-	hero_panel.add_child(_label("", hero_name, Vector2(100, 10), Vector2(180, 16), 12, Color("f3f8ff")))
-	hero_panel.add_child(_label("", hero_role, Vector2(100, 26), Vector2(180, 11), 7, Color("718eaf")))
+	# Bande centrale (nom + barre de vie) : zone de contenu plate mesurée
+	# dans l'image source, x∈[670,1510] y∈[270,435].
+	var bar_pos := Vector2(670.0, 270.0) * ATH_SCALE
+	var bar_size := Vector2(1510.0 - 670.0, 435.0 - 270.0) * ATH_SCALE
+	hero_panel.add_child(_label("", hero_name, Vector2(bar_pos.x, bar_pos.y), Vector2(bar_size.x, 15), 12, Color("f3f8ff"), HORIZONTAL_ALIGNMENT_CENTER))
 
-	# Gros chiffre de vie courante, bien plus lisible qu'un simple texte
-	# posé sur la barre — la barre elle-même devient un simple liseré fin
-	# sous le chiffre plutôt que l'élément principal.
-	health_text = _label("", "100", Vector2(100, 38), Vector2(62, 34), 26, Color("eafff5"))
-	hero_panel.add_child(health_text)
-	health_max_label = _label("", "/ 100", Vector2(162, 50), Vector2(100, 22), 13, Color("6fa593"))
-	health_max_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hero_panel.add_child(health_max_label)
+	var hp_bar_width: float = minf(HERO_HEALTH_BAR_WIDTH, bar_size.x - 20.0)
+	var hp_bar_x: float = bar_pos.x + (bar_size.x - hp_bar_width) * 0.5
+	var hp_bar_y: float = bar_pos.y + 18.0
 
 	# ColorRect plutôt que ProgressBar : sa taille minimale imposée par le
 	# thème ignorait la .size qu'on lui donnait et débordait du cadre du
@@ -4259,7 +4271,7 @@ func _build_hud() -> void:
 	# sur la barre d'XP du menu principal).
 	health_bar_bg = ColorRect.new()
 	health_bar_bg.name = "HealthBg"
-	health_bar_bg.position = Vector2(100, 76)
+	health_bar_bg.position = Vector2(hp_bar_x, hp_bar_y)
 	health_bar_bg.size = Vector2(HERO_HEALTH_BAR_WIDTH, 6)
 	health_bar_bg.color = Color("0c1626")
 	health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -4267,22 +4279,43 @@ func _build_hud() -> void:
 
 	health_bar_fill = ColorRect.new()
 	health_bar_fill.name = "HealthFill"
-	health_bar_fill.position = Vector2(100, 76)
+	health_bar_fill.position = Vector2(hp_bar_x, hp_bar_y)
 	health_bar_fill.size = Vector2(HERO_HEALTH_BAR_WIDTH, 6)
 	health_bar_fill.color = Color("31d795")
 	health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hero_panel.add_child(health_bar_fill)
 
-	# Badge de ressource passive, façon charge d'ultime : cercle avec le
-	# libellé court en haut et la valeur en gros au centre. Le contour
-	# s'accentue automatiquement (cf. _update_hud) quand la ressource est
-	# prête, au lieu de rester terne en permanence.
-	passive_badge = _panel(Vector2(284, 12), Vector2(68, 68), Color("101e32"), accent.darkened(0.4), 34)
+	# Chiffres de vie combinés ("100 / 100") sur une seule ligne compacte :
+	# pas assez de hauteur dans la bande pour un gros chiffre + un "/ max"
+	# séparé comme avant.
+	health_text = _label("", "100 / 100", Vector2(bar_pos.x, hp_bar_y + 9.0), Vector2(bar_size.x, 14), 11, Color("eafff5"), HORIZONTAL_ALIGNMENT_CENTER)
+	hero_panel.add_child(health_text)
+
+	# Grand cercle droit (ressource passive), façon charge d'ultime : centre
+	# natif (1857, 337), rayon 205 — même mesure que le portrait, en miroir.
+	var passive_pos := Vector2(1857.0 - 205.0, 337.0 - 205.0) * ATH_SCALE
+	passive_badge = _panel(passive_pos, Vector2(portrait_diam, portrait_diam), Color("101e32"), accent.darkened(0.4), int(portrait_diam * 0.5))
 	hero_panel.add_child(passive_badge)
-	passive_caption_label = _label("", "PASSIF", Vector2(0, 8), Vector2(68, 12), 7, Color("8aa0bd"), HORIZONTAL_ALIGNMENT_CENTER)
+	passive_caption_label = _label("", "PASSIF", Vector2(0, portrait_diam * 0.22), Vector2(portrait_diam, 12), 7, Color("8aa0bd"), HORIZONTAL_ALIGNMENT_CENTER)
 	passive_badge.add_child(passive_caption_label)
-	passive_label = _label("", "0/3", Vector2(0, 22), Vector2(68, 34), 17, Color("ffe6a3"), HORIZONTAL_ALIGNMENT_CENTER)
+	passive_label = _label("", "0/3", Vector2(0, portrait_diam * 0.32), Vector2(portrait_diam, portrait_diam * 0.5), 17, Color("ffe6a3"), HORIZONTAL_ALIGNMENT_CENTER)
 	passive_badge.add_child(passive_label)
+
+	# Le cadre ATH lui-même, en dernier enfant : dessiné par-dessus tout ce
+	# qui précède, ses 3 fenêtres (2 grands cercles + 1 petit) laissant voir
+	# le contenu posé dessous au travers de leur trou transparent.
+	var ath_path := "res://assets/ath_design/%s/%s_ath.png" % [hero_name.to_lower(), hero_name.to_lower()]
+	if ResourceLoader.exists(ath_path):
+		var ath_frame := TextureRect.new()
+		ath_frame.name = "AthFrame"
+		ath_frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		ath_frame.texture = load(ath_path) as Texture2D
+		ath_frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ath_frame.stretch_mode = TextureRect.STRETCH_SCALE
+		ath_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hero_panel.add_child(ath_frame)
+	else:
+		push_warning("ATH introuvable pour " + hero_name + " : " + ath_path)
 
 	# Sorts : icônes avec indice de touche/bouton sous chacune (voir
 	# MOBAAbilityIcon.setup), basculé automatiquement clavier/manette. Le
@@ -4380,9 +4413,7 @@ func _update_hud() -> void:
 	if health_bar_fill != null and is_instance_valid(health_bar_fill):
 		var health_ratio: float = clampf(player.health / maxf(1.0, player.max_health), 0.0, 1.0)
 		health_bar_fill.size.x = HERO_HEALTH_BAR_WIDTH * health_ratio
-	health_text.text = "%d" % int(player.health)
-	if health_max_label != null and is_instance_valid(health_max_label):
-		health_max_label.text = "/ %d" % int(player.max_health)
+	health_text.text = "%d / %d" % [int(player.health), int(player.max_health)]
 	passive_caption_label.text = player.get_passive_short_label()
 	passive_label.text = player.get_passive_value_text()
 	if passive_badge != null and is_instance_valid(passive_badge):

@@ -2418,12 +2418,18 @@ func _mode_card(mode: String, selected: bool) -> Button:
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.focus_mode = Control.FOCUS_ALL
 	b.add_theme_font_size_override("font_size", 17)
-	b.add_theme_color_override("font_color", Color("f3e6c8"))
-	b.add_theme_stylebox_override("normal", _rune_box(Color("1a140b"), Color("4a3018"), 1))
-	b.add_theme_stylebox_override("hover", _rune_box(Color("241a0d"), Color("c9a24d"), 1))
+	b.add_theme_constant_override("outline_size", 1)
+	b.add_theme_color_override("font_outline_color", Color("0a0603"))
+	# Même traitement "plaque gravée" que les autres boutons mis en avant du
+	# menu (_button()) : bronze allumé pour le mode actif, léger liseré doré
+	# pour les autres, plutôt que du brun plat sans relief.
+	b.add_theme_color_override("font_color", Color("fff2d4") if selected else Color("d4c4a0"))
+	b.add_theme_color_override("font_hover_color", Color("fff2d4"))
+	b.add_theme_stylebox_override("normal", _rune_box(Color("1f160c"), Color("6b4a24"), 1))
+	b.add_theme_stylebox_override("hover", _rune_box(Color("2c2010"), Color("c9a24d"), 2))
 	if selected:
-		b.add_theme_stylebox_override("normal", _rune_box(Color("2c2010"), Color("e8b656"), 2))
-	b.add_theme_stylebox_override("focus", _rune_box(Color("241a0d"), Color("f4c977"), 2))
+		b.add_theme_stylebox_override("normal", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
+	b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
 	return b
 
 func _hero_accent(hero_name: String) -> Color:

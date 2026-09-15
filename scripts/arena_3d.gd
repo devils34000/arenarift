@@ -986,6 +986,8 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 	fighter.is_bot = false
 	fighter.network_peer_id = peer_id
 	fighter.hero_id = selected_hero
+	if peer_id == multiplayer.get_unique_id():
+		_apply_arkanite_loadout(fighter, selected_hero)
 	# En Custom Game, le camp est choisi par le joueur (ou tiré au sort côté
 	# host) avant la connexion et transmis ici. Les autres modes gardent
 	# l'ancienne assignation automatique : 1er connecté = ASTRAL, le reste
@@ -1272,6 +1274,8 @@ func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, p
 	fighter.network_round_serial = network_round_serial
 	fighter.hero_id = hero
 	fighter.team_color = team
+	if not bot and fighter_id == multiplayer.get_unique_id():
+		_apply_arkanite_loadout(fighter, hero)
 	fighter.set_multiplayer_authority(fighter_id if fighter_id > 0 else 1)
 	add_child(fighter)
 	fighter.global_position = pos
@@ -1438,12 +1442,32 @@ func _broadcast_network_state() -> void:
 		var fighter_deaths: int = int(deathmatch_deaths.get(fighter, 0))
 		network_node.arena_match_state.rpc_id(int(id), round_time, fighter_kills, fighter_deaths, duel_astral_kills, duel_arcane_kills, team_astral_kills, team_arcane_kills, network_round_serial, duel_sudden_death_active or team_sudden_death, fighter.match_kills, fighter.match_damage_dealt)
 
+## Applique sur ce combattant les modificateurs de stats (Maîtrise) et les
+## sorts additionnels (Invocation) des Arkanites équipées sur ce héros dans
+## l'onglet LOADOUT du menu (PlayerProgress.get_equipped_loadout). Appelé
+## AVANT add_child() : _ready() calcule les stats dérivées (max_health,
+## orb_cooldown...) à partir des champs déjà modifiés ici. Ne s'applique
+## qu'au joueur local — PlayerProgress est une sauvegarde locale, jamais
+## celle d'un pair distant.
+func _apply_arkanite_loadout(fighter: ArenaPlayer3D, hero_name: String) -> void:
+	for card_id in PlayerProgress.get_equipped_loadout(hero_name):
+		var card := ArkaniteDB.get_by_id(card_id)
+		if card == null:
+			continue
+		if card.stat_field != "":
+			var current: float = float(fighter.get(card.stat_field))
+			fighter.set(card.stat_field, current + card.stat_delta)
+		if card.unlocked_spell_id != "":
+			fighter.equipped_spell_ids.append(card.unlocked_spell_id)
+
+
 func _build_fighters() -> void:
 	player = PlayerScene.new()
 	player.name = "Player"
 	player.is_bot = false
 	player.team_color = Color("48a9ff")
 	player.hero_id = selected_hero
+	_apply_arkanite_loadout(player, selected_hero)
 	add_child(player)
 	var spawn_sets: Dictionary = _map_spawn_positions()
 	var ally_spawns: Array[Vector3] = spawn_sets["ally"]

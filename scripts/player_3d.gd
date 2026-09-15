@@ -182,6 +182,12 @@ var network_round_serial: int = 1
 var network_input_sequence: int = 0
 var team_color: Color = Color("48a9ff")
 var hero_id: String = "AERIS"
+## Identifiants des sorts additionnels débloqués par les Arkanites
+## d'Invocation équipées (PlayerProgress.get_equipped_loadout), renseigné
+## juste avant l'entrée en scène par arena_3d.gd::_apply_arkanite_loadout().
+## Pas encore branché à une logique de sort réelle — sert d'infrastructure
+## pour l'instant (voir ArkaniteCard.unlocked_spell_id).
+var equipped_spell_ids: Array[String] = []
 var target: ArenaPlayer3D
 var dash_left: float = 0.0
 var dash_cooldown: float = 0.0

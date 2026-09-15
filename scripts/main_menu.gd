@@ -2006,12 +2006,16 @@ func _hero_head_texture(hero_name: String) -> Texture2D:
 		return null
 	var image := Image.new()
 	if image.load(path) != OK:
+		push_warning("Portrait introuvable/illisible : " + path)
 		return null
-	var base_texture := ImageTexture.create_from_image(image)
-	var atlas := AtlasTexture.new()
-	atlas.atlas = base_texture
-	atlas.region = Rect2(0, 0, image.get_width(), image.get_height() * HERO_HEAD_CROP_RATIO)
-	return atlas
+	var crop_height := int(image.get_height() * HERO_HEAD_CROP_RATIO)
+	if crop_height > 0 and crop_height < image.get_height():
+		var cropped := image.get_region(Rect2i(0, 0, image.get_width(), crop_height))
+		if cropped != null and cropped.get_width() > 0 and cropped.get_height() > 0:
+			return ImageTexture.create_from_image(cropped)
+	# Repli : image entière si le recadrage échoue pour une raison ou une
+	# autre, plutôt qu'une vignette totalement vide.
+	return ImageTexture.create_from_image(image)
 
 
 ## Reconstruit uniquement l'UI (sans toucher au minuteur / à l'état "prêt")

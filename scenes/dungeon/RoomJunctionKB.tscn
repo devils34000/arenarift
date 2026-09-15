@@ -22,16 +22,16 @@ size = Vector3(0.3, 2, 4)
 [node name="RoomJunctionKB" type="Node3D"]
 
 [node name="Floor_NW" parent="." instance=ExtResource("1_floor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, -1, 0, -1)
 
 [node name="Floor_NE" parent="." instance=ExtResource("1_floor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, -1)
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, 1, 0, -1)
 
 [node name="Floor_SW" parent="." instance=ExtResource("1_floor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 1)
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, -1, 0, 1)
 
 [node name="Floor_SE" parent="." instance=ExtResource("1_floor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, 1, 0, 1)
 
 [node name="FloorCollision" type="StaticBody3D" parent="."]
 collision_layer = 3
@@ -42,6 +42,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 shape = SubResource("FloorShape")
 
 [node name="Walls" parent="." instance=ExtResource("2_walls")]
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, 0, 0, 0)
 
 [node name="WallsCollision" type="StaticBody3D" parent="."]
 collision_layer = 3

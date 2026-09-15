@@ -47,11 +47,11 @@ category = 4
 
 [resource]
 script = ExtResource("1_cfg")
-main_path_length = 5
-branch_count = 2
+main_path_length = 7
+branch_count = 3
 branch_depth_min = 1
 branch_depth_max = 2
-room_count_min = 6
+room_count_min = 8
 room_count_max = 16
 random_seed = 0
 max_generation_attempts = 20

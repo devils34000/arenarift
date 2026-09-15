@@ -475,7 +475,7 @@ func _apply_controller_prompt(button: Button, kind: String) -> void:
 		button.icon = null
 		return
 	button.icon = load(path) as Texture2D
-	button.add_theme_constant_override("icon_max_width", 22)
+	button.add_theme_constant_override("icon_max_width", 34)
 	button.expand_icon = true
 
 

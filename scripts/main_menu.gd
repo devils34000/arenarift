@@ -709,6 +709,12 @@ func _show_home() -> void:
 
 	var categories_box := VBoxContainer.new()
 	categories_box.custom_minimum_size = Vector2(600, 0)
+	# Sans ça, ce VBoxContainer s'étire sur toute la largeur de `content`
+	# (~930px) au lieu de rester à sa largeur minimale de 600 : les bannières
+	# s'étirent alors bien plus que sur l'écran MULTIJOUEUR ARENA (qui a un
+	# panneau latéral pour le contraindre), agrandissant le médaillon
+	# d'icône au point qu'il chevauche le texte malgré la même marge fixe.
+	categories_box.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	categories_box.add_theme_constant_override("separation", 10)
 	content.add_child(categories_box)
 	categories_box.add_child(_label("SÉLECTIONNE UN MODE", 11, Color("8a7550"), Vector2.ZERO, Vector2(500, 22)))
@@ -789,6 +795,7 @@ func _show_arena_modes() -> void:
 
 	var desc_label := _label(str(details.get("desc", "")), 11, Color("c4b394"), Vector2(18, 78), Vector2(254, 84))
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_label.clip_text = true
 	side.add_child(desc_label)
 
 	side.add_child(_label("JOUEURS", 9, Color("7a6a4a"), Vector2(18, 172), Vector2(120, 16)))

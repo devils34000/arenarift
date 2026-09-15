@@ -433,13 +433,20 @@ func spawn_eren_fire_impact(parent: Node, position: Vector3, scale_value: float 
 	return explosion if explosion != null else impact
 
 func spawn_eren_fire_trail(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	# La traînée utilise le vrai Fire Area du pack, allongé dans le sens de la charge.
-	if parent == null or EREN_FIRE_AREA_VFX == null:
+	# La traînée utilise le vrai Fire Area du pack pour le flash initial (bref),
+	# + une marque de brûlure procédurale qui reste au sol pendant 3 secondes
+	# (durée de vie réelle de la zone de dégâts, cf. eren_fire_trails côté gameplay).
+	if parent == null:
 		return null
 	if eren_trail_vfx_clock > 0.0:
 		eren_trail_vfx_clock = maxf(0.0, eren_trail_vfx_clock - 0.055)
 		return null
 	eren_trail_vfx_clock = 0.09
+
+	_spawn_eren_scorch_decal(parent, position, direction)
+
+	if EREN_FIRE_AREA_VFX == null:
+		return null
 	var fire := EREN_FIRE_AREA_VFX.instantiate() as Node3D
 	if fire == null:
 		return null
@@ -455,6 +462,51 @@ func spawn_eren_fire_trail(parent: Node, position: Vector3, direction: Vector3) 
 			fire.queue_free()
 	)
 	return fire
+
+func _spawn_eren_scorch_decal(parent: Node, position: Vector3, direction: Vector3) -> void:
+	var duration := 3.0
+	var decal := MeshInstance3D.new()
+	decal.name = "EmberScorchDecal"
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(1.6, 2.2)
+	decal.mesh = mesh
+	decal.rotation_degrees.x = -90.0
+	var d := direction.normalized()
+	if d.length_squared() > 0.001:
+		decal.rotation.y = atan2(d.x, d.z)
+	decal.position = position + Vector3.UP * 0.02
+	decal.scale = Vector3.ONE * 0.3
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, blend_add, depth_draw_never, depth_test_disabled;
+
+uniform vec4 tint : source_color = vec4(1.0, 0.45, 0.1, 1.0);
+uniform float alpha_factor = 1.0;
+
+void fragment() {
+	vec2 c = UV - vec2(0.5);
+	float d = length(c * vec2(1.0, 1.25)) * 2.0;
+	float edge = 1.0 - smoothstep(0.45, 1.0, d);
+	float core = 1.0 - smoothstep(0.0, 0.4, d);
+	float mask = max(edge * 0.55, core * 0.9);
+	ALBEDO = tint.rgb;
+	EMISSION = tint.rgb * 1.8;
+	ALPHA = mask * alpha_factor;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("tint", Color("ff7a20"))
+	mat.set_shader_parameter("alpha_factor", 0.0)
+	decal.material_override = mat
+	parent.add_child(decal)
+	var tween := decal.create_tween()
+	tween.tween_property(decal, "scale", Vector3.ONE, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(mat, "shader_parameter/alpha_factor", 0.85, 0.18)
+	tween.tween_interval(duration - 0.9)
+	tween.tween_property(mat, "shader_parameter/alpha_factor", 0.0, 0.7)
+	tween.tween_callback(decal.queue_free)
 
 func spawn_eren_charge_burst(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
 	# Départ : vraie gerbe de feu du pack + explosion au sol du pack.

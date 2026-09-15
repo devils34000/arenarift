@@ -2717,7 +2717,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 	elif kind == "eren_charge_trail":
 		var trail_position: Vector3 = origin
 		trail_position.y = 0.03
-		eren_fire_trails.append({"position": trail_position, "expires": 2.4, "owner": caster})
+		eren_fire_trails.append({"position": trail_position, "expires": 3.0, "owner": caster})
 		vfx_manager.spawn_eren_fire_trail(self, trail_position, direction)
 	elif kind == "spirit":
 		_play_sfx(ORB_CAST_SFX, origin, -7.0)

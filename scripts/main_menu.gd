@@ -2004,8 +2004,11 @@ const HERO_HEAD_CROP_RATIO := 0.46
 ## sera utilisée telle quelle à la place du recadrage automatique du grand
 ## artwork — pas besoin de toucher au code.
 func _hero_art_square(hero_name: String) -> String:
-	var path := "res://assets/menu_art/heroes/square/%s.png" % hero_name.to_lower()
-	return path if ResourceLoader.exists(path) else ""
+	var base := "res://assets/menu_art/heroes/square/%s" % hero_name.to_lower()
+	for ext in [".png", ".PNG"]:
+		if ResourceLoader.exists(base + ext):
+			return base + ext
+	return ""
 
 ## Texture utilisée pour la vignette carrée de la rangée de portraits :
 ## priorité à l'artwork carré dédié s'il existe, sinon repli sur le
@@ -2063,8 +2066,8 @@ func _build_hero_select_lobby_ui() -> void:
 	# haut de `content`) : un canvas de 566+ px dépassait déjà du cadre, d'où
 	# le bouton "VALIDER" qui sortait de la fenêtre. Mise en page resserrée
 	# pour tenir confortablement dans ~500px.
-	var canvas := _panel(Vector2.ZERO, Vector2(946, 500), Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0)
-	canvas.custom_minimum_size = Vector2(946, 500)
+	var canvas := _panel(Vector2.ZERO, Vector2(946, 530), Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0)
+	canvas.custom_minimum_size = Vector2(946, 530)
 	canvas.clip_contents = true
 	content.add_child(canvas)
 
@@ -2126,20 +2129,64 @@ func _build_hero_select_lobby_ui() -> void:
 	# Statut de chaque joueur connecté (toi / adversaire), mis à jour en
 	# direct via Network.lobby_state_changed.
 	_lobby_status_box = VBoxContainer.new()
-	_lobby_status_box.position = Vector2(233, 360)
-	_lobby_status_box.custom_minimum_size = Vector2(480, 56)
+	_lobby_status_box.position = Vector2(233, 356)
+	_lobby_status_box.custom_minimum_size = Vector2(480, 48)
 	_lobby_status_box.add_theme_constant_override("separation", 5)
 	canvas.add_child(_lobby_status_box)
 
-	_lobby_validate_button = _button("VALIDER MON CHOIX", Vector2(300, 44), true)
-	_lobby_validate_button.position = Vector2(323, 428)
-	_lobby_validate_button.size = Vector2(300, 44)
+	canvas.add_child(_build_lobby_validate_button())
+
+
+const VALIDATE_BUTTON_FRAME := "res://assets/menu_design/champ_select/button_menu_select_validation.png"
+
+## Bouton "VALIDER MON CHOIX" habillé du cadre doré fourni par l'artiste
+## (button_menu_select_validation.png). L'image reste à son ratio natif
+## (~3:1) pour ne pas déformer les losanges/motifs du cadre — le Button lui
+## -même est totalement transparent (juste le texte), posé PAR-DESSUS
+## l'image de fond dans un Control englobant, puisqu'un enfant de Button
+## se dessinerait par-dessus son texte s'il était mis dedans directement.
+func _build_lobby_validate_button() -> Control:
+	var frame_tex := load(VALIDATE_BUTTON_FRAME) as Texture2D
+	var button_size := Vector2(320, 107)
+	if frame_tex != null:
+		var native_size := frame_tex.get_size()
+		if native_size.x > 0.0:
+			button_size.y = button_size.x * (native_size.y / native_size.x)
+
+	var wrap := Control.new()
+	wrap.position = Vector2((946.0 - button_size.x) / 2.0, 400)
+	wrap.size = button_size
+	wrap.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var frame := TextureRect.new()
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.texture = frame_tex
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wrap.add_child(frame)
+
+	_lobby_validate_button = Button.new()
+	_lobby_validate_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_lobby_validate_button.flat = true
+	_lobby_validate_button.focus_mode = Control.FOCUS_ALL
+	var empty_style := StyleBoxEmpty.new()
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		_lobby_validate_button.add_theme_stylebox_override(state, empty_style)
+	_lobby_validate_button.add_theme_color_override("font_color", Color("fff2d4"))
+	_lobby_validate_button.add_theme_color_override("font_hover_color", Color("fffbe8"))
+	_lobby_validate_button.add_theme_color_override("font_disabled_color", Color("c9b98a"))
+	_lobby_validate_button.add_theme_constant_override("outline_size", 2)
+	_lobby_validate_button.add_theme_color_override("font_outline_color", Color("0a0603"))
 	if _lobby_ready_locked:
-		_lobby_validate_button.text = "EN ATTENTE DES AUTRES JOUEURS..."
+		_lobby_validate_button.text = "EN ATTENTE..."
+		_lobby_validate_button.add_theme_font_size_override("font_size", 16)
 		_lobby_validate_button.disabled = true
 	else:
+		_lobby_validate_button.text = "VALIDER MON CHOIX"
+		_lobby_validate_button.add_theme_font_size_override("font_size", 19)
 		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
-	canvas.add_child(_lobby_validate_button)
+	wrap.add_child(_lobby_validate_button)
+	return wrap
 
 
 func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:

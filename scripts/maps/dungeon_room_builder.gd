@@ -107,26 +107,35 @@ func _build_walls() -> void:
 	_build_wall_side(walls, SIDE_SOUTH, mat)
 	_build_wall_side(walls, SIDE_WEST, mat)
 
-## Retourne (length_along, axis_pos, wall_center, wall_normal_yaw_degrees)
-## pour un côté donné, en coordonnées locales de la salle.
+## Retourne la position exacte du bord de la salle pour un côté donné (c'est
+## LÀ que doit se trouver le RoomConnector3D : les salles voisines se
+## touchent à ce point précis, sans le dépasser), plus la direction "vers
+## l'intérieur" utilisée pour reculer les murs de leur propre épaisseur.
 func _side_info(side: int) -> Dictionary:
 	match side:
 		SIDE_NORTH:
-			return {"length": room_size.x, "center": Vector3(0, 0, -room_size.y * 0.5), "yaw": 180.0, "horizontal": true}
+			return {"length": room_size.x, "boundary": Vector3(0, 0, -room_size.y * 0.5), "inward": Vector3(0, 0, 1), "yaw": 180.0, "horizontal": true}
 		SIDE_SOUTH:
-			return {"length": room_size.x, "center": Vector3(0, 0, room_size.y * 0.5), "yaw": 0.0, "horizontal": true}
+			return {"length": room_size.x, "boundary": Vector3(0, 0, room_size.y * 0.5), "inward": Vector3(0, 0, -1), "yaw": 0.0, "horizontal": true}
 		SIDE_EAST:
-			return {"length": room_size.y, "center": Vector3(room_size.x * 0.5, 0, 0), "yaw": 90.0, "horizontal": false}
+			return {"length": room_size.y, "boundary": Vector3(room_size.x * 0.5, 0, 0), "inward": Vector3(-1, 0, 0), "yaw": 90.0, "horizontal": false}
 		_:
-			return {"length": room_size.y, "center": Vector3(-room_size.x * 0.5, 0, 0), "yaw": -90.0, "horizontal": false}
+			return {"length": room_size.y, "boundary": Vector3(-room_size.x * 0.5, 0, 0), "inward": Vector3(1, 0, 0), "yaw": -90.0, "horizontal": false}
 
 func _build_wall_side(parent: Node3D, side: int, mat: StandardMaterial3D) -> void:
 	var info := _side_info(side)
 	var length: float = info["length"]
-	var center: Vector3 = info["center"]
+	var boundary: Vector3 = info["boundary"]
 	var yaw: float = info["yaw"]
 	var horizontal: bool = info["horizontal"]
 	var has_door := (doors & side) != 0
+
+	# Le mur est reculé d'une demi-épaisseur vers l'intérieur : sa face
+	# extérieure affleure exactement "boundary" sans jamais le dépasser.
+	# Sans ça, deux salles voisines se recouvrent légèrement à leur jonction
+	# (chaque mur déborde de boundary de sa propre demi-épaisseur) et le
+	# générateur rejette la connexion pour "chevauchement".
+	var center: Vector3 = boundary + (info["inward"] as Vector3) * (wall_thickness * 0.5)
 
 	if not has_door:
 		_add_wall_segment(parent, center, length, horizontal, mat, "Wall_%d" % side)
@@ -156,13 +165,16 @@ func _build_wall_side(parent: Node3D, side: int, mat: StandardMaterial3D) -> voi
 		lintel.material_override = mat
 		_spawn(parent, lintel)
 
-	# Connecteur au centre de l'ouverture, tourné vers l'extérieur.
-	var connector := RoomConnector3D.new()
+	# Connecteur exactement sur le bord de la salle (pas sur le mur reculé) :
+	# c'est ce point que le générateur fait coïncider avec celui de la salle
+	# suivante.
+	var connector := Node3D.new()
+	connector.set_script(load("res://addons/dungeon_crawler_3d/nodes/room_connector_3d.gd"))
 	connector.name = "Connector_%d" % side
-	connector.connection_type = connection_type
-	connector.aperture_width = door_width
-	connector.aperture_height = door_height
-	connector.position = center
+	connector.set("connection_type", connection_type)
+	connector.set("aperture_width", door_width)
+	connector.set("aperture_height", door_height)
+	connector.position = boundary
 	connector.rotation_degrees.y = yaw
 	_spawn(parent, connector)
 
@@ -202,11 +214,20 @@ func _build_corner_pillars() -> void:
 	mat.albedo_color = accent_color.darkened(0.15)
 	mat.roughness = 0.85
 
+	# Inset des piliers depuis le coin exact : un pilier de rayon 0.4 posé pile
+	# au coin dépasse du mur (qui ne fait que wall_thickness*0.5 de chaque côté
+	# de la ligne du mur) — la boîte englobante de la salle devient alors plus
+	# grande que son vrai contour, ce qui fait chevaucher les salles voisines
+	# aux yeux du détecteur de collision du générateur et bloque toute
+	# génération. On recule donc le pilier pour que son bord extérieur
+	# affleure exactement le mur, sans le dépasser.
+	var pillar_radius := 0.4
+	var inset := pillar_radius
 	var corners := [
-		Vector3(room_size.x * 0.5, 0, room_size.y * 0.5),
-		Vector3(-room_size.x * 0.5, 0, room_size.y * 0.5),
-		Vector3(room_size.x * 0.5, 0, -room_size.y * 0.5),
-		Vector3(-room_size.x * 0.5, 0, -room_size.y * 0.5),
+		Vector3(room_size.x * 0.5 - inset, 0, room_size.y * 0.5 - inset),
+		Vector3(-room_size.x * 0.5 + inset, 0, room_size.y * 0.5 - inset),
+		Vector3(room_size.x * 0.5 - inset, 0, -room_size.y * 0.5 + inset),
+		Vector3(-room_size.x * 0.5 + inset, 0, -room_size.y * 0.5 + inset),
 	]
 	for i in range(corners.size()):
 		var pillar := MeshInstance3D.new()

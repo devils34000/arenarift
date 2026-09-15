@@ -101,7 +101,7 @@ collision_mask = 1
 shape = SubResource("BoxShape3D_3")
 [node name="Walls" type="Node3D" parent="."]
 [node name="Wall_1_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.075, 1.7, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.075, 1.7, -4.8)
 mesh = SubResource("BoxMesh_5")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_A"]
@@ -110,7 +110,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_A/Collision"]
 shape = SubResource("BoxShape3D_6")
 [node name="Wall_1_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.075, 1.7, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.075, 1.7, -4.8)
 mesh = SubResource("BoxMesh_7")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_B"]
@@ -119,7 +119,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_B/Collision"]
 shape = SubResource("BoxShape3D_8")
 [node name="Lintel_1" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 3.0, -4.8)
 mesh = SubResource("BoxMesh_9")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Connector_1" type="Node3D" parent="Walls"]
@@ -129,7 +129,7 @@ connection_type = "standard_door"
 aperture_width = 2.3
 aperture_height = 2.6
 [node name="Wall_2_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, -3.075)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 1.7, -3.075)
 mesh = SubResource("BoxMesh_10")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_2_A"]
@@ -138,7 +138,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2_A/Collision"]
 shape = SubResource("BoxShape3D_11")
 [node name="Wall_2_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, 3.075)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 1.7, 3.075)
 mesh = SubResource("BoxMesh_12")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_2_B"]
@@ -147,7 +147,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2_B/Collision"]
 shape = SubResource("BoxShape3D_13")
 [node name="Lintel_2" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 3.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 3.0, 0.0)
 mesh = SubResource("BoxMesh_14")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Connector_2" type="Node3D" parent="Walls"]
@@ -157,7 +157,7 @@ connection_type = "standard_door"
 aperture_width = 2.3
 aperture_height = 2.6
 [node name="Wall_4_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.075, 1.7, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.075, 1.7, 4.8)
 mesh = SubResource("BoxMesh_15")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_A"]
@@ -166,7 +166,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_A/Collision"]
 shape = SubResource("BoxShape3D_16")
 [node name="Wall_4_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.075, 1.7, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.075, 1.7, 4.8)
 mesh = SubResource("BoxMesh_17")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_B"]
@@ -175,7 +175,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_B/Collision"]
 shape = SubResource("BoxShape3D_18")
 [node name="Lintel_4" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 3.0, 4.8)
 mesh = SubResource("BoxMesh_19")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Connector_4" type="Node3D" parent="Walls"]
@@ -185,7 +185,7 @@ connection_type = "standard_door"
 aperture_width = 2.3
 aperture_height = 2.6
 [node name="Wall_8_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, -3.075)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 1.7, -3.075)
 mesh = SubResource("BoxMesh_20")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_8_A"]
@@ -194,7 +194,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8_A/Collision"]
 shape = SubResource("BoxShape3D_21")
 [node name="Wall_8_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, 3.075)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 1.7, 3.075)
 mesh = SubResource("BoxMesh_22")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Collision" type="StaticBody3D" parent="Walls/Wall_8_B"]
@@ -203,7 +203,7 @@ collision_mask = 1
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8_B/Collision"]
 shape = SubResource("BoxShape3D_23")
 [node name="Lintel_8" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 3.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 3.0, 0.0)
 mesh = SubResource("BoxMesh_24")
 material_override = SubResource("StandardMaterial3D_4")
 [node name="Connector_8" type="Node3D" parent="Walls"]
@@ -214,19 +214,19 @@ aperture_width = 2.3
 aperture_height = 2.6
 [node name="Pillars" type="Node3D" parent="."]
 [node name="Pillar_0" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 1.7, 4.6)
 mesh = SubResource("CylinderMesh_26")
 material_override = SubResource("StandardMaterial3D_25")
 [node name="Pillar_1" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, 5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 1.7, 4.6)
 mesh = SubResource("CylinderMesh_27")
 material_override = SubResource("StandardMaterial3D_25")
 [node name="Pillar_2" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 1.7, -4.6)
 mesh = SubResource("CylinderMesh_28")
 material_override = SubResource("StandardMaterial3D_25")
 [node name="Pillar_3" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, -5.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 1.7, -4.6)
 mesh = SubResource("CylinderMesh_29")
 material_override = SubResource("StandardMaterial3D_25")
 [node name="Torch" type="OmniLight3D" parent="."]

@@ -2155,36 +2155,27 @@ func _build_lobby_validate_button() -> Control:
 		if native_size.x > 0.0:
 			button_size.y = button_size.x * (native_size.y / native_size.x)
 
-	var wrap := Control.new()
-	wrap.position = Vector2((946.0 - button_size.x) / 2.0, 400)
-	wrap.size = button_size
-	wrap.mouse_filter = Control.MOUSE_FILTER_PASS
+	_lobby_validate_button = Button.new()
+	_lobby_validate_button.position = Vector2((946.0 - button_size.x) / 2.0, 400)
+	_lobby_validate_button.size = button_size
+	_lobby_validate_button.focus_mode = Control.FOCUS_ALL
 
+	# Habille le bouton directement avec l'image (StyleBoxTexture, le
+	# mécanisme natif de Godot pour un bouton à fond illustré) plutôt que de
+	# poser un TextureRect à côté : le bouton se charge lui-même de peindre
+	# l'image ET le texte, sans ambiguïté d'ordre d'affichage entre nœuds.
 	if frame_tex != null:
-		var frame := TextureRect.new()
-		frame.position = Vector2.ZERO
-		frame.size = button_size
-		frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		frame.stretch_mode = TextureRect.STRETCH_SCALE
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		wrap.add_child(frame)
+		var style := StyleBoxTexture.new()
+		style.texture = frame_tex
+		for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+			_lobby_validate_button.add_theme_stylebox_override(state, style)
 	else:
 		# Repli visible si le cadre ne charge pas, plutôt qu'un bouton
-		# totalement invisible (juste du texte flottant).
-		var fallback := Panel.new()
-		fallback.position = Vector2.ZERO
-		fallback.size = button_size
-		fallback.add_theme_stylebox_override("panel", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
-		wrap.add_child(fallback)
+		# totalement invisible.
+		var fallback_style := _rune_box(Color("6b3a12"), Color("e8b656"), 2)
+		for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+			_lobby_validate_button.add_theme_stylebox_override(state, fallback_style)
 
-	_lobby_validate_button = Button.new()
-	_lobby_validate_button.position = Vector2.ZERO
-	_lobby_validate_button.size = button_size
-	_lobby_validate_button.flat = true
-	_lobby_validate_button.focus_mode = Control.FOCUS_ALL
-	var empty_style := StyleBoxEmpty.new()
-	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
-		_lobby_validate_button.add_theme_stylebox_override(state, empty_style)
 	_lobby_validate_button.add_theme_color_override("font_color", Color("fff2d4"))
 	_lobby_validate_button.add_theme_color_override("font_hover_color", Color("fffbe8"))
 	_lobby_validate_button.add_theme_color_override("font_disabled_color", Color("c9b98a"))
@@ -2198,8 +2189,7 @@ func _build_lobby_validate_button() -> Control:
 		_lobby_validate_button.text = "VALIDER MON CHOIX"
 		_lobby_validate_button.add_theme_font_size_override("font_size", 19)
 		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
-	wrap.add_child(_lobby_validate_button)
-	return wrap
+	return _lobby_validate_button
 
 
 func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:

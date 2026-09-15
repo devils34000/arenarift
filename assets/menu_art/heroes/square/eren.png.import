@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://0xxs0kxk5way"
-path="res://.godot/imported/eren.png-bc77921ce2468f60025ac6682dd539fe.ctex"
+uid="uid://cm38aydmhutbl"
+path="res://.godot/imported/eren.png-7bc2d2a768d880a17591090792eb9ad9.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/menu_art/heroes/square/eren.png"
-dest_files=["res://.godot/imported/eren.png-bc77921ce2468f60025ac6682dd539fe.ctex"]
+dest_files=["res://.godot/imported/eren.png-7bc2d2a768d880a17591090792eb9ad9.ctex"]
 
 [params]
 

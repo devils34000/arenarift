@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b6fxjdv0l2iwv"
-path="res://.godot/imported/maylinh.png-667acc6c40b7b171634fb360c8e310f5.ctex"
+uid="uid://dnvvh5eimjude"
+path="res://.godot/imported/maylinh.png-c3c313ec13c98d736dbf6068ef128702.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/menu_art/heroes/square/maylinh.png"
-dest_files=["res://.godot/imported/maylinh.png-667acc6c40b7b171634fb360c8e310f5.ctex"]
+dest_files=["res://.godot/imported/maylinh.png-c3c313ec13c98d736dbf6068ef128702.ctex"]
 
 [params]
 

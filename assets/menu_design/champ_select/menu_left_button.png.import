@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c0yxc5adfmhe"
-path="res://.godot/imported/aeris.png-e256406f7e6d671321411ebd29e289f1.ctex"
+uid="uid://88gx0g7crgh1"
+path="res://.godot/imported/menu_left_button.png-245a2d6357e50e590a3727949c667d7f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/menu_art/heroes/square/aeris.png"
-dest_files=["res://.godot/imported/aeris.png-e256406f7e6d671321411ebd29e289f1.ctex"]
+source_file="res://assets/menu_design/champ_select/menu_left_button.png"
+dest_files=["res://.godot/imported/menu_left_button.png-245a2d6357e50e590a3727949c667d7f.ctex"]
 
 [params]
 

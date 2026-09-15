@@ -9,12 +9,31 @@ signal peer_left(peer_id: int)
 signal arena_client_ready_signal(peer_id: int, hero: String, mode: String, team: String)
 signal arena_player_input_received(peer_id: int, move_direction: Vector3, aim_direction: Vector3)
 
+## Lobby de sélection de personnage (après matchmaking, avant le chargement
+## de l'arène) : émis côté client à chaque mise à jour envoyée par le
+## serveur (nouveau pick, joueur prêt, joueur qui rejoint/part).
+signal lobby_state_changed(picks: Dictionary, seconds_left: float)
+## Émis côté client quand le serveur donne le feu vert (tout le monde prêt,
+## ou temps écoulé) : le menu doit alors lancer la partie (_launch()).
+signal lobby_match_ready()
+
 const DEFAULT_PORT := 2456
 const MAX_PLAYERS := 8
 var peer: ENetMultiplayerPeer
 var match_mode := "DEATHMATCH"
 var selected_hero := "AERIS"
 var match_started: bool = false
+
+# =========================================================
+# LOBBY DE SÉLECTION DE PERSONNAGE
+# =========================================================
+## État autoritaire (côté serveur) / miroir reçu (côté client) :
+## peer_id -> {"hero": String, "ready": bool}.
+var lobby_picks: Dictionary = {}
+var lobby_active: bool = false
+var lobby_seconds_left: float = 30.0
+const LOBBY_DURATION := 30.0
+var _lobby_timer: Timer
 # Camp ("ASTRAL"/"ARCANE") choisi en Custom Game avant de rejoindre le
 # serveur, transmis au serveur via arena_client_ready. Vide pour tous les
 # autres modes, qui gardent l'assignation automatique par ordre de connexion.
@@ -40,6 +59,12 @@ func _ready() -> void:
 		print("=== NETWORK : SERVER DISCONNECTED ===")
 		session_failed.emit("Serveur déconnecté")
 	)
+
+	_lobby_timer = Timer.new()
+	_lobby_timer.name = "LobbyTimer"
+	_lobby_timer.one_shot = true
+	add_child(_lobby_timer)
+	_lobby_timer.timeout.connect(_on_lobby_timeout)
 
 	print("=== NETWORK : READY ===")
 
@@ -259,6 +284,97 @@ func arena_match_started() -> void:
 	var arena := _get_network_arena()
 	if arena != null:
 		arena.call("_on_network_match_started")
+
+
+# =========================================================
+# LOBBY DE SÉLECTION DE PERSONNAGE
+# =========================================================
+## Appelé côté serveur dédié (dedicated_server.gd, sur peer_connected) :
+## enregistre un joueur dans le lobby et démarre le compte à rebours de 30s
+## au premier arrivant. Un pick par défaut (AERIS, non prêt) est posé tout
+## de suite pour que ce joueur apparaisse dans l'état diffusé aux autres
+## même s'il n'a encore rien choisi.
+func lobby_register_peer(peer_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if lobby_picks.has(peer_id):
+		return
+	lobby_picks[peer_id] = {"hero": "AERIS", "ready": false}
+	if not lobby_active:
+		lobby_active = true
+		lobby_seconds_left = LOBBY_DURATION
+		_lobby_timer.start(LOBBY_DURATION)
+	_broadcast_lobby_state()
+
+## Appelé côté serveur dédié sur peer_disconnected.
+func lobby_unregister_peer(peer_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	if not lobby_picks.has(peer_id):
+		return
+	lobby_picks.erase(peer_id)
+	_broadcast_lobby_state()
+
+func _on_lobby_timeout() -> void:
+	if not multiplayer.is_server() or not lobby_active:
+		return
+	# Temps écoulé : on lance quel que soit l'état des picks (chacun garde
+	# son choix actuel, AERIS par défaut si personne n'a rien choisi).
+	_finish_lobby()
+
+## Envoyé par un client (rpc_id(1, ...)) à chaque changement de héros
+## (ready=false, aperçu live pour les autres joueurs du lobby) et à la
+## validation finale (ready=true).
+@rpc("any_peer", "call_remote", "reliable")
+func lobby_submit_pick(hero: String, ready: bool) -> void:
+	if not multiplayer.is_server() or not lobby_active:
+		return
+	var sender := multiplayer.get_remote_sender_id()
+	if sender <= 0 or not lobby_picks.has(sender):
+		return
+	var safe_hero := hero if hero in ["AERIS", "MAYLINH", "KAITHLYN", "EREN"] else "AERIS"
+	lobby_picks[sender] = {"hero": safe_hero, "ready": ready}
+	_broadcast_lobby_state()
+
+	# Fin anticipée seulement à partir de 2 joueurs connectés (sinon un
+	# joueur seul qui valide lancerait la partie tout de suite sans laisser
+	# de chance à l'adversaire de se connecter).
+	if lobby_picks.size() >= 2:
+		var all_ready := true
+		for pid in lobby_picks.keys():
+			if not bool((lobby_picks[pid] as Dictionary).get("ready", false)):
+				all_ready = false
+				break
+		if all_ready:
+			_finish_lobby()
+
+func _finish_lobby() -> void:
+	if not lobby_active:
+		return
+	lobby_active = false
+	_lobby_timer.stop()
+	lobby_proceed.rpc()
+
+## Diffusé par le serveur à tous les clients : le lobby est terminé, chacun
+## doit lancer sa propre partie (change de scène vers l'arène) avec le héros
+## qu'il a lui-même choisi localement.
+@rpc("authority", "call_remote", "reliable")
+func lobby_proceed() -> void:
+	lobby_active = false
+	lobby_match_ready.emit()
+
+func _broadcast_lobby_state() -> void:
+	if not multiplayer.is_server():
+		return
+	lobby_seconds_left = _lobby_timer.time_left if lobby_active else 0.0
+	lobby_state_broadcast.rpc(lobby_picks, lobby_seconds_left)
+
+@rpc("authority", "call_remote", "reliable")
+func lobby_state_broadcast(picks: Dictionary, seconds_left: float) -> void:
+	lobby_picks = picks
+	lobby_seconds_left = seconds_left
+	lobby_state_changed.emit(picks, seconds_left)
+
 
 func close() -> void:
 	# Sur un client, peer.close() détruit l'hôte ENet local directement, sans

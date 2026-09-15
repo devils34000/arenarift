@@ -150,11 +150,13 @@ func _on_peer_arrived(peer_id: int) -> void:
 	# Si une extinction était programmée (dernier joueur parti temporairement)
 	# et que quelqu'un revient à temps, on l'annule.
 	_shutdown_timer = null
+	Network.lobby_register_peer(peer_id)
 
 
 func _on_peer_left(peer_id: int) -> void:
 	print("JOUEUR DECONNECTE :", peer_id)
 	_connected_peers = maxi(0, _connected_peers - 1)
+	Network.lobby_unregister_peer(peer_id)
 	if _has_had_a_player and _connected_peers <= 0:
 		print("SERVEUR VIDE : extinction dans %.0fs si personne ne revient." % EMPTY_SERVER_SHUTDOWN_DELAY)
 		var timer := get_tree().create_timer(EMPTY_SERVER_SHUTDOWN_DELAY)

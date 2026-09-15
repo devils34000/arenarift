@@ -9,6 +9,15 @@ var selected_hero := "AERIS"
 # recevait bien la bonne map (d'où des collisions cohérentes), mais le
 # client affichait toujours arena.tscn.
 var pending_arena_scene_path: String = ""
+
+# Lobby de sélection de personnage (après matchmaking, avant l'arène).
+var _lobby_active_screen: bool = false
+var _lobby_ready_locked: bool = false
+var _lobby_seconds_left_local: float = 30.0
+var _lobby_countdown_label: Label
+var _lobby_status_box: VBoxContainer
+var _lobby_validate_button: Button
+
 var page := "HOME"
 var content: VBoxContainer
 var title: Label
@@ -171,6 +180,9 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_controller_connection()
+	if _lobby_active_screen and _lobby_countdown_label != null and is_instance_valid(_lobby_countdown_label):
+		_lobby_seconds_left_local = maxf(0.0, _lobby_seconds_left_local - _delta)
+		_lobby_countdown_label.text = str(int(ceil(_lobby_seconds_left_local)))
 
 
 func _input(event: InputEvent) -> void:
@@ -1952,49 +1964,170 @@ func _show_heroes() -> void:
 ## Lobby de sélection de personnage : affiché une fois le match trouvé et la
 ## connexion au serveur de partie établie, à la place du lancement direct.
 ## Le joueur choisit/confirme son héros ICI plutôt qu'à l'avance dans le
-## menu principal — la connexion réseau est déjà active (join() a réussi),
-## seul l'envoi du RPC "arena_client_ready" (déclenché par _launch() ->
-## Arena._ready() -> _send_network_ready()) est retardé jusqu'à ce que le
-## joueur confirme, donc aucun changement côté serveur n'est nécessaire :
-## le serveur attend déjà ce RPC (countdown de préparation existant).
+## menu principal — la connexion réseau est déjà active (join() a réussi).
+## Écran léger façon League of Legends (gros aperçu central + rangée de
+## portraits cliquables), synchronisé en réseau via Network.lobby_* : le
+## serveur dédié (dedicated_server.gd) enregistre chaque pair connecté dans
+## Network.lobby_picks dès l'arrivée et lance un compte à rebours de 30s ;
+## la partie démarre dès que tous les joueurs présents ont validé, ou à
+## l'expiration du délai (chacun garde alors son dernier choix, AERIS par
+## défaut). _launch() (et donc l'envoi du RPC arena_client_ready) n'est
+## déclenché qu'à la réception du signal lobby_match_ready.
 func _show_hero_select_lobby() -> void:
+	_lobby_active_screen = true
+	_lobby_ready_locked = false
+	_lobby_seconds_left_local = Network.LOBBY_DURATION
+	if not Network.lobby_state_changed.is_connected(_on_lobby_state_changed):
+		Network.lobby_state_changed.connect(_on_lobby_state_changed)
+	if not Network.lobby_match_ready.is_connected(_on_lobby_match_ready):
+		Network.lobby_match_ready.connect(_on_lobby_match_ready)
+	_build_hero_select_lobby_ui()
+	_refresh_lobby_status_ui(Network.lobby_picks)
+
+
+## Reconstruit uniquement l'UI (sans toucher au minuteur / à l'état "prêt")
+## — utilisé quand le joueur change de héros dans la rangée de portraits.
+func _build_hero_select_lobby_ui() -> void:
 	_clear()
-	title.text = "LOBBY"
+	title.text = "SÉLECTION DES CHAMPIONS"
 
-	var subtitle := _label("MATCH TROUVÉ  •  CHOISIS TON HÉROS", 10, Color("b8935a"), Vector2(0, 44), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER)
-	content.add_child(subtitle)
+	_lobby_countdown_label = _label(str(int(ceil(_lobby_seconds_left_local))), 40, Color("f4c977"), Vector2(0, 2), Vector2(946, 48), HORIZONTAL_ALIGNMENT_CENTER)
+	content.add_child(_lobby_countdown_label)
 
-	var main_row := HBoxContainer.new()
-	main_row.position = Vector2(0, 68)
-	main_row.size = Vector2(946, 438)
-	main_row.add_theme_constant_override("separation", 12)
-	content.add_child(main_row)
+	content.add_child(_label("MATCH TROUVÉ  •  CHOISIS TON CHAMPION", 11, Color("8a7550"), Vector2(0, 52), Vector2(946, 20), HORIZONTAL_ALIGNMENT_CENTER))
 
-	var cards := HBoxContainer.new()
-	cards.custom_minimum_size = Vector2(642, 438)
-	cards.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	cards.add_theme_constant_override("separation", 6)
-	main_row.add_child(cards)
+	# Grand aperçu central, façon écran de sélection LoL.
+	var preview := _panel(Vector2(323, 82), Vector2(300, 260), Color("140f09eb"), _hero_accent(selected_hero), 16)
+	content.add_child(preview)
 
-	cards.add_child(_hero_card("AERIS", "ARCANE SKIRMISHER", "DPS / BURST", Color("5b9bc4"), "ARC BOLT • TELEPORT • PHASE DASH", _show_hero_select_lobby_deferred))
-	cards.add_child(_hero_card("MAYLINH", "MYSTIC WARDEN", "HEALER / CONTROLLER", Color("4fae7d"), "ÉCLAT • SOIN • FUITE", _show_hero_select_lobby_deferred))
-	cards.add_child(_hero_card("KAITHLYN", "BARBARIAN", "BERSERKER / CONTROLLER", Color("c98a3d"), "HACHE • BOUCLIER • CHARGE", _show_hero_select_lobby_deferred))
-	cards.add_child(_hero_card("EREN", "CHEVALIER DE FEU", "FIRE BURST / CONTROLLER", Color("d9691f"), "BOULE DE FEU • NOVA • CHARGE", _show_hero_select_lobby_deferred))
+	var portrait := TextureRect.new()
+	portrait.position = Vector2(20, 14)
+	portrait.size = Vector2(260, 190)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var portrait_path := _hero_art(selected_hero)
+	if portrait_path != "":
+		var image := Image.new()
+		if image.load(portrait_path) == OK:
+			portrait.texture = ImageTexture.create_from_image(image)
+	preview.add_child(portrait)
+	preview.add_child(_label(selected_hero, 20, _hero_accent(selected_hero), Vector2(0, 206), Vector2(300, 28), HORIZONTAL_ALIGNMENT_CENTER))
+	preview.add_child(_label(_hero_role(selected_hero), 9, Color("9a8760"), Vector2(0, 232), Vector2(300, 18), HORIZONTAL_ALIGNMENT_CENTER))
 
-	main_row.add_child(_hero_detail_panel(selected_hero))
+	# Rangée de portraits cliquables, légère (pas de fiche détaillée).
+	var roster := HBoxContainer.new()
+	roster.position = Vector2(323, 350)
+	roster.size = Vector2(300, 72)
+	roster.add_theme_constant_override("separation", 8)
+	content.add_child(roster)
+	for hero_entry in [
+		["AERIS", Color("5b9bc4")],
+		["MAYLINH", Color("4fae7d")],
+		["KAITHLYN", Color("c98a3d")],
+		["EREN", Color("d9691f")],
+	]:
+		roster.add_child(_lobby_portrait_button(str(hero_entry[0]), hero_entry[1]))
 
-	content.add_child(_label("SÉLECTION  •  %s" % selected_hero, 12, _hero_accent(selected_hero), Vector2(0, 516), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER))
+	# Statut de chaque joueur connecté (toi / adversaire), mis à jour en
+	# direct via Network.lobby_state_changed.
+	_lobby_status_box = VBoxContainer.new()
+	_lobby_status_box.position = Vector2(233, 432)
+	_lobby_status_box.size = Vector2(480, 80)
+	_lobby_status_box.add_theme_constant_override("separation", 6)
+	content.add_child(_lobby_status_box)
 
-	var launch_btn := _button("ENTRER DANS LA PARTIE", Vector2(300, 48), true)
-	launch_btn.position = Vector2(323, 548)
-	launch_btn.size = Vector2(300, 48)
-	launch_btn.pressed.connect(_launch)
-	content.add_child(launch_btn)
+	_lobby_validate_button = _button("VALIDER MON CHOIX", Vector2(300, 48), true)
+	_lobby_validate_button.position = Vector2(323, 522)
+	_lobby_validate_button.size = Vector2(300, 48)
+	if _lobby_ready_locked:
+		_lobby_validate_button.text = "EN ATTENTE DES AUTRES JOUEURS..."
+		_lobby_validate_button.disabled = true
+	else:
+		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
+	content.add_child(_lobby_validate_button)
 
 
-func _show_hero_select_lobby_deferred() -> void:
-	call_deferred("_show_hero_select_lobby")
-	call_deferred("_focus_first_control")
+func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(68, 68)
+	btn.focus_mode = Control.FOCUS_ALL
+	var selected := hero_name == selected_hero
+	btn.add_theme_stylebox_override("normal", _box(Color("241a0df2") if selected else Color("140f09eb"), accent if selected else Color("352818"), 10, 2 if selected else 1))
+	btn.add_theme_stylebox_override("hover", _box(Color("241a0d"), accent, 10, 2))
+	btn.add_theme_stylebox_override("focus", _box(Color("241a0d"), accent, 10, 2))
+
+	var icon := TextureRect.new()
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var portrait_path := _hero_art(hero_name)
+	if portrait_path != "":
+		var image := Image.new()
+		if image.load(portrait_path) == OK:
+			icon.texture = ImageTexture.create_from_image(image)
+	btn.add_child(icon)
+
+	btn.disabled = _lobby_ready_locked
+	btn.pressed.connect(func():
+		if _lobby_ready_locked:
+			return
+		selected_hero = hero_name
+		Network.lobby_submit_pick.rpc_id(1, selected_hero, false)
+		_build_hero_select_lobby_ui()
+	)
+	return btn
+
+
+func _on_lobby_validate_pressed() -> void:
+	if _lobby_ready_locked:
+		return
+	_lobby_ready_locked = true
+	Network.lobby_submit_pick.rpc_id(1, selected_hero, true)
+	_build_hero_select_lobby_ui()
+
+
+## Reçu quand le serveur diffuse un nouvel état de lobby (un joueur a changé
+## de héros, s'est déclaré prêt, ou a rejoint/quitté) — resynchronise aussi
+## le minuteur local sur le minuteur autoritaire du serveur.
+func _on_lobby_state_changed(picks: Dictionary, seconds_left: float) -> void:
+	_lobby_seconds_left_local = seconds_left
+	if _lobby_countdown_label != null and is_instance_valid(_lobby_countdown_label):
+		_lobby_countdown_label.text = str(int(ceil(_lobby_seconds_left_local)))
+	_refresh_lobby_status_ui(picks)
+
+
+func _refresh_lobby_status_ui(picks: Dictionary) -> void:
+	if _lobby_status_box == null or not is_instance_valid(_lobby_status_box):
+		return
+	for child in _lobby_status_box.get_children():
+		child.queue_free()
+	var my_id := multiplayer.get_unique_id()
+	var ordered_ids := picks.keys()
+	ordered_ids.sort()
+	for peer_id in ordered_ids:
+		var info: Dictionary = picks[peer_id]
+		var hero_name: String = str(info.get("hero", "AERIS"))
+		var ready: bool = bool(info.get("ready", false))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var who_text := "TOI" if int(peer_id) == my_id else "JOUEUR %d" % int(peer_id)
+		row.add_child(_label(who_text, 10, Color("d4c4a0"), Vector2.ZERO, Vector2(120, 18)))
+		row.add_child(_label(hero_name, 10, _hero_accent(hero_name), Vector2.ZERO, Vector2(140, 18)))
+		row.add_child(_label("✔ PRÊT" if ready else "EN CHOIX...", 9, Color("6fb88a") if ready else Color("8a7a5a"), Vector2.ZERO, Vector2(120, 18)))
+		_lobby_status_box.add_child(row)
+
+
+## Reçu quand le serveur donne le feu vert (tout le monde prêt, ou temps
+## écoulé) : on lance la partie avec le héros actuellement choisi.
+func _on_lobby_match_ready() -> void:
+	_lobby_active_screen = false
+	if Network.lobby_state_changed.is_connected(_on_lobby_state_changed):
+		Network.lobby_state_changed.disconnect(_on_lobby_state_changed)
+	if Network.lobby_match_ready.is_connected(_on_lobby_match_ready):
+		Network.lobby_match_ready.disconnect(_on_lobby_match_ready)
+	_launch()
 
 
 func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color, spells: String, on_pick: Callable = Callable()) -> Panel:

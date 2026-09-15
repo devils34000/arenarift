@@ -460,6 +460,11 @@ func _build_shell() -> void:
 
 	left_rail.add_child(_label("V0.1 · PRÉ-ALPHA\nUNE NOUVELLE ÈRE\nSE LÈVE", 9, Color("6b5a3a"), Vector2(34, 650), Vector2(180, 55)))
 
+	# Bordure ornée fournie par le graphiste, par-dessus le panneau plat
+	# existant : ajoutée en dernier pour rester visible au-dessus du contenu
+	# du rail (elle est vide/transparente au centre, donc ne cache rien).
+	_add_border_overlay(left_rail, "res://assets/menu_design/champ_select/bordure_menu_play.png")
+
 	_build_steam_profile()
 
 	# Cadre principal façon pierre gravée : coins asymétriques, filet bronze.
@@ -469,6 +474,7 @@ func _build_shell() -> void:
 	frame.size = Vector2(994, 614)
 	frame.add_theme_stylebox_override("panel", _rune_box(Color("110c07eb"), Color("6b4a24"), 2))
 	add_child(frame)
+	_add_border_overlay(frame, "res://assets/menu_design/champ_select/bordure_menu.png")
 
 	title = _label("", 30, Color("f3e6c8"), Vector2(24, 20), Vector2(946, 40), HORIZONTAL_ALIGNMENT_CENTER)
 	frame.add_child(title)
@@ -496,6 +502,25 @@ func _build_shell() -> void:
 
 ## Braises flottantes en fond de menu : quelques particules ambrées qui
 ## montent lentement, purement décoratif et non-bloquant (mouse_filter IGNORE).
+## Pose une bordure décorative (image fournie par le graphiste, transparente
+## au centre) par-dessus un panneau existant, étirée exactement sur sa
+## taille. Ajoutée en dernier enfant pour rester visible par-dessus le
+## contenu du panneau — sans risque puisque le centre de l'image est vide.
+func _add_border_overlay(parent: Control, path: String) -> void:
+	var tex := load(path) as Texture2D
+	if tex == null:
+		push_warning("Bordure introuvable : " + path)
+		return
+	var overlay := TextureRect.new()
+	overlay.position = Vector2.ZERO
+	overlay.size = parent.size
+	overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	overlay.stretch_mode = TextureRect.STRETCH_SCALE
+	overlay.texture = tex
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(overlay)
+
+
 func _build_ember_particles() -> void:
 	var layer := Control.new()
 	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -553,6 +578,7 @@ func _build_steam_profile() -> void:
 	steam_profile.add_child(steam_name_label)
 	steam_status_label = _label("STEAM  •  EN LIGNE", 9, Color("6fb88a"), Vector2(64, 31), Vector2(134, 16))
 	steam_profile.add_child(steam_status_label)
+	_add_border_overlay(steam_profile, "res://assets/menu_design/champ_select/bordure_steam.png")
 
 	# Carte "Niveau" séparée, juste à gauche de la carte Steam, sur la même
 	# rangée (même y, même hauteur) pour ne jamais empiéter sur le cadre
@@ -585,6 +611,7 @@ func _build_steam_profile() -> void:
 	level_progress_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	level_panel.add_child(level_progress_fill)
 	level_panel.clip_contents = true
+	_add_border_overlay(level_panel, "res://assets/menu_design/champ_select/bordure_level.png")
 
 	_update_level_display()
 	if not PlayerProgress.xp_changed.is_connected(_on_player_xp_changed):

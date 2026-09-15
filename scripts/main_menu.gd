@@ -41,6 +41,13 @@ var menu_music: AudioStreamPlayer
 var nav_buttons: Dictionary = {}
 var controller_connected: bool = false
 var _last_controller_connected: bool = false
+## Contour de surbrillance unique, superposé par-dessus le contrôle qui a
+## le focus clavier/manette — chaque bouton avait son propre style "focus"
+## (souvent trop subtil, à peine différent du style normal, incohérent d'un
+## écran à l'autre), rendant la navigation manette difficile à suivre à
+## l'œil. Un seul contour, toujours identique et bien visible, réglé une
+## fois pour toute la fenêtre plutôt que par bouton.
+var _focus_ring: Panel
 
 var steam_profile: Panel
 var steam_avatar: TextureRect
@@ -291,6 +298,7 @@ func _ready() -> void:
 			network_node.peer_arrived.connect(_on_matchmaking_peer_arrived)
 
 	_show_home()
+	_build_focus_ring()
 
 
 
@@ -310,6 +318,7 @@ func _process(_delta: float) -> void:
 			var focused := viewport.gui_get_focus_owner()
 			if focused == null or not is_instance_valid(focused) or not focused.is_visible_in_tree():
 				_focus_first_control()
+	_update_focus_ring()
 	if _lobby_active_screen and _lobby_countdown_label != null and is_instance_valid(_lobby_countdown_label):
 		_lobby_seconds_left_local = maxf(0.0, _lobby_seconds_left_local - _delta)
 		_lobby_countdown_label.text = str(int(ceil(_lobby_seconds_left_local)))
@@ -357,6 +366,48 @@ func _update_controller_connection(force: bool = false) -> void:
 		call_deferred("_focus_first_control")
 	elif page == "SETTINGS":
 		call_deferred("_show_settings")
+
+
+## Construit le contour de surbrillance unique (voir _focus_ring), une fois
+## pour toute la durée de vie du menu — repositionné chaque frame par
+## _update_focus_ring() sur le contrôle actuellement focus.
+func _build_focus_ring() -> void:
+	_focus_ring = Panel.new()
+	_focus_ring.name = "ControllerFocusRing"
+	_focus_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_focus_ring.visible = false
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	style.border_color = Color("fff2d4")
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(10)
+	_focus_ring.add_theme_stylebox_override("panel", style)
+	add_child(_focus_ring)
+
+
+## Repositionne le contour de surbrillance sur le contrôle qui a
+## actuellement le focus (manette ou clavier), ou le masque s'il n'y a pas
+## de focus valide / pas de manette connectée.
+func _update_focus_ring() -> void:
+	if _focus_ring == null:
+		return
+	if not controller_connected:
+		_focus_ring.visible = false
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		_focus_ring.visible = false
+		return
+	var focused := viewport.gui_get_focus_owner()
+	if focused == null or not is_instance_valid(focused) or not (focused is Control) or not focused.is_visible_in_tree():
+		_focus_ring.visible = false
+		return
+	var control := focused as Control
+	var rect := control.get_global_rect()
+	var pad := 5.0
+	_focus_ring.global_position = rect.position - Vector2(pad, pad)
+	_focus_ring.size = rect.size + Vector2(pad * 2.0, pad * 2.0)
+	_focus_ring.visible = true
 
 
 func _focus_first_control() -> void:

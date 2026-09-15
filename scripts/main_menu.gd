@@ -4215,10 +4215,12 @@ func _loadout_card_row(card: ArkaniteCard, accent: Color) -> Panel:
 	var owned := PlayerProgress.owns_arkanite(card)
 	var equipped := PlayerProgress.is_arkanite_equipped(_loadout_focus_hero, card.id)
 
-	var row := _panel(Vector2.ZERO, Vector2(570, 64), Color("140f09eb"), accent if owned else Color("352818"), 10)
+	# Contrairement à l'onglet ARKANITES, on ne réduit PAS l'opacité de toute
+	# la ligne ici : sur le fond très sombre du menu, ça rendait les cartes
+	# non possédées quasi invisibles au lieu de juste "moins mises en avant".
+	# La bordure plus terne (352818) suffit à signaler l'état verrouillé.
+	var row := _panel(Vector2.ZERO, Vector2(570, 64), Color("140f09eb"), accent if owned else Color("4a3d28"), 10)
 	row.custom_minimum_size = Vector2(570, 64)
-	if not owned:
-		row.modulate.a = 0.55
 
 	var thumbnail := TextureRect.new()
 	thumbnail.position = Vector2(6, 6)

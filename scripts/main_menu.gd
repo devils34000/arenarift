@@ -202,6 +202,17 @@ var custom_room_pending_action: String = ""
 # est supérieure ou égale à la dernière appliquée.
 var _custom_room_last_version: int = -1
 var _custom_room_connect_triggered: bool = false
+# Même classe de course que celle décrite au-dessus de _custom_room_last_version,
+# mais que le garde de version ne couvre pas : un poll parti AVANT notre clic
+# peut revenir avec la MÊME version (donc pas rejeté par le garde) mais un
+# "map"/"mode" encore ancien, et re-synchroniser le menu déroulant en arrière
+# avant même que la réponse de notre propre changement (room_settings) soit
+# arrivée. On mémorise donc la valeur qu'on vient de choisir et on ignore les
+# re-synchronisations tant qu'elle n'a pas été confirmée (ou un court délai).
+var _custom_room_pending_map: String = ""
+var _custom_room_pending_map_deadline_ms: int = 0
+var _custom_room_pending_mode: String = ""
+var _custom_room_pending_mode_deadline_ms: int = 0
 const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"], ["colosseum", "ARÈNE DU COLISÉE"]]
 const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"], ["EXPLORE", "DÉCOUVERTE (SANS COMBAT)"]]
 
@@ -1606,8 +1617,12 @@ func _refresh_custom_room_lobby_ui() -> void:
 	# valeur pendant que le joueur choisissait tout juste la nouvelle,
 	# fermant/perturbant le popup avant que son clic ne soit pris en compte
 	# — la sélection semblait alors "ne jamais se faire".
+	if _custom_room_pending_map != "":
+		if map_key == _custom_room_pending_map or Time.get_ticks_msec() >= _custom_room_pending_map_deadline_ms:
+			_custom_room_pending_map = ""
+
 	if custom_room_map_option != null and is_instance_valid(custom_room_map_option):
-		if not custom_room_map_option.get_popup().visible:
+		if not custom_room_map_option.get_popup().visible and _custom_room_pending_map == "":
 			for i in CUSTOM_ROOM_MAPS.size():
 				if CUSTOM_ROOM_MAPS[i][0] == map_key:
 					if custom_room_map_option.selected != i:
@@ -1615,8 +1630,12 @@ func _refresh_custom_room_lobby_ui() -> void:
 					break
 		custom_room_map_option.disabled = not is_host
 
+	if _custom_room_pending_mode != "":
+		if mode == _custom_room_pending_mode or Time.get_ticks_msec() >= _custom_room_pending_mode_deadline_ms:
+			_custom_room_pending_mode = ""
+
 	if custom_room_mode_option != null and is_instance_valid(custom_room_mode_option):
-		if not custom_room_mode_option.get_popup().visible:
+		if not custom_room_mode_option.get_popup().visible and _custom_room_pending_mode == "":
 			for i in CUSTOM_ROOM_MODES.size():
 				if CUSTOM_ROOM_MODES[i][0] == mode:
 					if custom_room_mode_option.selected != i:
@@ -1700,13 +1719,19 @@ func _custom_room_member_row(member: Dictionary) -> Control:
 func _on_custom_room_map_selected(index: int) -> void:
 	if not _is_custom_room_host() or index < 0 or index >= CUSTOM_ROOM_MAPS.size():
 		return
-	_send_custom_room_settings({"map": CUSTOM_ROOM_MAPS[index][0]})
+	var map_key: String = CUSTOM_ROOM_MAPS[index][0]
+	_custom_room_pending_map = map_key
+	_custom_room_pending_map_deadline_ms = Time.get_ticks_msec() + 4000
+	_send_custom_room_settings({"map": map_key})
 
 
 func _on_custom_room_mode_selected(index: int) -> void:
 	if not _is_custom_room_host() or index < 0 or index >= CUSTOM_ROOM_MODES.size():
 		return
-	_send_custom_room_settings({"mode": CUSTOM_ROOM_MODES[index][0]})
+	var mode_key: String = CUSTOM_ROOM_MODES[index][0]
+	_custom_room_pending_mode = mode_key
+	_custom_room_pending_mode_deadline_ms = Time.get_ticks_msec() + 4000
+	_send_custom_room_settings({"mode": mode_key})
 
 
 func _toggle_custom_room_random() -> void:
@@ -1827,6 +1852,8 @@ func _leave_custom_room_local_only() -> void:
 	custom_room_state = {}
 	_custom_room_connect_triggered = false
 	_custom_room_last_version = -1
+	_custom_room_pending_map = ""
+	_custom_room_pending_mode = ""
 
 
 func _leave_custom_room() -> void:

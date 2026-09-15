@@ -1,6 +1,9 @@
 extends Control
 
 var selected_mode := "DEATHMATCH"
+## Boutons persistants (nœuds de scène) des 5 cartes de mode de
+## %ArenaModesScreen, indexés par nom de mode — remplit dans _build_shell().
+var _arena_mode_card_buttons: Dictionary = {}
 ## Héros réellement choisi pour la partie en cours — n'est plus modifié que
 ## par le lobby de sélection des champions (après matchmaking).
 var selected_hero := "AERIS"
@@ -415,6 +418,23 @@ func _build_shell() -> void:
 	var arena_back_btn: Button = %BackButton
 	arena_back_btn.pressed.connect(_show_home)
 
+	# Les 5 cartes de mode sont elles aussi des nœuds persistants de la
+	# scène (visibles/éditables dans Godot) plutôt que recréées à chaque
+	# affichage — on ne connecte leur clic qu'une fois ici.
+	_arena_mode_card_buttons = {
+		"DEATHMATCH": %DeathmatchCard,
+		"1V1 DUEL": %Duel1v1Card,
+		"2V2 CLASH": %Clash2v2Card,
+		"3V3 RIVALRY": %Rivalry3v3Card,
+		"CUSTOM GAME": %CustomGameCard,
+	}
+	for mode in _arena_mode_card_buttons:
+		var card_btn: Button = _arena_mode_card_buttons[mode]
+		card_btn.pressed.connect(func():
+			selected_mode = mode
+			_show_arena_modes_deferred()
+		)
+
 
 const FONT_CINZEL_BOLD := "res://assets/menu_design/font/Cintel/static/Cinzel-Bold.ttf"
 const FONT_CINZEL_SEMIBOLD := "res://assets/menu_design/font/Cintel/static/Cinzel-SemiBold.ttf"
@@ -788,19 +808,9 @@ func _show_arena_modes() -> void:
 	transient_label.text = _transient_status_message
 	_transient_status_message = ""
 
-	var modes_box: VBoxContainer = %ModesBox
-	for child in modes_box.get_children():
-		if child.name != "SelectModeLabel":
-			child.queue_free()
-
 	for mode in ["DEATHMATCH", "1V1 DUEL", "2V2 CLASH", "3V3 RIVALRY", "CUSTOM GAME"]:
-		var selected: bool = (mode == selected_mode)
-		var card := _mode_card(mode, selected)
-		card.pressed.connect(func():
-			selected_mode = mode
-			_show_arena_modes_deferred()
-		)
-		modes_box.add_child(card)
+		var card: Button = _arena_mode_card_buttons[mode]
+		_apply_mode_card_style(card, mode, mode == selected_mode)
 
 	var details: Dictionary = MODE_DETAILS.get(selected_mode, {})
 	var mode_accent: Color = _mode_accent(selected_mode)
@@ -2698,13 +2708,11 @@ func _aaa_nav_button(text_value: String, active: bool) -> Button:
 ## à cette largeur. Une marge de texte fixe en pixels convenait à une seule
 ## largeur mais chevauchait le médaillon dès que le bouton était plus
 ## large — d'où ces marges calculées en pourcentage de card_width.
-func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEIGHT_LIST, card_width: float = 600.0) -> Button:
-	var b := Button.new()
-	b.text = mode
-	b.custom_minimum_size = Vector2(card_width, card_height)
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.focus_mode = Control.FOCUS_ALL
-	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+## Applique le skin bannière (icône à gauche, flèche à droite) d'un mode/
+## catégorie à un bouton EXISTANT — factorisé hors de _mode_card() pour
+## pouvoir aussi styler les boutons persistants de %ArenaModesScreen (créés
+## une fois dans la scène) sans les recréer à chaque rafraîchissement.
+func _apply_mode_card_style(b: Button, mode: String, selected: bool, card_width: float = 600.0) -> void:
 	_apply_banner_text_style(b, 19)
 
 	var margin_left := card_width * 0.25
@@ -2748,6 +2756,16 @@ func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEI
 		if selected:
 			b.add_theme_stylebox_override("normal", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
 		b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
+
+
+func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEIGHT_LIST, card_width: float = 600.0) -> Button:
+	var b := Button.new()
+	b.text = mode
+	b.custom_minimum_size = Vector2(card_width, card_height)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_apply_mode_card_style(b, mode, selected, card_width)
 	return b
 
 ## Habillage texte lisible par-dessus une bannière illustrée chargée (photo

@@ -17,7 +17,13 @@ extends Node3D
 @export var room_size: Vector2 = Vector2(10.0, 10.0):
 	set(value):
 		room_size = value
-		if Engine.is_editor_hint():
+		# is_inside_tree() : évite de reconstruire quand ce setter est appelé
+		# par PackedScene.instantiate() au chargement d'une salle déjà
+		# "bakée" (nœud encore orphelin à ce moment) — sinon ça duplique la
+		# géométrie et assigne un owner à des nœuds pas encore dans l'arbre
+		# ("Invalid owner"). Une édition manuelle dans l'Inspecteur sur une
+		# salle déjà ouverte dans l'éditeur continue de reconstruire en direct.
+		if Engine.is_editor_hint() and is_inside_tree():
 			rebuild = true
 
 @export var wall_height: float = 3.4
@@ -85,14 +91,17 @@ func _build_floor() -> void:
 	body.name = "FloorCollision"
 	body.collision_layer = 3
 	body.collision_mask = 1
+	# body doit être dans l'arbre AVANT qu'on ajoute/owner-assigne collision
+	# en dessous, sinon "Invalid owner" (edited_scene_root n'est pas encore
+	# ancêtre de collision tant que body est orphelin).
+	floor_mesh.add_child(body)
+	if Engine.is_editor_hint() and _scene_root != null:
+		body.owner = _scene_root
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
 	shape.size = box.size
 	collision.shape = shape
 	_spawn(body, collision)
-	floor_mesh.add_child(body)
-	if Engine.is_editor_hint() and _scene_root != null:
-		body.owner = _scene_root
 
 func _build_walls() -> void:
 	var walls := Node3D.new()
@@ -197,14 +206,16 @@ func _add_wall_segment(parent: Node3D, center: Vector3, length: float, horizonta
 	body.name = "Collision"
 	body.collision_layer = 3
 	body.collision_mask = 1
+	# Même précaution que dans _build_floor() : body doit être dans l'arbre
+	# avant d'y attacher/owner-assigner collision.
+	wall.add_child(body)
+	if Engine.is_editor_hint() and _scene_root != null:
+		body.owner = _scene_root
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
 	shape.size = box.size
 	collision.shape = shape
 	_spawn(body, collision)
-	wall.add_child(body)
-	if Engine.is_editor_hint() and _scene_root != null:
-		body.owner = _scene_root
 
 func _build_corner_pillars() -> void:
 	var pillars := Node3D.new()

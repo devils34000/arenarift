@@ -30,7 +30,7 @@ category = 2
 [sub_resource type="Resource" id="RoomData_junction"]
 script = ExtResource("2_data")
 room_scene = ExtResource("6_junction")
-spawn_weight = 0.6
+spawn_weight = 2.5
 category = 3
 
 [sub_resource type="Resource" id="RoomData_deada"]

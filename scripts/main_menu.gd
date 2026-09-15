@@ -353,6 +353,10 @@ func _focus_first_control() -> void:
 		nav_play.grab_focus()
 		return
 	var first := _find_first_focusable(content)
+	if first == null:
+		var arena_screen: Control = %ArenaModesScreen
+		if arena_screen.visible:
+			first = _find_first_focusable(arena_screen)
 	if first != null:
 		first.grab_focus()
 
@@ -403,6 +407,13 @@ func _build_shell() -> void:
 	_use_title_font(title)
 
 	content = %Content
+
+	# %ArenaModesScreen est un nœud persistant (pas recréé à chaque
+	# affichage) : son bouton retour ne se connecte donc qu'une seule fois
+	# ici, plutôt qu'à chaque appel de _show_arena_modes() qui empilerait
+	# les connexions et déclencherait plusieurs fois le callback par clic.
+	var arena_back_btn: Button = %BackButton
+	arena_back_btn.pressed.connect(_show_home)
 
 
 const FONT_CINZEL_BOLD := "res://assets/menu_design/font/Cintel/static/Cinzel-Bold.ttf"
@@ -761,35 +772,26 @@ func _show_home() -> void:
 
 ## Écran de sélection du mode Arena (Deathmatch / 1v1 / 2v2 / 3v3 / Custom
 ## Game) — anciennement l'écran PLAY racine, maintenant sous-écran de
-## "MULTIJOUEUR ARENA".
+## "MULTIJOUEUR ARENA". Son ossature (bouton retour, panneau de détails,
+## bordure...) vit dans scenes/main_menu.tscn (%ArenaModesScreen) et est
+## donc déplaçable/redimensionnable directement dans l'éditeur ; cette
+## fonction ne fait qu'afficher cet écran et remplir ses parties dynamiques
+## (cartes de mode, texte du panneau de détails).
 func _show_arena_modes() -> void:
 	_clear()
 	title.text = "MULTIJOUEUR ARENA"
 
-	var back_btn := Button.new()
-	back_btn.text = "←  PLAY"
-	back_btn.flat = true
-	back_btn.custom_minimum_size = Vector2(120, 26)
-	back_btn.focus_mode = Control.FOCUS_ALL
-	back_btn.add_theme_font_size_override("font_size", 11)
-	back_btn.add_theme_color_override("font_color", Color("c9a24d"))
-	back_btn.pressed.connect(_show_home)
-	content.add_child(back_btn)
+	var screen: Control = %ArenaModesScreen
+	screen.visible = true
 
-	if _transient_status_message != "":
-		content.add_child(_label(_transient_status_message, 11, Color("ff8a8a"), Vector2.ZERO, Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER))
-		_transient_status_message = ""
+	var transient_label: Label = %TransientMessage
+	transient_label.text = _transient_status_message
+	_transient_status_message = ""
 
-	var row := HBoxContainer.new()
-	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	row.add_theme_constant_override("separation", 18)
-	content.add_child(row)
-
-	var modes_box := VBoxContainer.new()
-	modes_box.custom_minimum_size = Vector2(600, 0)
-	modes_box.add_theme_constant_override("separation", 10)
-	row.add_child(modes_box)
-	modes_box.add_child(_label("SELECT MODE", 11, Color("8a7550"), Vector2.ZERO, Vector2(500, 22)))
+	var modes_box: VBoxContainer = %ModesBox
+	for child in modes_box.get_children():
+		if child.name != "SelectModeLabel":
+			child.queue_free()
 
 	for mode in ["DEATHMATCH", "1V1 DUEL", "2V2 CLASH", "3V3 RIVALRY", "CUSTOM GAME"]:
 		var selected: bool = (mode == selected_mode)
@@ -800,46 +802,42 @@ func _show_arena_modes() -> void:
 		)
 		modes_box.add_child(card)
 
-	var side := _panel(Vector2.ZERO, Vector2(290, 380), Color("1a140b"), Color("4a3018"), 14)
-	side.custom_minimum_size = Vector2(290, 380)
-	row.add_child(side)
-
 	var details: Dictionary = MODE_DETAILS.get(selected_mode, {})
 	var mode_accent: Color = _mode_accent(selected_mode)
 
-	side.add_child(_label("MODE SÉLECTIONNÉ", 10, Color("6fb88a"), Vector2(18, 16), Vector2(254, 18)))
-	var mode_name_label := _label(selected_mode, 22, mode_accent, Vector2(18, 40), Vector2(254, 30))
+	var mode_name_label: Label = %ModeNameLabel
+	mode_name_label.text = selected_mode
+	mode_name_label.add_theme_color_override("font_color", mode_accent)
 	_use_title_font(mode_name_label)
-	side.add_child(mode_name_label)
 
 	# autowrap_mode seul ne suffisait pas ici (le texte débordait toujours
 	# sur une seule ligne) : on découpe nous-mêmes le texte en lignes avant
 	# de l'assigner, ce qui garantit le retour à la ligne quel que soit le
 	# comportement du Label.
-	var desc_text := _wrap_text_lines(str(details.get("desc", "")), 32)
-	var desc_label := _label(desc_text, 11, Color("c4b394"), Vector2(18, 78), Vector2(254, 84))
-	side.add_child(desc_label)
+	var desc_label: Label = %DescLabel
+	desc_label.text = _wrap_text_lines(str(details.get("desc", "")), 32)
 
-	side.add_child(_label("JOUEURS", 9, Color("7a6a4a"), Vector2(18, 172), Vector2(120, 16)))
-	side.add_child(_label(str(details.get("players", "")), 13, Color("f3e6c8"), Vector2(18, 190), Vector2(254, 20)))
+	var players_value: Label = %PlayersValueLabel
+	players_value.text = str(details.get("players", ""))
 
-	side.add_child(_label("CARTE", 9, Color("7a6a4a"), Vector2(18, 224), Vector2(120, 16)))
-	side.add_child(_label(str(details.get("map", "")), 13, Color("f3e6c8"), Vector2(18, 242), Vector2(254, 20)))
+	var map_value: Label = %MapValueLabel
+	map_value.text = str(details.get("map", ""))
 
-	var launch := _button("SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY", Vector2(280, 48), true)
-	launch.position = Vector2(18, 320)
-	launch.size = Vector2(254, 58)
-	launch.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var launch: Button = %LaunchButton
+	launch.text = "SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY"
 	_apply_banner_launch_style(launch)
 	_apply_banner_text_style(launch, 16)
+	if launch.pressed.is_connected(_show_custom_game_home):
+		launch.pressed.disconnect(_show_custom_game_home)
+	if launch.pressed.is_connected(_create_party):
+		launch.pressed.disconnect(_create_party)
 	if selected_mode == "CUSTOM GAME":
 		launch.pressed.connect(_show_custom_game_home)
 	else:
 		launch.pressed.connect(_create_party)
-	side.add_child(launch)
-	_add_border_overlay(side, "res://assets/menu_design/champ_select/bordure_mode_menu.png")
 
-	content.add_child(_label("MODE ACTIF  •  %s     |     LOCAL / PRACTICE" % selected_mode, 10, Color("6b5a3a"), Vector2.ZERO, Vector2(850, 20)))
+	var bottom_label: Label = %BottomLabel
+	bottom_label.text = "MODE ACTIF  •  %s     |     LOCAL / PRACTICE" % selected_mode
 
 
 # =========================================================
@@ -3716,6 +3714,12 @@ func _launch() -> void:
 # =========================================================
 
 func _clear() -> void:
+	content.visible = true
+	# Les écrans convertis en nœuds de scène statiques (ex. %ArenaModesScreen)
+	# ne repassent pas par ici pour se construire, mais doivent redevenir
+	# invisibles dès qu'on quitte vers un écran encore procédural.
+	var arena_screen: Control = %ArenaModesScreen
+	arena_screen.visible = false
 	for child in content.get_children():
 		child.queue_free()
 

@@ -2503,14 +2503,19 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		vfx_manager.spawn_explosion(self, visual_origin, 0.8)
 		vfx_manager.spawn_charge(self, visual_origin, 0.7)
 		_play_sfx(DASH_SFX, visual_origin, -3.0)
-	elif kind == "charge" or kind == "eren_charge":
+	elif kind == "charge":
 		vfx_manager.spawn_charge(self, visual_origin, 1.25)
 		vfx_manager.spawn_dash(self, visual_origin + direction.normalized() * 0.45, direction)
 		vfx_manager.spawn_explosion(self, visual_origin + Vector3.UP * 0.08, 0.4)
 		_play_sfx(DASH_SFX, visual_origin, -3.0)
-	elif kind == "charge_trail" or kind == "eren_charge_trail":
+	elif kind == "eren_charge":
+		vfx_manager.spawn_eren_charge_burst(self, visual_origin, direction)
+		_play_sfx(DASH_SFX, visual_origin, -3.0)
+	elif kind == "charge_trail":
 		vfx_manager.spawn_dash(self, visual_origin, direction)
 		vfx_manager.spawn_charge(self, visual_origin, 0.32)
+	elif kind == "eren_charge_trail":
+		vfx_manager.spawn_eren_fire_trail(self, visual_origin, direction)
 	elif kind == "charge_hit" or kind == "eren_charge_hit":
 		vfx_manager.spawn_charge(self, visual_origin, 0.55)
 		vfx_manager.spawn_explosion(self, visual_origin, 0.35)

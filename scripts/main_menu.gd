@@ -213,7 +213,7 @@ var _custom_room_pending_map: String = ""
 var _custom_room_pending_map_deadline_ms: int = 0
 var _custom_room_pending_mode: String = ""
 var _custom_room_pending_mode_deadline_ms: int = 0
-const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"], ["colosseum", "ARÈNE DU COLISÉE"], ["dungeon", "DONJON PROCÉDURAL"]]
+const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"], ["colosseum", "ARÈNE DU COLISÉE"]]
 const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"], ["EXPLORE", "DÉCOUVERTE (SANS COMBAT)"]]
 
 var matchmaking_action_http: HTTPRequest
@@ -1833,8 +1833,6 @@ func _check_custom_room_server_ready() -> void:
 			pending_arena_scene_path = "res://scenes/ArenaLabyrinth.tscn"
 		"colosseum":
 			pending_arena_scene_path = "res://scenes/ArenaColosseum.tscn"
-		"dungeon":
-			pending_arena_scene_path = "res://scenes/ArenaDungeonCoop.tscn"
 		_:
 			pending_arena_scene_path = "res://scenes/arena.tscn"
 

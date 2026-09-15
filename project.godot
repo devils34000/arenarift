@@ -16,10 +16,6 @@ config/features=PackedStringArray("4.7")
 boot_splash/image="uid://bkdl1nveibnmm"
 run/main_scene.dedicated_server="res://scenes/dedicated_server.tscn"
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/dungeon_crawler_3d/plugin.cfg")
-
 [autoload]
 
 Network="*res://scripts/network.gd"

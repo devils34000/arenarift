@@ -1,10 +1,19 @@
+@tool
 extends Node3D
 ## Arène "Colisée" — génération procédurale complète (sol circulaire à motif
 ## radial incrusté, tours périphériques avec braseros, colonnes intérieures,
 ## éclairage chaud). Ajoutée comme unique enfant d'une scène Arena (racine
-## avec le script arena_3d.gd) : Godot exécute le _ready() des enfants avant
-## celui du parent, donc tout ce que ce script construit (dont le nœud
-## "Terrain" requis) existe déjà quand arena_3d.gd cherche sa map.
+## avec le script arena_3d.gd).
+##
+## Script en @tool : la géométrie se construit directement dans l'éditeur
+## (visible sans lancer le jeu) et se sauvegarde comme de vrais nœuds dans
+## ArenaColosseum.tscn quand tu enregistres la scène — donc éditable à la
+## main ensuite (déplacer une tour, retoucher une couleur, etc.) exactement
+## comme le reste des maps du projet.
+##
+## Pour régénérer depuis zéro (après avoir changé une constante ci-dessous) :
+## supprime les enfants de MapBuilder dans l'éditeur, ou coche puis décoche
+## "Rebuild" dans l'Inspecteur.
 
 const PLATFORM_RADIUS := 22.0
 const PLATFORM_HEIGHT := 1.0
@@ -19,7 +28,26 @@ const INLAY_RED := Color("7a1f1f")
 const INLAY_GOLD := Color("d9a441")
 const LANTERN_COLOR := Color("ffb04d")
 
+@export var rebuild: bool = false:
+	set(value):
+		rebuild = false
+		if value:
+			_clear_and_build()
+
+var _scene_root: Node
+
 func _ready() -> void:
+	if get_child_count() > 0:
+		return
+	_build_all()
+
+func _clear_and_build() -> void:
+	for child in get_children():
+		child.queue_free()
+	call_deferred("_build_all")
+
+func _build_all() -> void:
+	_scene_root = get_tree().edited_scene_root if Engine.is_editor_hint() else null
 	_build_terrain()
 	_build_floor_pattern()
 	_build_parapet()
@@ -28,6 +56,14 @@ func _ready() -> void:
 	_build_spawn_points()
 	_build_environment()
 	_build_sun()
+
+## Ajoute "node" comme enfant de "parent" et, en édition, l'attribue à la
+## racine de la scène pour qu'il soit bien sauvegardé dans le fichier .tscn
+## (sans owner, un nœud créé par script disparaît à la sauvegarde).
+func _spawn(parent: Node, node: Node) -> void:
+	parent.add_child(node)
+	if Engine.is_editor_hint() and _scene_root != null:
+		node.owner = _scene_root
 
 func _build_terrain() -> void:
 	var terrain := MeshInstance3D.new()
@@ -43,7 +79,7 @@ func _build_terrain() -> void:
 	mat.albedo_color = STONE_COLOR
 	mat.roughness = 0.85
 	terrain.material_override = mat
-	add_child(terrain)
+	_spawn(self, terrain)
 
 func _build_floor_pattern() -> void:
 	# Motif radial incrusté (anneaux + rayons + rosace centrale) posé bien à
@@ -106,7 +142,7 @@ void fragment() {
 	mat.set_shader_parameter("inlay_color", INLAY_RED)
 	mat.set_shader_parameter("gold_color", INLAY_GOLD)
 	deco.material_override = mat
-	add_child(deco)
+	_spawn(self, deco)
 
 func _build_parapet() -> void:
 	var parapet := MeshInstance3D.new()
@@ -122,12 +158,12 @@ func _build_parapet() -> void:
 	mat.albedo_color = STONE_DARK
 	mat.roughness = 0.9
 	parapet.material_override = mat
-	add_child(parapet)
+	_spawn(self, parapet)
 
 func _build_towers() -> void:
 	var towers := Node3D.new()
 	towers.name = "Towers"
-	add_child(towers)
+	_spawn(self, towers)
 
 	var tower_mat := StandardMaterial3D.new()
 	tower_mat.albedo_color = STONE_COLOR
@@ -148,7 +184,7 @@ func _build_towers() -> void:
 		var tower := Node3D.new()
 		tower.name = "Tower_%02d" % i
 		tower.position = pos
-		towers.add_child(tower)
+		_spawn(towers, tower)
 
 		var base := MeshInstance3D.new()
 		var base_mesh := CylinderMesh.new()
@@ -159,7 +195,7 @@ func _build_towers() -> void:
 		base.mesh = base_mesh
 		base.position.y = 2.5
 		base.material_override = tower_mat
-		tower.add_child(base)
+		_spawn(tower, base)
 
 		var upper := MeshInstance3D.new()
 		var upper_mesh := CylinderMesh.new()
@@ -170,7 +206,7 @@ func _build_towers() -> void:
 		upper.mesh = upper_mesh
 		upper.position.y = 5.0 + 2.3
 		upper.material_override = trim_mat
-		tower.add_child(upper)
+		_spawn(tower, upper)
 
 		# Vasque au sommet, façon brasero.
 		var bowl := MeshInstance3D.new()
@@ -182,24 +218,26 @@ func _build_towers() -> void:
 		bowl.mesh = bowl_mesh
 		bowl.position.y = 5.0 + 4.6 + 0.45
 		bowl.material_override = tower_mat
-		tower.add_child(bowl)
+		_spawn(tower, bowl)
 
 		# Flamme + lumière chaude.
 		var flame_light := OmniLight3D.new()
+		flame_light.name = "FlameLight"
 		flame_light.light_color = LANTERN_COLOR
 		flame_light.light_energy = 2.6
 		flame_light.omni_range = 9.0
 		flame_light.position.y = 5.0 + 4.6 + 0.9
-		tower.add_child(flame_light)
+		_spawn(tower, flame_light)
 
 		var flame_mesh := MeshInstance3D.new()
+		flame_mesh.name = "Flame"
 		var flame_sphere := SphereMesh.new()
 		flame_sphere.radius = 0.32
 		flame_sphere.height = 0.64
 		flame_mesh.mesh = flame_sphere
 		flame_mesh.material_override = flame_mat
 		flame_mesh.position.y = 5.0 + 4.6 + 0.75
-		tower.add_child(flame_mesh)
+		_spawn(tower, flame_mesh)
 
 		# Collision : les tours bloquent le passage, comme sur la référence.
 		var body := StaticBody3D.new()
@@ -207,18 +245,19 @@ func _build_towers() -> void:
 		body.collision_layer = 3
 		body.collision_mask = 1
 		var collision := CollisionShape3D.new()
+		collision.name = "CollisionShape3D"
 		var shape := CylinderShape3D.new()
 		shape.radius = 1.85
 		shape.height = 10.0
 		collision.shape = shape
 		collision.position.y = 5.0
-		body.add_child(collision)
-		tower.add_child(body)
+		_spawn(body, collision)
+		_spawn(tower, body)
 
 func _build_inner_columns() -> void:
 	var columns := Node3D.new()
 	columns.name = "InnerColumns"
-	add_child(columns)
+	_spawn(self, columns)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = STONE_COLOR.lightened(0.08)
 	mat.roughness = 0.75
@@ -237,14 +276,15 @@ func _build_inner_columns() -> void:
 		col.mesh = mesh
 		col.position = pos + Vector3(0, 2.7, 0)
 		col.material_override = mat
-		columns.add_child(col)
+		_spawn(columns, col)
 
 		var lantern_light := OmniLight3D.new()
+		lantern_light.name = "Lantern_%02d" % i
 		lantern_light.light_color = LANTERN_COLOR
 		lantern_light.light_energy = 1.4
 		lantern_light.omni_range = 5.0
 		lantern_light.position = pos + Vector3(0, 5.5, 0)
-		columns.add_child(lantern_light)
+		_spawn(columns, lantern_light)
 
 func _build_spawn_points() -> void:
 	# Convention attendue par arena_3d.gd::_map_spawn_positions() : un nœud
@@ -252,7 +292,7 @@ func _build_spawn_points() -> void:
 	# de part et d'autre de la plateforme circulaire.
 	var spawn_root := Node3D.new()
 	spawn_root.name = "SpawnPoints"
-	add_child(spawn_root)
+	_spawn(self, spawn_root)
 
 	var spawn_radius := PLATFORM_RADIUS * 0.55
 	var ally_angles := [200.0, 180.0, 160.0]
@@ -263,16 +303,18 @@ func _build_spawn_points() -> void:
 		marker.name = "Ally_Astral_%02d" % (i + 1)
 		var a := deg_to_rad(ally_angles[i])
 		marker.position = Vector3(cos(a) * spawn_radius, 0.05, sin(a) * spawn_radius)
-		spawn_root.add_child(marker)
+		_spawn(spawn_root, marker)
 
 	for i in range(enemy_angles.size()):
 		var marker := Marker3D.new()
 		marker.name = "Enemy_Arcane_%02d" % (i + 1)
 		var a := deg_to_rad(enemy_angles[i])
 		marker.position = Vector3(cos(a) * spawn_radius, 0.05, sin(a) * spawn_radius)
-		spawn_root.add_child(marker)
+		_spawn(spawn_root, marker)
 
 func _build_environment() -> void:
+	if get_node_or_null("WorldEnvironment") != null:
+		return
 	var env_node := WorldEnvironment.new()
 	env_node.name = "WorldEnvironment"
 	var environment := Environment.new()
@@ -286,13 +328,15 @@ func _build_environment() -> void:
 	environment.fog_light_color = Color("c98a4a")
 	environment.fog_density = 0.006
 	env_node.environment = environment
-	add_child(env_node)
+	_spawn(self, env_node)
 
 func _build_sun() -> void:
+	if get_node_or_null("Sun") != null:
+		return
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
 	sun.light_color = Color("ffcf9a")
 	sun.light_energy = 1.1
 	sun.rotation_degrees = Vector3(-62.0, -35.0, 0.0)
 	sun.shadow_enabled = true
-	add_child(sun)
+	_spawn(self, sun)

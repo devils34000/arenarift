@@ -1994,32 +1994,61 @@ func _show_hero_select_lobby() -> void:
 	_refresh_lobby_status_ui(Network.lobby_picks)
 
 
+## Charge le portrait d'un héros recadré sur la tête (les artworks sont des
+## portraits pleine longueur avec la tête dans le tiers/moitié haute) au lieu
+## de l'image entière rétrécie. Les 4 artworks partagent le même cadrage,
+## donc un seul ratio de recadrage (haut de l'image) convient à tous.
+const HERO_HEAD_CROP_RATIO := 0.58
+
+func _hero_head_texture(hero_name: String) -> Texture2D:
+	var path := _hero_art(hero_name)
+	if path == "":
+		return null
+	var image := Image.new()
+	if image.load(path) != OK:
+		return null
+	var base_texture := ImageTexture.create_from_image(image)
+	var atlas := AtlasTexture.new()
+	atlas.atlas = base_texture
+	atlas.region = Rect2(0, 0, image.get_width(), image.get_height() * HERO_HEAD_CROP_RATIO)
+	return atlas
+
+
 ## Reconstruit uniquement l'UI (sans toucher au minuteur / à l'état "prêt")
 ## — utilisé quand le joueur change de héros dans la rangée de portraits.
+## Tout le contenu est posé sur un unique panneau "canvas" (pas un
+## Container) : un VBoxContainer/HBoxContainer directement enfant de
+## `content` ignore les positions manuelles de ses enfants (il les
+## réempile verticalement en écrasant .position/.size), ce qui faisait
+## disparaître/mal placer les panneaux ici — déjà rencontré ailleurs dans ce
+## fichier, d'où le même contournement (_hero_card etc. vivent tous dans un
+## panneau non-Container avec des tailles minimales explicites).
 func _build_hero_select_lobby_ui() -> void:
 	_clear()
 	title.text = "SÉLECTION DES CHAMPIONS"
 
-	_lobby_countdown_label = _label(str(int(ceil(_lobby_seconds_left_local))), 40, Color("f4c977"), Vector2(0, 2), Vector2(946, 48), HORIZONTAL_ALIGNMENT_CENTER)
-	content.add_child(_lobby_countdown_label)
+	var canvas := _panel(Vector2.ZERO, Vector2(946, 566), Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0)
+	canvas.custom_minimum_size = Vector2(946, 566)
+	content.add_child(canvas)
 
-	content.add_child(_label("MATCH TROUVÉ  •  CHOISIS TON CHAMPION", 11, Color("8a7550"), Vector2(0, 52), Vector2(946, 20), HORIZONTAL_ALIGNMENT_CENTER))
+	_lobby_countdown_label = _label(str(int(ceil(_lobby_seconds_left_local))), 40, Color("f4c977"), Vector2(0, 2), Vector2(946, 48), HORIZONTAL_ALIGNMENT_CENTER)
+	canvas.add_child(_lobby_countdown_label)
+
+	canvas.add_child(_label("MATCH TROUVÉ  •  CHOISIS TON CHAMPION", 11, Color("8a7550"), Vector2(0, 52), Vector2(946, 20), HORIZONTAL_ALIGNMENT_CENTER))
 
 	# Grand aperçu central, façon écran de sélection LoL.
 	var preview := _panel(Vector2(323, 82), Vector2(300, 260), Color("140f09eb"), _hero_accent(selected_hero), 16)
-	content.add_child(preview)
+	preview.custom_minimum_size = Vector2(300, 260)
+	canvas.add_child(preview)
 
 	var portrait := TextureRect.new()
 	portrait.position = Vector2(20, 14)
 	portrait.size = Vector2(260, 190)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var portrait_path := _hero_art(selected_hero)
-	if portrait_path != "":
-		var image := Image.new()
-		if image.load(portrait_path) == OK:
-			portrait.texture = ImageTexture.create_from_image(image)
+	portrait.clip_contents = true
+	portrait.texture = _hero_head_texture(selected_hero)
 	preview.add_child(portrait)
 	preview.add_child(_label(selected_hero, 20, _hero_accent(selected_hero), Vector2(0, 206), Vector2(300, 28), HORIZONTAL_ALIGNMENT_CENTER))
 	preview.add_child(_label(_hero_role(selected_hero), 9, Color("9a8760"), Vector2(0, 232), Vector2(300, 18), HORIZONTAL_ALIGNMENT_CENTER))
@@ -2027,9 +2056,9 @@ func _build_hero_select_lobby_ui() -> void:
 	# Rangée de portraits cliquables, légère (pas de fiche détaillée).
 	var roster := HBoxContainer.new()
 	roster.position = Vector2(323, 350)
-	roster.size = Vector2(300, 72)
+	roster.custom_minimum_size = Vector2(300, 72)
 	roster.add_theme_constant_override("separation", 8)
-	content.add_child(roster)
+	canvas.add_child(roster)
 	for hero_entry in [
 		["AERIS", Color("5b9bc4")],
 		["MAYLINH", Color("4fae7d")],
@@ -2042,9 +2071,9 @@ func _build_hero_select_lobby_ui() -> void:
 	# direct via Network.lobby_state_changed.
 	_lobby_status_box = VBoxContainer.new()
 	_lobby_status_box.position = Vector2(233, 432)
-	_lobby_status_box.size = Vector2(480, 80)
+	_lobby_status_box.custom_minimum_size = Vector2(480, 80)
 	_lobby_status_box.add_theme_constant_override("separation", 6)
-	content.add_child(_lobby_status_box)
+	canvas.add_child(_lobby_status_box)
 
 	_lobby_validate_button = _button("VALIDER MON CHOIX", Vector2(300, 48), true)
 	_lobby_validate_button.position = Vector2(323, 522)
@@ -2054,7 +2083,7 @@ func _build_hero_select_lobby_ui() -> void:
 		_lobby_validate_button.disabled = true
 	else:
 		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
-	content.add_child(_lobby_validate_button)
+	canvas.add_child(_lobby_validate_button)
 
 
 func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:
@@ -2069,13 +2098,10 @@ func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:
 	var icon := TextureRect.new()
 	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var portrait_path := _hero_art(hero_name)
-	if portrait_path != "":
-		var image := Image.new()
-		if image.load(portrait_path) == OK:
-			icon.texture = ImageTexture.create_from_image(image)
+	icon.clip_contents = true
+	icon.texture = _hero_head_texture(hero_name)
 	btn.add_child(icon)
 
 	btn.disabled = _lobby_ready_locked

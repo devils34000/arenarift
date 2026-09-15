@@ -51,52 +51,71 @@ func spawn_teleport_start(parent: Node, position: Vector3, scale_value: float = 
 
 func spawn_teleport_end(parent: Node, position: Vector3, scale_value: float = 0.85) -> Node3D:
 	_spawn_ice_nova_burst(parent, position, scale_value)
+	_camera_impact_punch(parent)
 	return _spawn_tinted(parent, IMPACT_01_VFX, position, Vector3.ZERO, scale_value * 0.9, 0.4, ICE_PRIMARY, ICE_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.0)
+
+func _camera_impact_punch(parent: Node) -> void:
+	if parent == null or not parent.is_inside_tree():
+		return
+	var viewport := parent.get_viewport()
+	if viewport == null:
+		return
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return
+	var base_fov := cam.fov
+	var tween := cam.create_tween()
+	tween.tween_property(cam, "fov", base_fov - 6.0, 0.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(cam, "fov", base_fov, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _spawn_ice_vortex_charge(parent: Node, position: Vector3, scale_value: float = 1.0) -> void:
 	if parent == null:
 		return
+	var s := scale_value * 1.8
 	var root := Node3D.new()
 	root.name = "IceVortexChargeFX"
 	parent.add_child(root)
 	root.global_position = position
 
-	var ring_particles := GPUParticles3D.new()
-	ring_particles.amount = 70
-	ring_particles.lifetime = 0.55
-	ring_particles.one_shot = true
-	ring_particles.emitting = true
-	ring_particles.explosiveness = 0.2
-	ring_particles.draw_pass_1 = _ice_sparkle_mesh()
-	var pm := ParticleProcessMaterial.new()
-	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
-	pm.emission_ring_axis = Vector3.UP
-	pm.emission_ring_radius = 1.0 * scale_value
-	pm.emission_ring_inner_radius = 0.8 * scale_value
-	pm.emission_ring_height = 0.0
-	pm.direction = Vector3(0, 1, 0)
-	pm.spread = 8.0
-	pm.initial_velocity_min = 0.5
-	pm.initial_velocity_max = 1.3
-	pm.orbit_velocity_min = 1.6
-	pm.orbit_velocity_max = 2.8
-	pm.gravity = Vector3(0, 0.8, 0)
-	pm.scale_min = 0.5
-	pm.scale_max = 1.3
-	pm.color = ICE_SECONDARY
-	ring_particles.process_material = pm
-	root.add_child(ring_particles)
+	# Deux anneaux de particules à des rayons différents, en orbite rapide,
+	# pour un vortex qui se referme visiblement avant la téléportation.
+	for ring_i in range(2):
+		var ring_particles := GPUParticles3D.new()
+		ring_particles.amount = 90
+		ring_particles.lifetime = 0.5
+		ring_particles.one_shot = true
+		ring_particles.emitting = true
+		ring_particles.explosiveness = 0.2
+		ring_particles.draw_pass_1 = _ice_sparkle_mesh()
+		var pm := ParticleProcessMaterial.new()
+		pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
+		pm.emission_ring_axis = Vector3.UP
+		pm.emission_ring_radius = (1.6 - ring_i * 0.5) * s
+		pm.emission_ring_inner_radius = (1.35 - ring_i * 0.5) * s
+		pm.emission_ring_height = 0.0
+		pm.direction = Vector3(0, 1, 0)
+		pm.spread = 8.0
+		pm.initial_velocity_min = 0.5
+		pm.initial_velocity_max = 1.4
+		pm.orbit_velocity_min = 2.0 + ring_i * 1.2
+		pm.orbit_velocity_max = 3.2 + ring_i * 1.4
+		pm.gravity = Vector3(0, 1.2, 0)
+		pm.scale_min = 0.6
+		pm.scale_max = 1.5
+		pm.color = ICE_SECONDARY if ring_i == 0 else ICE_CORE
+		ring_particles.process_material = pm
+		root.add_child(ring_particles)
 
 	var light := OmniLight3D.new()
 	light.light_color = ICE_PRIMARY
 	light.light_energy = 0.0
-	light.omni_range = 3.2 * scale_value
+	light.omni_range = 5.5 * s
 	root.add_child(light)
 	var light_tween := root.create_tween()
-	light_tween.tween_property(light, "light_energy", 7.0, 0.2)
-	light_tween.tween_property(light, "light_energy", 0.0, 0.3)
+	light_tween.tween_property(light, "light_energy", 10.0, 0.18)
+	light_tween.tween_property(light, "light_energy", 0.0, 0.35)
 
-	get_tree().create_timer(0.75).timeout.connect(func():
+	get_tree().create_timer(0.8).timeout.connect(func():
 		if is_instance_valid(root):
 			root.queue_free()
 	)
@@ -104,6 +123,9 @@ func _spawn_ice_vortex_charge(parent: Node, position: Vector3, scale_value: floa
 func _spawn_ice_nova_burst(parent: Node, position: Vector3, scale_value: float = 1.0) -> void:
 	if parent == null:
 		return
+	# On gonfle nettement l'échelle réelle par rapport au paramètre reçu :
+	# à scale_value=1 on veut un impact qui domine largement la silhouette du héros.
+	var s := scale_value * 2.4
 	var root := Node3D.new()
 	root.name = "IceNovaBurstFX"
 	parent.add_child(root)
@@ -113,20 +135,24 @@ func _spawn_ice_nova_burst(parent: Node, position: Vector3, scale_value: float =
 	var light := OmniLight3D.new()
 	light.light_color = ICE_CORE
 	light.light_energy = 0.0
-	light.omni_range = 6.5 * scale_value
+	light.omni_range = 11.0 * s
 	root.add_child(light)
 	var light_tween := root.create_tween()
-	light_tween.tween_property(light, "light_energy", 18.0, 0.06)
-	light_tween.tween_property(light, "light_energy", 0.0, 0.42)
+	light_tween.tween_property(light, "light_energy", 26.0, 0.05)
+	light_tween.tween_property(light, "light_energy", 4.0, 0.25)
+	light_tween.tween_property(light, "light_energy", 0.0, 0.35)
+
+	# Colonne de glace qui jaillit du sol et explose vers le haut.
+	_spawn_ice_pillar(root, s)
 
 	# Nuage de givre semi-transparent qui gonfle et se dissipe.
 	var mist := MeshInstance3D.new()
 	var mist_sphere := SphereMesh.new()
-	mist_sphere.radius = 0.4 * scale_value
-	mist_sphere.height = 0.8 * scale_value
+	mist_sphere.radius = 0.4 * s
+	mist_sphere.height = 0.8 * s
 	mist.mesh = mist_sphere
 	var mist_mat := StandardMaterial3D.new()
-	mist_mat.albedo_color = Color(ICE_SECONDARY.r, ICE_SECONDARY.g, ICE_SECONDARY.b, 0.35)
+	mist_mat.albedo_color = Color(ICE_SECONDARY.r, ICE_SECONDARY.g, ICE_SECONDARY.b, 0.4)
 	mist_mat.emission_enabled = true
 	mist_mat.emission = ICE_PRIMARY
 	mist_mat.emission_energy_multiplier = 2.0
@@ -137,16 +163,16 @@ func _spawn_ice_nova_burst(parent: Node, position: Vector3, scale_value: float =
 	root.add_child(mist)
 	var mist_tween := root.create_tween()
 	mist_tween.set_parallel(true)
-	mist_tween.tween_property(mist, "scale", Vector3.ONE * 6.5 * scale_value, 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	mist_tween.tween_property(mist_mat, "albedo_color:a", 0.0, 0.78)
+	mist_tween.tween_property(mist, "scale", Vector3.ONE * 9.0 * s, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	mist_tween.tween_property(mist_mat, "albedo_color:a", 0.0, 1.0)
 	mist_tween.set_parallel(false)
 
-	# Double onde de choc glacée au sol.
-	for ring_i in range(2):
+	# Triple onde de choc glacée au sol — trois vagues décalées, la dernière très large.
+	for ring_i in range(3):
 		var ring := MeshInstance3D.new()
 		var torus := TorusMesh.new()
-		torus.inner_radius = 0.08 * scale_value
-		torus.outer_radius = (0.16 + ring_i * 0.08) * scale_value
+		torus.inner_radius = 0.08 * s
+		torus.outer_radius = (0.16 + ring_i * 0.08) * s
 		torus.rings = 32
 		torus.ring_segments = 12
 		ring.mesh = torus
@@ -163,71 +189,123 @@ func _spawn_ice_nova_burst(parent: Node, position: Vector3, scale_value: float =
 		root.add_child(ring)
 		var ring_tween := root.create_tween()
 		ring_tween.set_parallel(true)
-		ring_tween.tween_property(ring, "scale", Vector3.ONE * (5.0 + ring_i * 2.5) * scale_value, 0.55 + ring_i * 0.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(ring_i * 0.08)
-		ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.5).set_delay(ring_i * 0.08)
+		ring_tween.tween_property(ring, "scale", Vector3.ONE * (6.0 + ring_i * 4.0) * s, 0.6 + ring_i * 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(ring_i * 0.1)
+		ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.55).set_delay(ring_i * 0.1)
 
-	_spawn_ice_frost_decal(root, scale_value)
+	_spawn_ice_frost_decal(root, s)
 
 	# Grosse gerbe de particules — le vrai moment "Niagara".
 	var burst := GPUParticles3D.new()
-	burst.amount = 160
-	burst.lifetime = 0.85
+	burst.amount = 320
+	burst.lifetime = 1.05
 	burst.one_shot = true
 	burst.emitting = true
 	burst.explosiveness = 0.95
 	burst.draw_pass_1 = _ice_sparkle_mesh()
 	var burst_pm := ParticleProcessMaterial.new()
 	burst_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	burst_pm.emission_sphere_radius = 0.18 * scale_value
+	burst_pm.emission_sphere_radius = 0.2 * s
 	burst_pm.direction = Vector3(0, 1, 0)
 	burst_pm.spread = 180.0
-	burst_pm.initial_velocity_min = 1.6 * scale_value
-	burst_pm.initial_velocity_max = 4.8 * scale_value
-	burst_pm.gravity = Vector3(0, -2.6, 0)
-	burst_pm.damping_min = 1.5
-	burst_pm.damping_max = 3.0
-	burst_pm.scale_min = 0.5
-	burst_pm.scale_max = 1.4
+	burst_pm.initial_velocity_min = 2.6 * s
+	burst_pm.initial_velocity_max = 7.5 * s
+	burst_pm.gravity = Vector3(0, -3.2, 0)
+	burst_pm.damping_min = 1.2
+	burst_pm.damping_max = 2.6
+	burst_pm.scale_min = 0.6
+	burst_pm.scale_max = 1.8
 	burst_pm.color = ICE_SECONDARY
 	burst.process_material = burst_pm
 	root.add_child(burst)
 
+	# Deuxième souffle décalé — un second temps qui relance l'attention.
+	get_tree().create_timer(0.22).timeout.connect(func():
+		if not is_instance_valid(root):
+			return
+		var burst2 := GPUParticles3D.new()
+		burst2.amount = 140
+		burst2.lifetime = 0.75
+		burst2.one_shot = true
+		burst2.emitting = true
+		burst2.explosiveness = 1.0
+		burst2.draw_pass_1 = _ice_sparkle_mesh()
+		var pm2 := ParticleProcessMaterial.new()
+		pm2.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+		pm2.emission_sphere_radius = 0.3 * s
+		pm2.direction = Vector3(0, 1, 0)
+		pm2.spread = 90.0
+		pm2.initial_velocity_min = 1.8 * s
+		pm2.initial_velocity_max = 4.2 * s
+		pm2.gravity = Vector3(0, -4.0, 0)
+		pm2.scale_min = 0.5
+		pm2.scale_max = 1.3
+		pm2.color = ICE_CORE
+		burst2.process_material = pm2
+		root.add_child(burst2)
+	)
+
 	# Grands éclats de glace qui explosent dans toutes les directions puis retombent.
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var shard_count := 16
+	var shard_count := 26
 	for i in range(shard_count):
 		var shard := MeshInstance3D.new()
 		var box := BoxMesh.new()
-		var size_variant := rng.randf_range(0.7, 1.6)
-		box.size = Vector3(0.06, 0.32, 0.06) * size_variant * scale_value
+		var size_variant := rng.randf_range(0.8, 2.1)
+		box.size = Vector3(0.08, 0.42, 0.08) * size_variant * s
 		shard.mesh = box
 		var shard_mat := StandardMaterial3D.new()
 		shard_mat.albedo_color = Color(ICE_SECONDARY.r, ICE_SECONDARY.g, ICE_SECONDARY.b, 0.95)
 		shard_mat.emission_enabled = true
 		shard_mat.emission = ICE_PRIMARY
-		shard_mat.emission_energy_multiplier = 8.0
+		shard_mat.emission_energy_multiplier = 9.0
 		shard_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		shard_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		shard.material_override = shard_mat
 		var azimuth := TAU * float(i) / float(shard_count) + rng.randf_range(-0.25, 0.25)
-		var elevation := rng.randf_range(deg_to_rad(15.0), deg_to_rad(75.0))
+		var elevation := rng.randf_range(deg_to_rad(15.0), deg_to_rad(80.0))
 		var dir := Vector3(cos(azimuth) * cos(elevation), sin(elevation), sin(azimuth) * cos(elevation))
-		shard.position = dir * 0.08
+		shard.position = dir * 0.1
 		shard.rotation_degrees = Vector3(rng.randf_range(0, 360), rad_to_deg(azimuth), rng.randf_range(0, 360))
 		root.add_child(shard)
-		var dest := dir * rng.randf_range(1.4, 2.6) * scale_value
+		var dest := dir * rng.randf_range(2.2, 4.2) * s
 		var shard_tween := root.create_tween()
 		shard_tween.set_parallel(true)
-		shard_tween.tween_property(shard, "position", dest, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		shard_tween.tween_property(shard, "position:y", dest.y - 0.6 * scale_value, 0.45).set_delay(0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		shard_tween.tween_property(shard, "scale", Vector3.ZERO, 0.35).set_delay(0.45)
-		shard_tween.tween_property(shard_mat, "albedo_color:a", 0.0, 0.35).set_delay(0.45)
+		shard_tween.tween_property(shard, "position", dest, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		shard_tween.tween_property(shard, "position:y", dest.y - 1.1 * s, 0.5).set_delay(0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		shard_tween.tween_property(shard, "scale", Vector3.ZERO, 0.4).set_delay(0.5)
+		shard_tween.tween_property(shard_mat, "albedo_color:a", 0.0, 0.4).set_delay(0.5)
 
-	get_tree().create_timer(1.1).timeout.connect(func():
+	get_tree().create_timer(1.6).timeout.connect(func():
 		if is_instance_valid(root):
 			root.queue_free()
 	)
+
+func _spawn_ice_pillar(parent: Node, s: float) -> void:
+	var pillar := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = 0.02 * s
+	cylinder.bottom_radius = 0.5 * s
+	cylinder.height = 1.0
+	cylinder.radial_segments = 6
+	pillar.mesh = cylinder
+	pillar.position.y = 0.0
+	pillar.scale = Vector3(1.0, 0.01, 1.0)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(ICE_CORE.r, ICE_CORE.g, ICE_CORE.b, 0.85)
+	mat.emission_enabled = true
+	mat.emission = ICE_PRIMARY
+	mat.emission_energy_multiplier = 7.0
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pillar.material_override = mat
+	parent.add_child(pillar)
+	var height := 4.2 * s
+	var tween := pillar.create_tween()
+	tween.tween_property(pillar, "scale", Vector3(1.0, height, 1.0), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.35)
+	tween.parallel().tween_property(pillar, "scale:y", height * 1.15, 0.35)
+	tween.tween_callback(pillar.queue_free)
 
 func _spawn_ice_frost_decal(parent: Node, scale_value: float = 1.0) -> void:
 	var decal := MeshInstance3D.new()

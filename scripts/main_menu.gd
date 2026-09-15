@@ -202,7 +202,7 @@ var custom_room_pending_action: String = ""
 # est supérieure ou égale à la dernière appliquée.
 var _custom_room_last_version: int = -1
 var _custom_room_connect_triggered: bool = false
-const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"]]
+const CUSTOM_ROOM_MAPS := [["default", "CARTE PAR DÉFAUT"], ["1v1", "ARENA 1V1"], ["labyrinth", "LABYRINTHE D'ARKANOR"], ["colosseum", "ARÈNE DU COLISÉE"]]
 const CUSTOM_ROOM_MODES := [["TEAM", "ÉQUIPES (ASTRAL VS ARCANE)"], ["FFA", "DEATHMATCH (CHACUN POUR SOI)"], ["EXPLORE", "DÉCOUVERTE (SANS COMBAT)"]]
 
 var matchmaking_action_http: HTTPRequest
@@ -1806,6 +1806,8 @@ func _check_custom_room_server_ready() -> void:
 			pending_arena_scene_path = "res://scenes/Arena1v1.tscn"
 		"labyrinth":
 			pending_arena_scene_path = "res://scenes/ArenaLabyrinth.tscn"
+		"colosseum":
+			pending_arena_scene_path = "res://scenes/ArenaColosseum.tscn"
 		_:
 			pending_arena_scene_path = "res://scenes/arena.tscn"
 

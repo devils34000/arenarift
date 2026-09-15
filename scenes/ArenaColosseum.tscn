@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://bx1coloss0001"]
+
+[ext_resource type="Script" uid="uid://cnxhs10scv8yn" path="res://scripts/arena_3d.gd" id="1_arena3d"]
+[ext_resource type="Script" path="res://scripts/maps/arena_colosseum_builder.gd" id="2_builder"]
+
+[node name="ArenaColosseum" type="Node3D"]
+script = ExtResource("1_arena3d")
+
+[node name="MapBuilder" type="Node3D" parent="."]
+script = ExtResource("2_builder")

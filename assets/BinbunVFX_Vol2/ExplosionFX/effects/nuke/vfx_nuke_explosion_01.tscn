@@ -967,6 +967,6 @@ emitting = false
 amount = 64
 one_shot = true
 explosiveness = 1.0
-trail_enabled = true
+trail_enabled = false
 process_material = SubResource("ParticleProcessMaterial_rpaum")
 draw_pass_1 = SubResource("TubeTrailMesh_cp0jp")

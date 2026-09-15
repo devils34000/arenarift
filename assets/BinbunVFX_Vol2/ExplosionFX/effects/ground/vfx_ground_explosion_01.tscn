@@ -707,7 +707,7 @@ emitting = false
 amount = 16
 one_shot = true
 explosiveness = 1.0
-trail_enabled = true
+trail_enabled = false
 process_material = SubResource("ParticleProcessMaterial_d0ufd")
 draw_pass_1 = SubResource("TubeTrailMesh_8nwue")
 

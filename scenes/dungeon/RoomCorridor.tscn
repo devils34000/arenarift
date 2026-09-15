@@ -1,10 +1,183 @@
-[gd_scene load_steps=2 format=3 uid="uid://bdungrmcorr1"]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
 
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(6.0, 0.4, 14.0)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2"]
+albedo_color = Color(0.34, 0.29, 0.22, 1)
+roughness = 0.9
+[sub_resource type="BoxShape3D" id="BoxShape3D_3"]
+size = Vector3(6.0, 0.4, 14.0)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4"]
+albedo_color = Color(0.42, 0.36, 0.28, 1)
+roughness = 0.88
+[sub_resource type="BoxMesh" id="BoxMesh_5"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_6"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_7"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_8"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_9"]
+size = Vector3(2.3, 0.8, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_10"]
+size = Vector3(0.4, 3.4, 14.0)
+[sub_resource type="BoxShape3D" id="BoxShape3D_11"]
+size = Vector3(0.4, 3.4, 14.0)
+[sub_resource type="BoxMesh" id="BoxMesh_12"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_13"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_14"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_15"]
+size = Vector3(1.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_16"]
+size = Vector3(2.3, 0.8, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_17"]
+size = Vector3(0.4, 3.4, 14.0)
+[sub_resource type="BoxShape3D" id="BoxShape3D_18"]
+size = Vector3(0.4, 3.4, 14.0)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_19"]
+albedo_color = Color(0.357, 0.306, 0.23800000000000002, 1)
+roughness = 0.85
+[sub_resource type="CylinderMesh" id="CylinderMesh_20"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+[sub_resource type="CylinderMesh" id="CylinderMesh_21"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+[sub_resource type="CylinderMesh" id="CylinderMesh_22"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+[sub_resource type="CylinderMesh" id="CylinderMesh_23"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+
 [node name="RoomCorridor" type="Node3D"]
 script = ExtResource("1_builder")
-room_size = Vector2(6, 14)
+room_size = Vector2(6.0, 14.0)
+wall_height = 3.4
+wall_thickness = 0.4
+door_width = 2.3
+door_height = 2.6
 doors = 5
+connection_type = "standard_door"
 accent_color = Color(0.42, 0.36, 0.28, 1)
 floor_color = Color(0.34, 0.29, 0.22, 1)
+has_torch = true
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_1")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+material_override = SubResource("StandardMaterial3D_2")
+[node name="FloorCollision" type="StaticBody3D" parent="Floor"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/FloorCollision"]
+shape = SubResource("BoxShape3D_3")
+[node name="Walls" type="Node3D" parent="."]
+[node name="Wall_1_A" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.075, 1.7, -7.0)
+mesh = SubResource("BoxMesh_5")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_A"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_A/Collision"]
+shape = SubResource("BoxShape3D_6")
+[node name="Wall_1_B" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.075, 1.7, -7.0)
+mesh = SubResource("BoxMesh_7")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_B"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_B/Collision"]
+shape = SubResource("BoxShape3D_8")
+[node name="Lintel_1" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, -7.0)
+mesh = SubResource("BoxMesh_9")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Connector_1" type="RoomConnector3D" parent="Walls"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, -0.0, 0, -1.0, 0, 0, -7.0)
+connection_type = "standard_door"
+aperture_width = 2.3
+aperture_height = 2.6
+[node name="Wall_2" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 1.7, 0)
+mesh = SubResource("BoxMesh_10")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_2"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2/Collision"]
+shape = SubResource("BoxShape3D_11")
+[node name="Wall_4_A" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.075, 1.7, 7.0)
+mesh = SubResource("BoxMesh_12")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_A"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_A/Collision"]
+shape = SubResource("BoxShape3D_13")
+[node name="Wall_4_B" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.075, 1.7, 7.0)
+mesh = SubResource("BoxMesh_14")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_B"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_B/Collision"]
+shape = SubResource("BoxShape3D_15")
+[node name="Lintel_4" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 7.0)
+mesh = SubResource("BoxMesh_16")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Connector_4" type="RoomConnector3D" parent="Walls"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, -0.0, 0, 1.0, 0, 0, 7.0)
+connection_type = "standard_door"
+aperture_width = 2.3
+aperture_height = 2.6
+[node name="Wall_8" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 1.7, 0)
+mesh = SubResource("BoxMesh_17")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_8"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8/Collision"]
+shape = SubResource("BoxShape3D_18")
+[node name="Pillars" type="Node3D" parent="."]
+[node name="Pillar_0" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 1.7, 7.0)
+mesh = SubResource("CylinderMesh_20")
+material_override = SubResource("StandardMaterial3D_19")
+[node name="Pillar_1" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 1.7, 7.0)
+mesh = SubResource("CylinderMesh_21")
+material_override = SubResource("StandardMaterial3D_19")
+[node name="Pillar_2" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0, 1.7, -7.0)
+mesh = SubResource("CylinderMesh_22")
+material_override = SubResource("StandardMaterial3D_19")
+[node name="Pillar_3" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0, 1.7, -7.0)
+mesh = SubResource("CylinderMesh_23")
+material_override = SubResource("StandardMaterial3D_19")
+[node name="Torch" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.55, 0)
+light_color = Color(1, 0.6666667, 0.33333334, 1)
+light_energy = 2.0
+omni_range = 11.200000000000001

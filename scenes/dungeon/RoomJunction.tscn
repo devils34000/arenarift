@@ -1,10 +1,231 @@
-[gd_scene load_steps=2 format=3 uid="uid://bdungrmjunc1"]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
 
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(10.0, 0.4, 10.0)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2"]
+albedo_color = Color(0.38, 0.32, 0.24, 1)
+roughness = 0.9
+[sub_resource type="BoxShape3D" id="BoxShape3D_3"]
+size = Vector3(10.0, 0.4, 10.0)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4"]
+albedo_color = Color(0.47, 0.4, 0.31, 1)
+roughness = 0.88
+[sub_resource type="BoxMesh" id="BoxMesh_5"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_6"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_7"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_8"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_9"]
+size = Vector3(2.3, 0.8, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_10"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxShape3D" id="BoxShape3D_11"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxMesh" id="BoxMesh_12"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxShape3D" id="BoxShape3D_13"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxMesh" id="BoxMesh_14"]
+size = Vector3(0.4, 0.8, 2.3)
+[sub_resource type="BoxMesh" id="BoxMesh_15"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_16"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_17"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxShape3D" id="BoxShape3D_18"]
+size = Vector3(3.85, 3.4, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_19"]
+size = Vector3(2.3, 0.8, 0.4)
+[sub_resource type="BoxMesh" id="BoxMesh_20"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxShape3D" id="BoxShape3D_21"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxMesh" id="BoxMesh_22"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxShape3D" id="BoxShape3D_23"]
+size = Vector3(0.4, 3.4, 3.85)
+[sub_resource type="BoxMesh" id="BoxMesh_24"]
+size = Vector3(0.4, 0.8, 2.3)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_25"]
+albedo_color = Color(0.39949999999999997, 0.34, 0.2635, 1)
+roughness = 0.85
+[sub_resource type="CylinderMesh" id="CylinderMesh_26"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+[sub_resource type="CylinderMesh" id="CylinderMesh_27"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+[sub_resource type="CylinderMesh" id="CylinderMesh_28"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+[sub_resource type="CylinderMesh" id="CylinderMesh_29"]
+top_radius = 0.35
+bottom_radius = 0.4
+height = 3.4
+radial_segments = 10
+
 [node name="RoomJunction" type="Node3D"]
 script = ExtResource("1_builder")
-room_size = Vector2(10, 10)
+room_size = Vector2(10.0, 10.0)
+wall_height = 3.4
+wall_thickness = 0.4
+door_width = 2.3
+door_height = 2.6
 doors = 15
+connection_type = "standard_door"
 accent_color = Color(0.47, 0.4, 0.31, 1)
 floor_color = Color(0.38, 0.32, 0.24, 1)
+has_torch = true
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_1")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+material_override = SubResource("StandardMaterial3D_2")
+[node name="FloorCollision" type="StaticBody3D" parent="Floor"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/FloorCollision"]
+shape = SubResource("BoxShape3D_3")
+[node name="Walls" type="Node3D" parent="."]
+[node name="Wall_1_A" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.075, 1.7, -5.0)
+mesh = SubResource("BoxMesh_5")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_A"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_A/Collision"]
+shape = SubResource("BoxShape3D_6")
+[node name="Wall_1_B" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.075, 1.7, -5.0)
+mesh = SubResource("BoxMesh_7")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_B"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_B/Collision"]
+shape = SubResource("BoxShape3D_8")
+[node name="Lintel_1" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, -5.0)
+mesh = SubResource("BoxMesh_9")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Connector_1" type="RoomConnector3D" parent="Walls"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, -0.0, 0, -1.0, 0, 0, -5.0)
+connection_type = "standard_door"
+aperture_width = 2.3
+aperture_height = 2.6
+[node name="Wall_2_A" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, -3.075)
+mesh = SubResource("BoxMesh_10")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_2_A"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2_A/Collision"]
+shape = SubResource("BoxShape3D_11")
+[node name="Wall_2_B" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, 3.075)
+mesh = SubResource("BoxMesh_12")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_2_B"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2_B/Collision"]
+shape = SubResource("BoxShape3D_13")
+[node name="Lintel_2" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 3.0, 0)
+mesh = SubResource("BoxMesh_14")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Connector_2" type="RoomConnector3D" parent="Walls"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 5.0, 0, 0)
+connection_type = "standard_door"
+aperture_width = 2.3
+aperture_height = 2.6
+[node name="Wall_4_A" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.075, 1.7, 5.0)
+mesh = SubResource("BoxMesh_15")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_A"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_A/Collision"]
+shape = SubResource("BoxShape3D_16")
+[node name="Wall_4_B" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.075, 1.7, 5.0)
+mesh = SubResource("BoxMesh_17")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_B"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_B/Collision"]
+shape = SubResource("BoxShape3D_18")
+[node name="Lintel_4" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 5.0)
+mesh = SubResource("BoxMesh_19")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Connector_4" type="RoomConnector3D" parent="Walls"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, -0.0, 0, 1.0, 0, 0, 5.0)
+connection_type = "standard_door"
+aperture_width = 2.3
+aperture_height = 2.6
+[node name="Wall_8_A" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, -3.075)
+mesh = SubResource("BoxMesh_20")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_8_A"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8_A/Collision"]
+shape = SubResource("BoxShape3D_21")
+[node name="Wall_8_B" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, 3.075)
+mesh = SubResource("BoxMesh_22")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Collision" type="StaticBody3D" parent="Walls/Wall_8_B"]
+collision_layer = 3
+collision_mask = 1
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8_B/Collision"]
+shape = SubResource("BoxShape3D_23")
+[node name="Lintel_8" type="MeshInstance3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 3.0, 0)
+mesh = SubResource("BoxMesh_24")
+material_override = SubResource("StandardMaterial3D_4")
+[node name="Connector_8" type="RoomConnector3D" parent="Walls"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -5.0, 0, 0)
+connection_type = "standard_door"
+aperture_width = 2.3
+aperture_height = 2.6
+[node name="Pillars" type="Node3D" parent="."]
+[node name="Pillar_0" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, 5.0)
+mesh = SubResource("CylinderMesh_26")
+material_override = SubResource("StandardMaterial3D_25")
+[node name="Pillar_1" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, 5.0)
+mesh = SubResource("CylinderMesh_27")
+material_override = SubResource("StandardMaterial3D_25")
+[node name="Pillar_2" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 1.7, -5.0)
+mesh = SubResource("CylinderMesh_28")
+material_override = SubResource("StandardMaterial3D_25")
+[node name="Pillar_3" type="MeshInstance3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.7, -5.0)
+mesh = SubResource("CylinderMesh_29")
+material_override = SubResource("StandardMaterial3D_25")
+[node name="Torch" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.55, 0)
+light_color = Color(1, 0.6666667, 0.33333334, 1)
+light_energy = 2.0
+omni_range = 8.0

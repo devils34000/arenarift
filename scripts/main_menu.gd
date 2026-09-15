@@ -2147,6 +2147,8 @@ const VALIDATE_BUTTON_FRAME := "res://assets/menu_design/champ_select/button_men
 ## se dessinerait par-dessus son texte s'il était mis dedans directement.
 func _build_lobby_validate_button() -> Control:
 	var frame_tex := load(VALIDATE_BUTTON_FRAME) as Texture2D
+	if frame_tex == null:
+		push_warning("Cadre du bouton VALIDER introuvable : " + VALIDATE_BUTTON_FRAME)
 	var button_size := Vector2(320, 107)
 	if frame_tex != null:
 		var native_size := frame_tex.get_size()
@@ -2158,12 +2160,20 @@ func _build_lobby_validate_button() -> Control:
 	wrap.size = button_size
 	wrap.mouse_filter = Control.MOUSE_FILTER_PASS
 
-	var frame := TextureRect.new()
-	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	frame.texture = frame_tex
-	frame.stretch_mode = TextureRect.STRETCH_SCALE
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	wrap.add_child(frame)
+	if frame_tex != null:
+		var frame := TextureRect.new()
+		frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		frame.texture = frame_tex
+		frame.stretch_mode = TextureRect.STRETCH_SCALE
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		wrap.add_child(frame)
+	else:
+		# Repli visible si le cadre ne charge pas, plutôt qu'un bouton
+		# totalement invisible (juste du texte flottant).
+		var fallback := Panel.new()
+		fallback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fallback.add_theme_stylebox_override("panel", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
+		wrap.add_child(fallback)
 
 	_lobby_validate_button = Button.new()
 	_lobby_validate_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

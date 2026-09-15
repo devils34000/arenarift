@@ -337,15 +337,26 @@ func _input(event: InputEvent) -> void:
 		_update_controller_connection(true)
 
 		if event is InputEventJoypadButton and event.pressed:
-			# Un menu déroulant (OptionButton) ouvert a son propre popup natif
-			# (PopupMenu), qui gère déjà nativement D-pad/stick pour naviguer,
-			# A pour sélectionner, B pour fermer — via les actions ui_* de
-			# Godot (bindées manette par défaut). Nos raccourcis globaux A/B/
-			# START ci-dessous lui volaient l'input avant qu'il ne puisse le
-			# traiter : impossible de sélectionner un élément ou de fermer le
-			# popup. On laisse donc passer sans rien faire tant qu'un popup
-			# est ouvert.
-			if _any_option_popup_open():
+			# Le popup natif d'un OptionButton (PopupMenu) ne répond pas de
+			# façon fiable au D-pad/A/B manette dans ce projet (testé : le
+			# popup s'ouvre mais rien à l'intérieur ne réagit). Plutôt que de
+			# compter dessus, on ne l'ouvre JAMAIS en manette : un menu
+			# déroulant focus se pilote directement au D-pad gauche/droite
+			# (cycle la valeur, sans jamais afficher de popup) — voir plus
+			# bas. Ça évite complètement le popup cassé.
+			if event.button_index == JOY_BUTTON_DPAD_LEFT or event.button_index == JOY_BUTTON_DPAD_RIGHT:
+				var viewport := get_viewport()
+				if viewport == null:
+					return
+				var focused := viewport.gui_get_focus_owner()
+				if focused is OptionButton and focused.is_visible_in_tree() and not focused.disabled:
+					var opt := focused as OptionButton
+					if opt.item_count > 0:
+						var step := -1 if event.button_index == JOY_BUTTON_DPAD_LEFT else 1
+						var new_index := wrapi(opt.selected + step, 0, opt.item_count)
+						viewport.set_input_as_handled()
+						opt.select(new_index)
+						opt.item_selected.emit(new_index)
 				return
 
 			if event.button_index == JOY_BUTTON_B:
@@ -362,36 +373,23 @@ func _input(event: InputEvent) -> void:
 					_controller_primary_action.call()
 				return
 
-			# Bouton A / bouton sud : valide toujours le contrôle actuellement sélectionné.
+			# Bouton A / bouton sud : valide toujours le contrôle actuellement
+			# sélectionné — SAUF un OptionButton, dont le popup (cassé au
+			# D-pad) est volontairement remplacé par le cycle gauche/droite
+			# ci-dessus ; A n'a donc rien à y faire.
 			if event.button_index == JOY_BUTTON_A:
 				var viewport := get_viewport()
 				if viewport == null:
 					return
 
 				var focused := viewport.gui_get_focus_owner()
-				if focused is OptionButton and focused.is_visible_in_tree() and not focused.disabled:
-					# Cas à part : un OptionButton (menu déroulant MAP/MODE...)
-					# n'ouvre pas son popup via un simple emit_signal("pressed")
-					# comme un bouton normal — il faut appeler show_popup()
-					# directement. Sans ça, la manette pouvait le focus mais
-					# jamais l'ouvrir.
-					viewport.set_input_as_handled()
-					(focused as OptionButton).show_popup()
-				elif focused is BaseButton and focused.is_visible_in_tree() and not focused.disabled:
+				if focused is OptionButton:
+					return
+				if focused is BaseButton and focused.is_visible_in_tree() and not focused.disabled:
 					# Marquer l'input AVANT le signal : le signal peut changer de scène
 					# et supprimer ce menu pendant l'exécution.
 					viewport.set_input_as_handled()
 					(focused as BaseButton).emit_signal("pressed")
-
-
-## true si l'un des menus déroulants (OptionButton) du menu a actuellement
-## son popup ouvert — sert à laisser passer l'input manette vers ce popup
-## natif plutôt que de le capter avec nos raccourcis A/B/START globaux.
-func _any_option_popup_open() -> bool:
-	for option_button in [custom_room_map_option, custom_room_mode_option]:
-		if option_button != null and is_instance_valid(option_button) and option_button.get_popup().visible:
-			return true
-	return false
 
 
 func _update_controller_connection(force: bool = false) -> void:

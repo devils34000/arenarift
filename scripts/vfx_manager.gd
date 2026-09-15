@@ -2,10 +2,6 @@ class_name ArenaVFXManager
 extends Node3D
 
 
-# Téléportation — restaurée avec les VFX Binbun validés de la V14.
-const TELEPORT_CHARGE_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/BattleFX/effects/charge/vfx_blank_charge.tscn")
-const TELEPORT_EXPLOSION_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ExplosionFX/effects/ground/vfx_ground_explosion_01.tscn")
-
 # Maylinh — vrais VFX du pack Elemental Magic FX (version verte).
 const MAYLINH_ELEMENTAL_PROJECTILE_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ElementalMagicFX/effects/projectile/vfx_fire_projectile_01.tscn")
 const MAYLINH_ELEMENTAL_AREA_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ElementalMagicFX/effects/area/vfx_fire_area_01.tscn")
@@ -32,9 +28,6 @@ const ELEMENTAL_CAST_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/Ele
 const ELEMENTAL_AREA_VFX: PackedScene = preload("res://assets/BinbunVFX_Vol2/ElementalMagicFX/effects/area/vfx_fire_area_01.tscn")
 
 # Palettes par personnage — mêmes teintes que l'ancien rendu procédural, appliquées aux vrais VFX.
-const AERIS_PRIMARY := Color("62d8ff")
-const AERIS_SECONDARY := Color("d9f7ff")
-const AERIS_TERTIARY := Color("2f7fbf")
 const MAYLINH_PRIMARY := Color("c45cff")
 const MAYLINH_SECONDARY := Color("f2b6ff")
 const COMBAT_PRIMARY := Color("ff9d2e")
@@ -43,13 +36,21 @@ const COMBAT_TERTIARY := Color("ffb52e")
 const DAMAGE_PRIMARY := Color("ff3b30")
 const DAMAGE_SECONDARY := Color("ffb0a8")
 
+# Palette glace pour Aeris — ses sorts (orbe, dash, téléportation) sont 100% distincts
+# des autres héros : mailles/particules procédurales dédiées, pas du recolorage de VFX feu.
+const ICE_CORE := Color("d8fbff")
+const ICE_PRIMARY := Color("9fe9ff")
+const ICE_SECONDARY := Color("eafeff")
+const ICE_DEEP := Color("4fb8e0")
+
 var eren_trail_vfx_clock: float = 0.0
 
-func spawn_teleport_start(parent: Node, position: Vector3, scale_value: float = 0.75) -> Node3D:
-	return _spawn_external(parent, TELEPORT_CHARGE_VFX, position, Vector3.ZERO, scale_value, 2.5)
+func spawn_teleport_start(parent: Node, position: Vector3, scale_value: float = 0.85) -> Node3D:
+	return _spawn_tinted(parent, BATTLE_CHARGE_VFX, position, Vector3.ZERO, scale_value, 0.55, ICE_PRIMARY, ICE_SECONDARY, ICE_DEEP, 3.2, 4.5)
 
-func spawn_teleport_end(parent: Node, position: Vector3, scale_value: float = 0.55) -> Node3D:
-	return _spawn_external(parent, TELEPORT_EXPLOSION_VFX, position, Vector3.ZERO, scale_value, 2.5)
+func spawn_teleport_end(parent: Node, position: Vector3, scale_value: float = 0.85) -> Node3D:
+	_spawn_ice_shard_burst(parent, position)
+	return _spawn_tinted(parent, IMPACT_01_VFX, position, Vector3.ZERO, scale_value, 0.5, ICE_PRIMARY, ICE_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.5)
 
 func spawn_eren_fire_projectile(projectile: Node3D, direction: Vector3) -> Node3D:
 	if projectile == null or EREN_FIRE_PROJECTILE_VFX == null:
@@ -319,20 +320,214 @@ func spawn_shield_hit(parent: Node, position: Vector3) -> Node3D:
 # =========================
 # VFX HERO-SPECIFIQUES
 # =========================
-func spawn_aeris_orb(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	return _spawn_tinted(parent, ELEMENTAL_CAST_VFX, position + Vector3.UP * 0.06, direction, 1.05, 0.5, AERIS_PRIMARY, AERIS_SECONDARY, AERIS_TERTIARY, 3.4, 5.0)
+func spawn_aeris_orb(projectile: Node3D, direction: Vector3) -> Node3D:
+	# Sphère de glace attachée directement au projectile : elle voyage avec lui
+	# (contrairement à l'ancienne version qui ne faisait qu'un flash au point de tir).
+	if projectile == null:
+		return null
+	var root := Node3D.new()
+	root.name = "AerisIceOrbFX"
+	projectile.add_child(root)
+
+	var core := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.24
+	sphere.height = 0.48
+	sphere.radial_segments = 10
+	sphere.rings = 6
+	core.mesh = sphere
+	var core_mat := StandardMaterial3D.new()
+	core_mat.albedo_color = Color(ICE_CORE.r, ICE_CORE.g, ICE_CORE.b, 0.55)
+	core_mat.emission_enabled = true
+	core_mat.emission = ICE_PRIMARY
+	core_mat.emission_energy_multiplier = 5.0
+	core_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	core_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	core_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	core.material_override = core_mat
+	root.add_child(core)
+
+	var shard_mat := StandardMaterial3D.new()
+	shard_mat.albedo_color = ICE_SECONDARY
+	shard_mat.emission_enabled = true
+	shard_mat.emission = ICE_SECONDARY
+	shard_mat.emission_energy_multiplier = 6.0
+	shard_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(projectile.get_instance_id())
+	for i in range(5):
+		var shard := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.05, 0.20, 0.05)
+		shard.mesh = box
+		shard.material_override = shard_mat
+		var a := TAU * float(i) / 5.0
+		shard.position = Vector3(cos(a) * 0.20, sin(a) * 0.12, sin(a * 1.3) * 0.16)
+		shard.rotation_degrees = Vector3(rng.randf_range(-60, 60), rng.randf_range(0, 360), rng.randf_range(-60, 60))
+		root.add_child(shard)
+
+	var particles := GPUParticles3D.new()
+	particles.amount = 24
+	particles.lifetime = 0.55
+	particles.local_coords = false
+	particles.draw_pass_1 = _ice_sparkle_mesh()
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pm.emission_sphere_radius = 0.16
+	pm.direction = Vector3(0, 0, 1)
+	pm.spread = 180.0
+	pm.initial_velocity_min = 0.1
+	pm.initial_velocity_max = 0.35
+	pm.gravity = Vector3.ZERO
+	pm.scale_min = 0.5
+	pm.scale_max = 1.1
+	pm.color = ICE_SECONDARY
+	particles.process_material = pm
+	root.add_child(particles)
+	particles.restart()
+
+	var light := OmniLight3D.new()
+	light.light_color = ICE_PRIMARY
+	light.light_energy = 3.0
+	light.omni_range = 2.0
+	root.add_child(light)
+
+	var tween := root.create_tween()
+	tween.set_loops()
+	tween.tween_property(root, "rotation:y", TAU, 1.1)
+	return root
 
 func spawn_aeris_hit(parent: Node, position: Vector3) -> Node3D:
-	return _spawn_tinted(parent, IMPACT_02_VFX, position, Vector3.ZERO, 0.85, 0.4, AERIS_PRIMARY, AERIS_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.5)
+	_spawn_ice_shard_burst(parent, position, 0.55)
+	return _spawn_tinted(parent, IMPACT_02_VFX, position, Vector3.ZERO, 0.85, 0.4, ICE_PRIMARY, ICE_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.5)
 
 func spawn_maylinh_hit(parent: Node, position: Vector3) -> Node3D:
 	return _spawn_tinted(parent, HIT_01_VFX, position, Vector3.ZERO, 0.8, 0.36, MAYLINH_PRIMARY, MAYLINH_SECONDARY, Color(0, 0, 0, 0), 3.2, 5.0)
 
 func spawn_aeris_dash(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	return _spawn_tinted(parent, BATTLE_SWING_VFX, position, direction, 1.0, 0.34, AERIS_PRIMARY, AERIS_SECONDARY, AERIS_TERTIARY, 3.2, 4.5)
+	var root := Node3D.new()
+	root.name = "AerisIceDashFX"
+	parent.add_child(root)
+	root.global_position = position
+	var d := direction.normalized()
+	if d.length_squared() < 0.001:
+		d = Vector3(0, 0, -1)
+	root.rotation.y = atan2(d.x, d.z)
 
-func spawn_aeris_teleport(parent: Node, position: Vector3, arriving: bool = false) -> Node3D:
-	return _spawn_tinted(parent, BATTLE_SHIELD_VFX, position + Vector3.UP * 0.05, Vector3.ZERO, 1.5 if arriving else 1.1, 0.45, AERIS_PRIMARY, Color("8c6cff"), AERIS_SECONDARY, 3.4, 5.0)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(ICE_PRIMARY.r, ICE_PRIMARY.g, ICE_PRIMARY.b, 0.85)
+	mat.emission_enabled = true
+	mat.emission = ICE_PRIMARY
+	mat.emission_energy_multiplier = 6.0
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	for i in range(4):
+		var streak := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.14, 0.10, 0.9 + i * 0.3)
+		streak.mesh = box
+		streak.position = Vector3(0, 0.15 + i * 0.05, 0.2 + i * 0.4)
+		streak.rotation_degrees.y = (i - 1.5) * 6.0
+		streak.material_override = mat
+		root.add_child(streak)
+
+	var particles := GPUParticles3D.new()
+	particles.amount = 22
+	particles.lifetime = 0.5
+	particles.one_shot = true
+	particles.emitting = true
+	particles.draw_pass_1 = _ice_sparkle_mesh()
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = Vector3(0.2, 0.2, 1.0)
+	pm.direction = Vector3(0, 1, 0)
+	pm.spread = 40.0
+	pm.initial_velocity_min = 0.2
+	pm.initial_velocity_max = 0.6
+	pm.gravity = Vector3.ZERO
+	pm.scale_min = 0.4
+	pm.scale_max = 0.9
+	pm.color = ICE_SECONDARY
+	particles.process_material = pm
+	root.add_child(particles)
+
+	var tween := root.create_tween()
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.32)
+	tween.parallel().tween_property(mat, "emission_energy_multiplier", 0.0, 0.32)
+	tween.tween_callback(root.queue_free)
+	return root
+
+func _ice_sparkle_mesh() -> QuadMesh:
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(0.08, 0.08)
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, blend_add, depth_draw_never, depth_test_disabled;
+
+uniform vec4 tint : source_color = vec4(0.85, 0.98, 1.0, 1.0);
+
+void fragment() {
+	vec2 c = UV - vec2(0.5);
+	float d = length(c) * 2.0;
+	float soft = 1.0 - smoothstep(0.3, 1.0, d);
+	ALBEDO = tint.rgb;
+	EMISSION = tint.rgb * 3.0;
+	ALPHA = soft;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("tint", ICE_SECONDARY)
+	mesh.material = mat
+	return mesh
+
+func _spawn_ice_shard_burst(parent: Node, position: Vector3, scale_value: float = 1.0) -> void:
+	if parent == null:
+		return
+	var root := Node3D.new()
+	root.name = "IceShardBurstFX"
+	parent.add_child(root)
+	root.global_position = position
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(ICE_SECONDARY.r, ICE_SECONDARY.g, ICE_SECONDARY.b, 0.9)
+	mat.emission_enabled = true
+	mat.emission = ICE_PRIMARY
+	mat.emission_energy_multiplier = 7.0
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.12 * scale_value
+	torus.outer_radius = 0.22 * scale_value
+	torus.rings = 28
+	torus.ring_segments = 10
+	ring.mesh = torus
+	ring.rotation_degrees.x = 90.0
+	ring.material_override = mat
+	root.add_child(ring)
+
+	var tween := root.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(ring, "scale", Vector3.ONE * 3.2, 0.4)
+	for i in range(7):
+		var shard := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.07, 0.36, 0.07) * scale_value
+		shard.mesh = box
+		shard.material_override = mat
+		var a := TAU * float(i) / 7.0
+		shard.position = Vector3.UP * 0.05
+		shard.rotation_degrees = Vector3(75.0, rad_to_deg(a), 0.0)
+		root.add_child(shard)
+		var dest := Vector3(cos(a), 0.3, sin(a)) * 0.9 * scale_value
+		tween.tween_property(shard, "position", dest, 0.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(shard, "scale", Vector3.ZERO, 0.32).set_delay(0.18)
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.4)
+	tween.set_parallel(false)
+	tween.tween_callback(root.queue_free)
 
 func spawn_maylinh_spirit(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
 	return _spawn_tinted(parent, BATTLE_SLASH_VFX, position, direction, 0.85, 0.34, MAYLINH_PRIMARY, MAYLINH_SECONDARY, Color("6a1fbf"), 3.2, 4.5)

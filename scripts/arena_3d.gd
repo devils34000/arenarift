@@ -2481,7 +2481,7 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		if str(caster.get("hero_id")) == "EREN":
 			vfx_manager.spawn_eren_fire_projectile(orb, direction)
 		else:
-			vfx_manager.spawn_aeris_orb(self, visual_origin, direction)
+			vfx_manager.spawn_aeris_orb(orb, direction)
 	elif kind == "spirit":
 		_play_sfx(ORB_CAST_SFX, visual_origin, -7.0)
 		var spirit := ProjectileScene.new()
@@ -2610,7 +2610,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		if hero == "EREN":
 			vfx_manager.spawn_eren_fire_projectile(orb, direction)
 		else:
-			vfx_manager.spawn_aeris_orb(self, origin, direction)
+			vfx_manager.spawn_aeris_orb(orb, direction)
 
 	elif kind == "axe_throw":
 		_spawn_thrown_axe(caster, direction)

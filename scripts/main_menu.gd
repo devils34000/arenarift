@@ -1998,6 +1998,26 @@ func _show_hero_select_lobby() -> void:
 ## donc un seul ratio de recadrage (haut de l'image) convient à tous.
 const HERO_HEAD_CROP_RATIO := 0.46
 
+## Chemin d'une vignette carrée dédiée (dessinée/recadrée à la main), si elle
+## existe : res://assets/menu_art/heroes/square/<hero>.png (ex :
+## square/aeris.png). Dépose une image carrée ici pour chaque héros et elle
+## sera utilisée telle quelle à la place du recadrage automatique du grand
+## artwork — pas besoin de toucher au code.
+func _hero_art_square(hero_name: String) -> String:
+	var path := "res://assets/menu_art/heroes/square/%s.png" % hero_name.to_lower()
+	return path if ResourceLoader.exists(path) else ""
+
+## Texture utilisée pour la vignette carrée de la rangée de portraits :
+## priorité à l'artwork carré dédié s'il existe, sinon repli sur le
+## recadrage automatique du grand artwork (_hero_head_texture).
+func _hero_roster_texture(hero_name: String) -> Texture2D:
+	var square_path := _hero_art_square(hero_name)
+	if square_path != "":
+		var square_texture := load(square_path) as Texture2D
+		if square_texture != null:
+			return square_texture
+	return _hero_head_texture(hero_name)
+
 func _hero_head_texture(hero_name: String) -> Texture2D:
 	var path := _hero_art(hero_name)
 	if path == "":
@@ -2119,7 +2139,7 @@ func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.clip_contents = true
-	icon.texture = _hero_head_texture(hero_name)
+	icon.texture = _hero_roster_texture(hero_name)
 	btn.add_child(icon)
 
 	btn.disabled = _lobby_ready_locked

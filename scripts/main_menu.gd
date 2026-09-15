@@ -702,9 +702,7 @@ func _show_arena_modes() -> void:
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var portrait_path := _hero_art(selected_hero)
 	if portrait_path != "":
-		var image := Image.new()
-		if image.load(portrait_path) == OK:
-			portrait.texture = ImageTexture.create_from_image(image)
+		portrait.texture = load(portrait_path) as Texture2D
 	side.add_child(portrait)
 	side.add_child(_label("CURRENT LOADOUT", 9, Color("7a6a4a"), Vector2(18, 245), Vector2(150, 18)))
 	side.add_child(_label(_hero_spells(selected_hero), 10, Color("c4b394"), Vector2(18, 270), Vector2(250, 42)))
@@ -1998,16 +1996,25 @@ func _show_hero_select_lobby() -> void:
 ## portraits pleine longueur avec la tête dans le tiers/moitié haute) au lieu
 ## de l'image entière rétrécie. Les 4 artworks partagent le même cadrage,
 ## donc un seul ratio de recadrage (haut de l'image) convient à tous.
-const HERO_HEAD_CROP_RATIO := 0.58
+const HERO_HEAD_CROP_RATIO := 0.46
 
 func _hero_head_texture(hero_name: String) -> Texture2D:
 	var path := _hero_art(hero_name)
 	if path == "":
 		return null
-	var image := Image.new()
-	if image.load(path) != OK:
-		push_warning("Portrait introuvable/illisible : " + path)
+	# load() (pas Image.load()) : passe par le système de ressources importé
+	# par Godot, seul garanti présent dans un .exe exporté. Image.load() lit
+	# le fichier source brut sur disque, absent du build exporté (seule la
+	# ressource importée .ctex l'est) — ça marchait dans l'éditeur (accès
+	# direct aux fichiers du projet) mais donnait des vignettes vides une
+	# fois exporté.
+	var base_texture := load(path) as Texture2D
+	if base_texture == null:
+		push_warning("Portrait introuvable : " + path)
 		return null
+	var image := base_texture.get_image()
+	if image == null:
+		return base_texture
 	var crop_height := int(image.get_height() * HERO_HEAD_CROP_RATIO)
 	if crop_height > 0 and crop_height < image.get_height():
 		var cropped := image.get_region(Rect2i(0, 0, image.get_width(), crop_height))
@@ -2015,7 +2022,7 @@ func _hero_head_texture(hero_name: String) -> Texture2D:
 			return ImageTexture.create_from_image(cropped)
 	# Repli : image entière si le recadrage échoue pour une raison ou une
 	# autre, plutôt qu'une vignette totalement vide.
-	return ImageTexture.create_from_image(image)
+	return base_texture
 
 
 ## Reconstruit uniquement l'UI (sans toucher au minuteur / à l'état "prêt")
@@ -2031,36 +2038,41 @@ func _build_hero_select_lobby_ui() -> void:
 	_clear()
 	title.text = "SÉLECTION DES CHAMPIONS"
 
-	var canvas := _panel(Vector2.ZERO, Vector2(946, 566), Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0)
-	canvas.custom_minimum_size = Vector2(946, 566)
+	# Le cadre (`frame`) qui contient `content` ne fait que ~542px de haut
+	# utilisables sous le titre (614 de hauteur totale - 72 de décalage du
+	# haut de `content`) : un canvas de 566+ px dépassait déjà du cadre, d'où
+	# le bouton "VALIDER" qui sortait de la fenêtre. Mise en page resserrée
+	# pour tenir confortablement dans ~500px.
+	var canvas := _panel(Vector2.ZERO, Vector2(946, 500), Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0)
+	canvas.custom_minimum_size = Vector2(946, 500)
 	content.add_child(canvas)
 
-	_lobby_countdown_label = _label(str(int(ceil(_lobby_seconds_left_local))), 40, Color("f4c977"), Vector2(0, 2), Vector2(946, 48), HORIZONTAL_ALIGNMENT_CENTER)
+	_lobby_countdown_label = _label(str(int(ceil(_lobby_seconds_left_local))), 36, Color("f4c977"), Vector2(0, 0), Vector2(946, 42), HORIZONTAL_ALIGNMENT_CENTER)
 	canvas.add_child(_lobby_countdown_label)
 
-	canvas.add_child(_label("MATCH TROUVÉ  •  CHOISIS TON CHAMPION", 11, Color("8a7550"), Vector2(0, 52), Vector2(946, 20), HORIZONTAL_ALIGNMENT_CENTER))
+	canvas.add_child(_label("MATCH TROUVÉ  •  CHOISIS TON CHAMPION", 11, Color("8a7550"), Vector2(0, 42), Vector2(946, 18), HORIZONTAL_ALIGNMENT_CENTER))
 
 	# Grand aperçu central, façon écran de sélection LoL.
-	var preview := _panel(Vector2(323, 82), Vector2(300, 260), Color("140f09eb"), _hero_accent(selected_hero), 16)
-	preview.custom_minimum_size = Vector2(300, 260)
+	var preview := _panel(Vector2(323, 66), Vector2(300, 216), Color("140f09eb"), _hero_accent(selected_hero), 16)
+	preview.custom_minimum_size = Vector2(300, 216)
 	canvas.add_child(preview)
 
 	var portrait := TextureRect.new()
-	portrait.position = Vector2(20, 14)
-	portrait.size = Vector2(260, 190)
+	portrait.position = Vector2(20, 10)
+	portrait.size = Vector2(260, 148)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	portrait.clip_contents = true
 	portrait.texture = _hero_head_texture(selected_hero)
 	preview.add_child(portrait)
-	preview.add_child(_label(selected_hero, 20, _hero_accent(selected_hero), Vector2(0, 206), Vector2(300, 28), HORIZONTAL_ALIGNMENT_CENTER))
-	preview.add_child(_label(_hero_role(selected_hero), 9, Color("9a8760"), Vector2(0, 232), Vector2(300, 18), HORIZONTAL_ALIGNMENT_CENTER))
+	preview.add_child(_label(selected_hero, 18, _hero_accent(selected_hero), Vector2(0, 162), Vector2(300, 26), HORIZONTAL_ALIGNMENT_CENTER))
+	preview.add_child(_label(_hero_role(selected_hero), 9, Color("9a8760"), Vector2(0, 186), Vector2(300, 16), HORIZONTAL_ALIGNMENT_CENTER))
 
 	# Rangée de portraits cliquables, légère (pas de fiche détaillée).
 	var roster := HBoxContainer.new()
-	roster.position = Vector2(323, 350)
-	roster.custom_minimum_size = Vector2(300, 72)
+	roster.position = Vector2(323, 292)
+	roster.custom_minimum_size = Vector2(300, 60)
 	roster.add_theme_constant_override("separation", 8)
 	canvas.add_child(roster)
 	for hero_entry in [
@@ -2074,14 +2086,14 @@ func _build_hero_select_lobby_ui() -> void:
 	# Statut de chaque joueur connecté (toi / adversaire), mis à jour en
 	# direct via Network.lobby_state_changed.
 	_lobby_status_box = VBoxContainer.new()
-	_lobby_status_box.position = Vector2(233, 432)
-	_lobby_status_box.custom_minimum_size = Vector2(480, 80)
-	_lobby_status_box.add_theme_constant_override("separation", 6)
+	_lobby_status_box.position = Vector2(233, 360)
+	_lobby_status_box.custom_minimum_size = Vector2(480, 56)
+	_lobby_status_box.add_theme_constant_override("separation", 5)
 	canvas.add_child(_lobby_status_box)
 
-	_lobby_validate_button = _button("VALIDER MON CHOIX", Vector2(300, 48), true)
-	_lobby_validate_button.position = Vector2(323, 522)
-	_lobby_validate_button.size = Vector2(300, 48)
+	_lobby_validate_button = _button("VALIDER MON CHOIX", Vector2(300, 44), true)
+	_lobby_validate_button.position = Vector2(323, 428)
+	_lobby_validate_button.size = Vector2(300, 44)
 	if _lobby_ready_locked:
 		_lobby_validate_button.text = "EN ATTENTE DES AUTRES JOUEURS..."
 		_lobby_validate_button.disabled = true
@@ -2092,12 +2104,14 @@ func _build_hero_select_lobby_ui() -> void:
 
 func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(68, 68)
+	btn.custom_minimum_size = Vector2(60, 60)
 	btn.focus_mode = Control.FOCUS_ALL
 	var selected := hero_name == selected_hero
-	btn.add_theme_stylebox_override("normal", _box(Color("241a0df2") if selected else Color("140f09eb"), accent if selected else Color("352818"), 10, 2 if selected else 1))
-	btn.add_theme_stylebox_override("hover", _box(Color("241a0d"), accent, 10, 2))
-	btn.add_theme_stylebox_override("focus", _box(Color("241a0d"), accent, 10, 2))
+	# Cadre coloré (couleur du héros) sur CHAQUE portrait, pas seulement
+	# celui sélectionné — plus épais/lumineux pour la sélection en cours.
+	btn.add_theme_stylebox_override("normal", _box(Color("241a0df2") if selected else Color("140f09eb"), accent, 10, 3 if selected else 2))
+	btn.add_theme_stylebox_override("hover", _box(Color("241a0d"), accent, 10, 3))
+	btn.add_theme_stylebox_override("focus", _box(Color("241a0d"), accent, 10, 3))
 
 	var icon := TextureRect.new()
 	icon.set_anchors_preset(Control.PRESET_FULL_RECT)

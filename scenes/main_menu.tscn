@@ -8,18 +8,18 @@
 [ext_resource type="Texture2D" uid="uid://ble1xlphoiehb" path="res://assets/menu_design/champ_select/bordure_level_cropped.png" id="6_level_border"]
 [ext_resource type="Texture2D" uid="uid://b0le3ivsbxo85" path="res://assets/menu_design/champ_select/bordure_menu_cropped.png" id="7_frame_border"]
 [ext_resource type="Texture2D" uid="uid://dmj6uytdoh6vt" path="res://assets/menu_design/champ_select/bordure_mode_menu_cropped.png" id="8_side_border"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/deathmatch_button_cropped.png" id="9_deathmatch"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/1v1_button_cropped.png" id="10_1v1"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/2v2_button_cropped.png" id="11_2v2"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/3v3_button_cropped.png" id="12_3v3"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/custom_button_cropped.png" id="13_custom"]
-[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/create_party_button_cropped.png" id="14_create_party"]
+[ext_resource type="Texture2D" uid="uid://bohpsfjptj15o" path="res://assets/menu_design/champ_select/deathmatch_button_cropped.png" id="9_deathmatch"]
+[ext_resource type="Texture2D" uid="uid://dc7nhsa8xyysy" path="res://assets/menu_design/champ_select/1v1_button_cropped.png" id="10_1v1"]
+[ext_resource type="Texture2D" uid="uid://dbjhjvl4846vq" path="res://assets/menu_design/champ_select/2v2_button_cropped.png" id="11_2v2"]
+[ext_resource type="Texture2D" uid="uid://day1cyfsbg2r4" path="res://assets/menu_design/champ_select/3v3_button_cropped.png" id="12_3v3"]
+[ext_resource type="Texture2D" uid="uid://dhfmu1b6xodjf" path="res://assets/menu_design/champ_select/custom_button_cropped.png" id="13_custom"]
+[ext_resource type="Texture2D" uid="uid://dxg1fxbgein23" path="res://assets/menu_design/champ_select/create_party_button_cropped.png" id="14_create_party"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_deathmatch"]
 content_margin_left = 150.0
 content_margin_right = 70.0
 texture = ExtResource("9_deathmatch")
-modulate_color = Color(1.05, 1.0, 0.9, 1)
+modulate_color = Color(1.05, 1, 0.9, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_1v1"]
 content_margin_left = 150.0
@@ -49,7 +49,7 @@ modulate_color = Color(0.95, 0.95, 0.95, 1)
 content_margin_left = 66.0
 content_margin_right = 34.0
 texture = ExtResource("14_create_party")
-modulate_color = Color(1.05, 1.0, 0.9, 1)
+modulate_color = Color(1.05, 1, 0.9, 1)
 
 [node name="MainMenu" type="Control" unique_id=1079531850]
 layout_mode = 3
@@ -110,6 +110,7 @@ offset_bottom = 720.0
 mouse_filter = 2
 
 [node name="RailEdge" type="ColorRect" parent="LeftRail" unique_id=1965397914]
+visible = false
 layout_mode = 0
 offset_left = 242.0
 offset_right = 244.0
@@ -424,7 +425,7 @@ theme_override_colors/font_color = Color(0.541176, 0.458824, 0.313726, 1)
 theme_override_font_sizes/font_size = 11
 text = "SELECT MODE"
 
-[node name="DeathmatchCard" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox"]
+[node name="DeathmatchCard" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox" unique_id=153076691]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(600, 76)
 layout_mode = 2
@@ -434,7 +435,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_deathmatch")
 text = "DEATHMATCH"
 alignment = 0
 
-[node name="Duel1v1Card" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox"]
+[node name="Duel1v1Card" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox" unique_id=2017532853]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(600, 76)
 layout_mode = 2
@@ -444,7 +445,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_1v1")
 text = "1V1 DUEL"
 alignment = 0
 
-[node name="Clash2v2Card" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox"]
+[node name="Clash2v2Card" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox" unique_id=759316307]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(600, 76)
 layout_mode = 2
@@ -454,7 +455,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_2v2")
 text = "2V2 CLASH"
 alignment = 0
 
-[node name="Rivalry3v3Card" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox"]
+[node name="Rivalry3v3Card" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox" unique_id=1991825422]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(600, 76)
 layout_mode = 2
@@ -464,7 +465,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_3v3")
 text = "3V3 RIVALRY"
 alignment = 0
 
-[node name="CustomGameCard" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox"]
+[node name="CustomGameCard" type="Button" parent="MainFrame/ArenaModesScreen/Row/ModesBox" unique_id=747633047]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(600, 76)
 layout_mode = 2

@@ -502,12 +502,38 @@ func _build_shell() -> void:
 
 ## Braises flottantes en fond de menu : quelques particules ambrées qui
 ## montent lentement, purement décoratif et non-bloquant (mouse_filter IGNORE).
+var _border_texture_cache: Dictionary = {}
+
+## Certaines bordures (bordure_menu.png, bordure_steam.png, bordure_level.png)
+## ont une grosse marge transparente/halo laissée dans le canevas source par
+## le graphiste (jusqu'à ~15% de hauteur vide en haut/bas) — étirer le
+## canevas entier sur un panneau fait alors flotter le trait doré loin des
+## bords réels du panneau au lieu de les longer. On recadre donc sur le
+## contenu visible (rectangle non-transparent) avant utilisation.
+func _cropped_border_texture(path: String) -> Texture2D:
+	if _border_texture_cache.has(path):
+		return _border_texture_cache[path]
+	var base := load(path) as Texture2D
+	if base == null:
+		return null
+	var image := base.get_image()
+	var result: Texture2D = base
+	if image != null:
+		var used := image.get_used_rect()
+		if used.size.x > 0 and used.size.y > 0:
+			var cropped := image.get_region(used)
+			if cropped != null and cropped.get_width() > 0 and cropped.get_height() > 0:
+				result = ImageTexture.create_from_image(cropped)
+	_border_texture_cache[path] = result
+	return result
+
+
 ## Pose une bordure décorative (image fournie par le graphiste, transparente
 ## au centre) par-dessus un panneau existant, étirée exactement sur sa
 ## taille. Ajoutée en dernier enfant pour rester visible par-dessus le
 ## contenu du panneau — sans risque puisque le centre de l'image est vide.
 func _add_border_overlay(parent: Control, path: String) -> void:
-	var tex := load(path) as Texture2D
+	var tex := _cropped_border_texture(path)
 	if tex == null:
 		push_warning("Bordure introuvable : " + path)
 		return

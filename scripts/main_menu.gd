@@ -38,6 +38,7 @@ var level_label: Label
 var xp_label: Label
 var level_progress_fill: ColorRect
 const LEVEL_BAR_WIDTH: float = 164.0
+const NAV_BUTTON_FRAME := "res://assets/menu_design/champ_select/menu_left_button.png"
 
 var party_panel: Panel
 var party_title_label: Label
@@ -601,9 +602,9 @@ func _set_nav_active(active_item: String) -> void:
 		if b == null:
 			continue
 		var active: bool = (item == active_item)
-		b.text = ("◆  " if active else "    ") + item
-		b.add_theme_color_override("font_color", Color("f3e2b8") if active else Color("7a6a4a"))
-		b.add_theme_stylebox_override("normal", _rune_box(Color("241a0d") if active else Color("140f09"), Color("c9a24d") if active else Color("352818"), 1))
+		b.text = ("◆  " if active else "     ") + item
+		b.add_theme_color_override("font_color", Color("fff2d4") if active else Color("c4b48a"))
+		_apply_nav_button_style(b, active)
 
 
 # =========================================================
@@ -2486,18 +2487,70 @@ func _hero_spell_details(hero_name: String) -> Array:
 		["PHASE DASH", "Dash court • traverse les unités", "res://assets/hud/dash.svg"]
 	]
 
+## Hauteur des boutons de nav du rail gauche, calculée pour respecter le
+## ratio natif de l'image menu_left_button.png (bannière large, pas carrée) :
+## sans ça, l'étirer sur une hauteur arbitraire déforme le motif.
+const NAV_BUTTON_WIDTH: float = 208.0
+
+func _nav_button_height() -> float:
+	var frame_tex := load(NAV_BUTTON_FRAME) as Texture2D
+	if frame_tex == null:
+		return 42.0
+	var native_size := frame_tex.get_size()
+	if native_size.x <= 0.0:
+		return 42.0
+	return NAV_BUTTON_WIDTH * (native_size.y / native_size.x)
+
+
+## Applique le skin "menu_left_button.png" (StyleBoxTexture par état, même
+## technique que le bouton VALIDER du lobby de sélection de champions) sur un
+## bouton de nav, avec une teinte différente selon qu'il est actif ou non.
+func _apply_nav_button_style(b: Button, active: bool) -> void:
+	var frame_tex := load(NAV_BUTTON_FRAME) as Texture2D
+	if frame_tex == null:
+		push_warning("Cadre du bouton de navigation introuvable : " + NAV_BUTTON_FRAME)
+		b.add_theme_stylebox_override("normal", _rune_box(Color("241a0d") if active else Color("140f09"), Color("c9a24d") if active else Color("352818"), 1))
+		b.add_theme_stylebox_override("hover", _rune_box(Color("2c2010"), Color("e8b656"), 1))
+		b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
+		return
+
+	var normal_style := StyleBoxTexture.new()
+	normal_style.texture = frame_tex
+	normal_style.modulate_color = Color(1.1, 1.0, 0.72) if active else Color(0.6, 0.55, 0.46)
+	normal_style.content_margin_left = 34
+	normal_style.content_margin_right = 18
+	b.add_theme_stylebox_override("normal", normal_style)
+
+	var hover_style := StyleBoxTexture.new()
+	hover_style.texture = frame_tex
+	hover_style.modulate_color = Color(1.3, 1.22, 0.95)
+	hover_style.content_margin_left = 34
+	hover_style.content_margin_right = 18
+	b.add_theme_stylebox_override("hover", hover_style)
+	b.add_theme_stylebox_override("focus", hover_style)
+
+	var pressed_style := StyleBoxTexture.new()
+	pressed_style.texture = frame_tex
+	pressed_style.modulate_color = Color(0.68, 0.62, 0.5)
+	pressed_style.content_margin_left = 34
+	pressed_style.content_margin_right = 18
+	b.add_theme_stylebox_override("pressed", pressed_style)
+
+
 func _aaa_nav_button(text_value: String, active: bool) -> Button:
 	var b := Button.new()
-	b.text = ("◆  " if active else "    ") + text_value
-	b.custom_minimum_size = Vector2(166, 42)
+	b.text = ("◆  " if active else "     ") + text_value
+	b.custom_minimum_size = Vector2(NAV_BUTTON_WIDTH, _nav_button_height())
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.focus_mode = Control.FOCUS_ALL
-	b.add_theme_font_size_override("font_size", 12)
-	b.add_theme_color_override("font_color", Color("f3e2b8") if active else Color("7a6a4a"))
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.add_theme_font_size_override("font_size", 13)
+	b.add_theme_constant_override("outline_size", 1)
+	b.add_theme_color_override("font_outline_color", Color("0a0603"))
+	b.add_theme_color_override("font_color", Color("fff2d4") if active else Color("c4b48a"))
 	b.add_theme_color_override("font_hover_color", Color("fff2d4"))
-	b.add_theme_stylebox_override("normal", _rune_box(Color("241a0d") if active else Color("140f09"), Color("c9a24d") if active else Color("352818"), 1))
-	b.add_theme_stylebox_override("hover", _rune_box(Color("2c2010"), Color("e8b656"), 1))
-	b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
+	b.add_theme_color_override("font_focus_color", Color("fff2d4"))
+	_apply_nav_button_style(b, active)
 	return b
 
 func _mode_card(mode: String, selected: bool) -> Button:

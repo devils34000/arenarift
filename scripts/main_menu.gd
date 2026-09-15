@@ -727,33 +727,34 @@ func _show_home() -> void:
 
 	var categories_box := VBoxContainer.new()
 	categories_box.custom_minimum_size = Vector2(600, 0)
-	# Sans ça, ce VBoxContainer s'étire sur toute la largeur de `content`
-	# (~930px) au lieu de rester à sa largeur minimale de 600 : les bannières
-	# s'étirent alors bien plus que sur l'écran MULTIJOUEUR ARENA (qui a un
-	# panneau latéral pour le contraindre), agrandissant le médaillon
-	# d'icône au point qu'il chevauche le texte malgré la même marge fixe.
-	categories_box.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	# categories_box (contrairement à modes_box sur l'écran MULTIJOUEUR
+	# ARENA, contraint par le panneau latéral juste à côté) n'a pas de
+	# voisin et s'étire donc sur toute la largeur de `content` (946px) — les
+	# bannières doivent en tenir compte pour leurs marges de texte, d'où le
+	# paramètre card_width plutôt qu'une largeur supposée fixe.
 	categories_box.add_theme_constant_override("separation", 10)
 	content.add_child(categories_box)
 	categories_box.add_child(_label("SÉLECTIONNE UN MODE", 11, Color("8a7550"), Vector2.ZERO, Vector2(500, 22)))
 
-	var arena_card := _mode_card("MULTIJOUEUR ARENA", false, MODE_CARD_HEIGHT_CATEGORY)
+	var category_card_width := 946.0
+
+	var arena_card := _mode_card("MULTIJOUEUR ARENA", false, MODE_CARD_HEIGHT_CATEGORY, category_card_width)
 	arena_card.pressed.connect(_show_arena_modes)
 	categories_box.add_child(arena_card)
 
-	var coop_card := _mode_card("CO-OP DONJON", false, MODE_CARD_HEIGHT_CATEGORY)
+	var coop_card := _mode_card("CO-OP DONJON", false, MODE_CARD_HEIGHT_CATEGORY, category_card_width)
 	coop_card.pressed.connect(func():
 		_show_play_placeholder("CO-OP DONJON", "Mode coopératif roguelike en développement. Explorez un donjon généré à plusieurs contre des vagues d'ennemis — revenez bientôt !")
 	)
 	categories_box.add_child(coop_card)
 
-	var impostor_card := _mode_card("IMPOSTOR", false, MODE_CARD_HEIGHT_CATEGORY)
+	var impostor_card := _mode_card("IMPOSTOR", false, MODE_CARD_HEIGHT_CATEGORY, category_card_width)
 	impostor_card.pressed.connect(func():
 		_show_play_placeholder("IMPOSTOR", "Mode social façon Among Us en développement. Démasquez les imposteurs avant qu'ils ne sabotent la partie — revenez bientôt !")
 	)
 	categories_box.add_child(impostor_card)
 
-	var hideseek_card := _mode_card("HIDE & SEEK", false, MODE_CARD_HEIGHT_CATEGORY)
+	var hideseek_card := _mode_card("HIDE & SEEK", false, MODE_CARD_HEIGHT_CATEGORY, category_card_width)
 	hideseek_card.pressed.connect(func():
 		_show_play_placeholder("HIDE & SEEK", "Prop Hunt en développement. Cachez-vous en objet du décor ou traquez ceux qui s'y dissimulent — revenez bientôt !")
 	)
@@ -2682,14 +2683,25 @@ func _aaa_nav_button(text_value: String, active: bool) -> Button:
 	_apply_nav_button_style(b, active)
 	return b
 
-func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEIGHT_LIST) -> Button:
+## card_width doit correspondre à la largeur RÉELLEMENT rendue du bouton
+## (946 sur l'écran PLAY où la bannière occupe tout `content` ; 600 sur
+## l'écran MULTIJOUEUR ARENA où le panneau latéral la contraint) : la
+## bannière est une image unique étirée sur toute la largeur du bouton, et
+## la position du médaillon/flèche qu'elle contient est donc proportionnelle
+## à cette largeur. Une marge de texte fixe en pixels convenait à une seule
+## largeur mais chevauchait le médaillon dès que le bouton était plus
+## large — d'où ces marges calculées en pourcentage de card_width.
+func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEIGHT_LIST, card_width: float = 600.0) -> Button:
 	var b := Button.new()
 	b.text = mode
-	b.custom_minimum_size = Vector2(600, card_height)
+	b.custom_minimum_size = Vector2(card_width, card_height)
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_apply_banner_text_style(b, 19)
+
+	var margin_left := card_width * 0.25
+	var margin_right := card_width * 0.117
 
 	var frame_tex: Texture2D = null
 	if MODE_CARD_ASSETS.has(mode):
@@ -2704,23 +2716,23 @@ func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEI
 		var normal_style := StyleBoxTexture.new()
 		normal_style.texture = frame_tex
 		normal_style.modulate_color = Color(1.05, 1.0, 0.9) if selected else Color(0.95, 0.95, 0.95)
-		normal_style.content_margin_left = 150
-		normal_style.content_margin_right = 70
+		normal_style.content_margin_left = margin_left
+		normal_style.content_margin_right = margin_right
 		b.add_theme_stylebox_override("normal", normal_style)
 
 		var hover_style := StyleBoxTexture.new()
 		hover_style.texture = frame_tex
 		hover_style.modulate_color = Color(1.18, 1.14, 1.0)
-		hover_style.content_margin_left = 150
-		hover_style.content_margin_right = 70
+		hover_style.content_margin_left = margin_left
+		hover_style.content_margin_right = margin_right
 		b.add_theme_stylebox_override("hover", hover_style)
 		b.add_theme_stylebox_override("focus", hover_style)
 
 		var pressed_style := StyleBoxTexture.new()
 		pressed_style.texture = frame_tex
 		pressed_style.modulate_color = Color(0.8, 0.76, 0.66)
-		pressed_style.content_margin_left = 150
-		pressed_style.content_margin_right = 70
+		pressed_style.content_margin_left = margin_left
+		pressed_style.content_margin_right = margin_right
 		b.add_theme_stylebox_override("pressed", pressed_style)
 	else:
 		push_warning("Cadre du bouton de mode introuvable pour : " + mode)

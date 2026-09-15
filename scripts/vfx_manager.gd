@@ -856,10 +856,17 @@ func _soft_puff_mesh(size: Vector2, tint: Color) -> QuadMesh:
 	var shader := Shader.new()
 	shader.code = """
 shader_type spatial;
-render_mode unshaded, cull_disabled, blend_mix, depth_draw_never, depth_test_disabled, billboard;
+render_mode unshaded, cull_disabled, blend_mix, depth_draw_never, depth_test_disabled;
 
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float alpha_factor = 1.0;
+
+void vertex() {
+	// Billboard manuel : pas de mot-clé "billboard" pour les shaders spatial,
+	// on aligne donc la matrice modèle-vue sur les axes caméra nous-mêmes.
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
 
 void fragment() {
 	vec2 c = UV - vec2(0.5);

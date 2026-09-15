@@ -337,6 +337,17 @@ func _input(event: InputEvent) -> void:
 		_update_controller_connection(true)
 
 		if event is InputEventJoypadButton and event.pressed:
+			# Un menu déroulant (OptionButton) ouvert a son propre popup natif
+			# (PopupMenu), qui gère déjà nativement D-pad/stick pour naviguer,
+			# A pour sélectionner, B pour fermer — via les actions ui_* de
+			# Godot (bindées manette par défaut). Nos raccourcis globaux A/B/
+			# START ci-dessous lui volaient l'input avant qu'il ne puisse le
+			# traiter : impossible de sélectionner un élément ou de fermer le
+			# popup. On laisse donc passer sans rien faire tant qu'un popup
+			# est ouvert.
+			if _any_option_popup_open():
+				return
+
 			if event.button_index == JOY_BUTTON_B:
 				if page != "HOME":
 					_show_home_deferred()
@@ -371,6 +382,16 @@ func _input(event: InputEvent) -> void:
 					# et supprimer ce menu pendant l'exécution.
 					viewport.set_input_as_handled()
 					(focused as BaseButton).emit_signal("pressed")
+
+
+## true si l'un des menus déroulants (OptionButton) du menu a actuellement
+## son popup ouvert — sert à laisser passer l'input manette vers ce popup
+## natif plutôt que de le capter avec nos raccourcis A/B/START globaux.
+func _any_option_popup_open() -> bool:
+	for option_button in [custom_room_map_option, custom_room_mode_option]:
+		if option_button != null and is_instance_valid(option_button) and option_button.get_popup().visible:
+			return true
+	return false
 
 
 func _update_controller_connection(force: bool = false) -> void:

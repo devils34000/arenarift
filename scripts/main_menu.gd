@@ -54,8 +54,40 @@ const MODE_CARD_ASSETS := {
 	"3V3 RIVALRY": "res://assets/menu_design/champ_select/3v3_button.png",
 	"CUSTOM GAME": "res://assets/menu_design/champ_select/custom_button.png",
 }
-const MODE_CARD_HEIGHT: float = 90.0
+const MODE_CARD_HEIGHT_CATEGORY: float = 110.0
+const MODE_CARD_HEIGHT_LIST: float = 92.0
 const CREATE_PARTY_BUTTON_ASSET := "res://assets/menu_design/champ_select/create_party_button.png"
+
+## Les bannières font 2172x724 mais le cadre orné (médaillon + filet doré)
+## n'occupe qu'une bande centrée d'environ 300-350px de haut — le reste
+## n'est que du halo/glow transparent. Étirer l'image entière sur la
+## hauteur réduite d'un bouton écrasait le médaillon en ovale ; on ne garde
+## donc que cette bande avant de l'étirer, ce qui réduit fortement la
+## déformation.
+const BANNER_CROP_TOP: int = 170
+const BANNER_CROP_HEIGHT: int = 370
+var _banner_texture_cache: Dictionary = {}
+
+func _cropped_banner_texture(path: String) -> Texture2D:
+	if path == "":
+		return null
+	if _banner_texture_cache.has(path):
+		return _banner_texture_cache[path]
+	var base := load(path) as Texture2D
+	if base == null:
+		return null
+	var image := base.get_image()
+	if image == null:
+		_banner_texture_cache[path] = base
+		return base
+	var top: int = clampi(BANNER_CROP_TOP, 0, image.get_height() - 1)
+	var height: int = clampi(BANNER_CROP_HEIGHT, 1, image.get_height() - top)
+	var cropped := image.get_region(Rect2i(0, top, image.get_width(), height))
+	var result: Texture2D = base
+	if cropped != null and cropped.get_width() > 0 and cropped.get_height() > 0:
+		result = ImageTexture.create_from_image(cropped)
+	_banner_texture_cache[path] = result
+	return result
 
 var party_panel: Panel
 var party_title_label: Label
@@ -641,23 +673,23 @@ func _show_home() -> void:
 	content.add_child(categories_box)
 	categories_box.add_child(_label("SÉLECTIONNE UN MODE", 11, Color("8a7550"), Vector2.ZERO, Vector2(500, 22)))
 
-	var arena_card := _mode_card("MULTIJOUEUR ARENA", false)
+	var arena_card := _mode_card("MULTIJOUEUR ARENA", false, MODE_CARD_HEIGHT_CATEGORY)
 	arena_card.pressed.connect(_show_arena_modes)
 	categories_box.add_child(arena_card)
 
-	var coop_card := _mode_card("CO-OP DONJON", false)
+	var coop_card := _mode_card("CO-OP DONJON", false, MODE_CARD_HEIGHT_CATEGORY)
 	coop_card.pressed.connect(func():
 		_show_play_placeholder("CO-OP DONJON", "Mode coopératif roguelike en développement. Explorez un donjon généré à plusieurs contre des vagues d'ennemis — revenez bientôt !")
 	)
 	categories_box.add_child(coop_card)
 
-	var impostor_card := _mode_card("IMPOSTOR", false)
+	var impostor_card := _mode_card("IMPOSTOR", false, MODE_CARD_HEIGHT_CATEGORY)
 	impostor_card.pressed.connect(func():
 		_show_play_placeholder("IMPOSTOR", "Mode social façon Among Us en développement. Démasquez les imposteurs avant qu'ils ne sabotent la partie — revenez bientôt !")
 	)
 	categories_box.add_child(impostor_card)
 
-	var hideseek_card := _mode_card("HIDE & SEEK", false)
+	var hideseek_card := _mode_card("HIDE & SEEK", false, MODE_CARD_HEIGHT_CATEGORY)
 	hideseek_card.pressed.connect(func():
 		_show_play_placeholder("HIDE & SEEK", "Prop Hunt en développement. Cachez-vous en objet du décor ou traquez ceux qui s'y dissimulent — revenez bientôt !")
 	)
@@ -2572,10 +2604,10 @@ func _aaa_nav_button(text_value: String, active: bool) -> Button:
 	_apply_nav_button_style(b, active)
 	return b
 
-func _mode_card(mode: String, selected: bool) -> Button:
+func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEIGHT_LIST) -> Button:
 	var b := Button.new()
 	b.text = mode
-	b.custom_minimum_size = Vector2(600, MODE_CARD_HEIGHT)
+	b.custom_minimum_size = Vector2(600, card_height)
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -2590,22 +2622,24 @@ func _mode_card(mode: String, selected: bool) -> Button:
 
 	var frame_tex: Texture2D = null
 	if MODE_CARD_ASSETS.has(mode):
-		frame_tex = load(MODE_CARD_ASSETS[mode]) as Texture2D
+		frame_tex = _cropped_banner_texture(MODE_CARD_ASSETS[mode])
 
 	if frame_tex != null:
 		# Le médaillon d'icône occupe la partie gauche de la bannière et la
 		# flèche la partie droite : on resserre la zone de texte au bandeau
-		# central plutôt que de le laisser chevaucher l'artwork.
+		# central plutôt que de le laisser chevaucher l'artwork. Modulate
+		# proche du blanc pour garder les couleurs vives de l'artwork
+		# d'origine (un assombrissement marqué le rendait terne/sale).
 		var normal_style := StyleBoxTexture.new()
 		normal_style.texture = frame_tex
-		normal_style.modulate_color = Color(1.15, 1.08, 0.85) if selected else Color(0.72, 0.68, 0.6)
+		normal_style.modulate_color = Color(1.05, 1.0, 0.9) if selected else Color(0.95, 0.95, 0.95)
 		normal_style.content_margin_left = 150
 		normal_style.content_margin_right = 70
 		b.add_theme_stylebox_override("normal", normal_style)
 
 		var hover_style := StyleBoxTexture.new()
 		hover_style.texture = frame_tex
-		hover_style.modulate_color = Color(1.32, 1.26, 1.0)
+		hover_style.modulate_color = Color(1.18, 1.14, 1.0)
 		hover_style.content_margin_left = 150
 		hover_style.content_margin_right = 70
 		b.add_theme_stylebox_override("hover", hover_style)
@@ -2613,7 +2647,7 @@ func _mode_card(mode: String, selected: bool) -> Button:
 
 		var pressed_style := StyleBoxTexture.new()
 		pressed_style.texture = frame_tex
-		pressed_style.modulate_color = Color(0.72, 0.66, 0.54)
+		pressed_style.modulate_color = Color(0.8, 0.76, 0.66)
 		pressed_style.content_margin_left = 150
 		pressed_style.content_margin_right = 70
 		b.add_theme_stylebox_override("pressed", pressed_style)
@@ -2630,21 +2664,21 @@ func _mode_card(mode: String, selected: bool) -> Button:
 ## CRÉER LA PARTY / SALON CUSTOM GAME du panneau latéral — même famille
 ## d'asset et même technique que _mode_card().
 func _apply_banner_launch_style(b: Button) -> void:
-	var frame_tex := load(CREATE_PARTY_BUTTON_ASSET) as Texture2D
+	var frame_tex := _cropped_banner_texture(CREATE_PARTY_BUTTON_ASSET)
 	if frame_tex == null:
 		push_warning("Cadre du bouton CRÉER LA PARTY introuvable : " + CREATE_PARTY_BUTTON_ASSET)
 		return
 
 	var normal_style := StyleBoxTexture.new()
 	normal_style.texture = frame_tex
-	normal_style.modulate_color = Color(1.15, 1.08, 0.85)
+	normal_style.modulate_color = Color(1.05, 1.0, 0.9)
 	normal_style.content_margin_left = 66
 	normal_style.content_margin_right = 34
 	b.add_theme_stylebox_override("normal", normal_style)
 
 	var hover_style := StyleBoxTexture.new()
 	hover_style.texture = frame_tex
-	hover_style.modulate_color = Color(1.32, 1.26, 1.0)
+	hover_style.modulate_color = Color(1.18, 1.14, 1.0)
 	hover_style.content_margin_left = 66
 	hover_style.content_margin_right = 34
 	b.add_theme_stylebox_override("hover", hover_style)
@@ -2652,7 +2686,7 @@ func _apply_banner_launch_style(b: Button) -> void:
 
 	var pressed_style := StyleBoxTexture.new()
 	pressed_style.texture = frame_tex
-	pressed_style.modulate_color = Color(0.72, 0.66, 0.54)
+	pressed_style.modulate_color = Color(0.8, 0.76, 0.66)
 	pressed_style.content_margin_left = 66
 	pressed_style.content_margin_right = 34
 	b.add_theme_stylebox_override("pressed", pressed_style)

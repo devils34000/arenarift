@@ -9,43 +9,63 @@ class MOBAAbilityIcon extends Control:
 	## Petit indice sous l'icône : texte clavier/souris (ex: "CLIC G.", "E",
 	## "A") par défaut, remplacé par l'icône du bouton manette correspondante
 	## dès qu'une manette est utilisée (voir set_input_mode, appelé en
-	## continu depuis _update_hud() avec last_input_was_controller).
+	## continu depuis _update_hud() avec last_input_was_controller). Posé sur
+	## un petit fond sombre (key_chip) : flottant directement sur la scène
+	## 3D, le texte clair devenait illisible dès que l'arrière-plan était
+	## clair (blanc/gris) au même endroit.
 	var key_label: Label
 	var key_icon: TextureRect
+	var key_chip: Panel
 
 	func setup(texture: Texture2D, color: Color, size: float, key_text: String = "", controller_icon_path: String = "") -> void:
 		icon_texture = texture
 		accent_color = color
-		custom_minimum_size = Vector2(size, size + 16.0)
+		custom_minimum_size = Vector2(size, size + 22.0)
 		self.size = Vector2(size, size)
 		radius = size * 0.42
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		queue_redraw()
 
-		if key_text != "":
+		var has_key := key_text != ""
+		var has_icon := controller_icon_path != "" and ResourceLoader.exists(controller_icon_path)
+		if not has_key and not has_icon:
+			return
+
+		var chip_size := Vector2(size * 0.62, 20.0)
+		key_chip = Panel.new()
+		key_chip.position = Vector2((size - chip_size.x) * 0.5, size + 4.0)
+		key_chip.size = chip_size
+		key_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var chip_style := StyleBoxFlat.new()
+		chip_style.bg_color = Color(0.027, 0.067, 0.122, 0.92)
+		chip_style.border_color = accent_color.darkened(0.15)
+		chip_style.set_border_width_all(1)
+		chip_style.set_corner_radius_all(6)
+		key_chip.add_theme_stylebox_override("panel", chip_style)
+		add_child(key_chip)
+
+		if has_key:
 			key_label = Label.new()
 			key_label.text = key_text
-			key_label.position = Vector2(0.0, size + 3.0)
-			key_label.size = Vector2(size, 14.0)
+			key_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			key_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			key_label.clip_text = true
-			key_label.add_theme_font_size_override("font_size", 9)
-			key_label.add_theme_color_override("font_color", Color("c9d6e8"))
-			key_label.add_theme_constant_override("outline_size", 2)
-			key_label.add_theme_color_override("font_outline_color", Color("07111f"))
+			key_label.add_theme_font_size_override("font_size", 11)
+			key_label.add_theme_color_override("font_color", Color("ffffff"))
 			key_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			add_child(key_label)
+			key_chip.add_child(key_label)
 
-		if controller_icon_path != "" and ResourceLoader.exists(controller_icon_path):
+		if has_icon:
 			key_icon = TextureRect.new()
 			key_icon.texture = load(controller_icon_path) as Texture2D
-			key_icon.position = Vector2(size * 0.5 - 9.0, size + 2.0)
 			key_icon.size = Vector2(18.0, 18.0)
+			key_icon.position = (chip_size - key_icon.size) * 0.5
 			key_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			key_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			key_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			key_icon.visible = false
-			add_child(key_icon)
+			key_chip.add_child(key_icon)
 
 	## Bascule entre l'indice clavier (texte) et l'indice manette (icône)
 	## selon le dernier type d'entrée utilisé par le joueur.
@@ -4263,9 +4283,10 @@ func _build_hud() -> void:
 
 	# Sorts : icônes avec indice de touche/bouton sous chacune (voir
 	# MOBAAbilityIcon.setup), basculé automatiquement clavier/manette.
-	# skill_y remonté de 644 à 636 pour laisser la place à cet indice sans
-	# déborder du bas de l'écran (viewport 720px de haut).
-	var skill_y := 636.0
+	# skill_y remonté de 644 à 622 pour laisser la place à cet indice (icône
+	# 64px + puce d'indice ~24px de plus) sans déborder du bas de l'écran
+	# (viewport 720px de haut).
+	var skill_y := 622.0
 	var skill_size := 64.0
 	var skill_gap := 9.0
 	var skill_x := 536.0

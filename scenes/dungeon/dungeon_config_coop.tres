@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DungeonConfig" load_steps=9 format=3 uid="uid://bdungcfgcoop1"]
+[gd_resource type="Resource" script_class="DungeonConfig" load_steps=11 format=3 uid="uid://bdungcfgcoop1"]
 
 [ext_resource type="Script" path="res://addons/dungeon_crawler_3d/resources/dungeon_config.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://addons/dungeon_crawler_3d/resources/room_data.gd" id="2_data"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomJunctionKB.tscn" id="6_junction"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomDeadEndA.tscn" id="7_deada"]
 [ext_resource type="PackedScene" path="res://scenes/dungeon/RoomDeadEndB.tscn" id="8_deadb"]
+[ext_resource type="PackedScene" path="res://scenes/dungeon/RoomCorridorTurn.tscn" id="9_turn"]
 
 [sub_resource type="Resource" id="RoomData_entrance"]
 script = ExtResource("2_data")
@@ -25,6 +26,12 @@ category = 1
 script = ExtResource("2_data")
 room_scene = ExtResource("5_corridor")
 spawn_weight = 1.0
+category = 2
+
+[sub_resource type="Resource" id="RoomData_turn"]
+script = ExtResource("2_data")
+room_scene = ExtResource("9_turn")
+spawn_weight = 1.4
 category = 2
 
 [sub_resource type="Resource" id="RoomData_junction"]
@@ -57,7 +64,7 @@ random_seed = 0
 max_generation_attempts = 20
 entrance_pool = Array[RoomData]([SubResource("RoomData_entrance")])
 boss_pool = Array[RoomData]([SubResource("RoomData_boss")])
-corridor_pool = Array[RoomData]([SubResource("RoomData_corridor")])
+corridor_pool = Array[RoomData]([SubResource("RoomData_corridor"), SubResource("RoomData_turn")])
 junction_pool = Array[RoomData]([SubResource("RoomData_junction")])
 dead_end_pool = Array[RoomData]([SubResource("RoomData_deada"), SubResource("RoomData_deadb")])
 key_scenes = {}

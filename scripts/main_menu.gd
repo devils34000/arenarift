@@ -4001,13 +4001,20 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 			status_label.clip_text = true
 			row.add_child(status_label)
 	else:
-		var use_button := _button("UTILISER", Vector2(120, 22), false)
+		# Consommable : gagné rarement en fin de match (stock persisté), une
+		# utilisation en retire un du stock.
+		var stock: int = PlayerProgress.get_consumable_stock(card.id)
+		var use_button := _button("UTILISER (x%d)" % stock if stock > 0 else "AUCUNE EN STOCK", Vector2(140, 22), stock > 0)
 		use_button.position = Vector2(86, 88)
 		use_button.clip_text = true
 		use_button.add_theme_font_size_override("font_size", 9)
+		use_button.disabled = stock <= 0
+		var card_id := card.id
 		use_button.pressed.connect(func():
-			print("ARENA RIFT : Arkanite consommée -> ", card.id)
-			# TODO : appliquer l'effet temporaire réel + retirer du stock.
+			if PlayerProgress.consume_arkanite(card_id):
+				print("ARENA RIFT : Arkanite consommée -> ", card_id)
+				# TODO : appliquer l'effet temporaire réel.
+				_show_arkanites_deferred()
 		)
 		row.add_child(use_button)
 	# Petit bouton i : ouvre la carte dans son format original.

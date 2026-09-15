@@ -2197,6 +2197,7 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	var xp_gained: int = PlayerProgress.award_match_xp(player_won, personal_kills)
 	var currency_gained: int = PlayerProgress.award_match_currency(player_won)
 	var arkanite_reward: Dictionary = PlayerProgress.award_match_arkanite_fragments(player_won, selected_hero)
+	var consumable_reward: Dictionary = PlayerProgress.award_match_consumable()
 	if round_end_label != null and is_instance_valid(round_end_label):
 		round_end_label.queue_free()
 		round_end_label = null
@@ -2278,8 +2279,22 @@ func _show_match_results(player_won: bool, winner_name: String, score_text: Stri
 	reward_label.add_theme_color_override("font_color", Color("c9a24d"))
 	panel.add_child(reward_label)
 
+	if not consumable_reward.is_empty():
+		var consumable_label := Label.new()
+		consumable_label.position = Vector2(70, 280)
+		consumable_label.size = Vector2(460, 22)
+		consumable_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		consumable_label.clip_text = true
+		consumable_label.text = "ARKANITE OBTENUE : %s  (x%d)" % [
+			str(consumable_reward.get("display_name", "")),
+			int(consumable_reward.get("stock", 1)),
+		]
+		consumable_label.add_theme_font_size_override("font_size", 12)
+		consumable_label.add_theme_color_override("font_color", Color("62e6a7"))
+		panel.add_child(consumable_label)
+
 	var return_button := Button.new()
-	return_button.position = Vector2(145, 300)
+	return_button.position = Vector2(145, 318)
 	return_button.size = Vector2(310, 62)
 	return_button.text = "RETOUR AU MENU"
 	return_button.add_theme_font_size_override("font_size", 18)

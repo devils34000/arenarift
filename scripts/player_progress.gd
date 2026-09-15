@@ -18,6 +18,10 @@ const CHEST_LEVEL_INTERVAL: int = 5
 ## Éclats de fin de match, eux, tombent toujours). Volontairement faible pour
 ## pousser à jouer davantage plutôt que de garantir un drop à chaque partie.
 const FRAGMENT_DROP_CHANCE: float = 0.35
+## Probabilité qu'un match termine sur le gain d'une Arkanite d'Éveil
+## (consommable). Bien plus rare que les fragments d'équipable : c'est un
+## bonus occasionnel, pas une ressource à farmer.
+const CONSUMABLE_DROP_CHANCE: float = 0.12
 
 signal level_up(new_level: int)
 signal xp_changed(xp: int, level: int)
@@ -48,6 +52,10 @@ var owned_arkanites: Array[String] = []
 ## Arkanites équipées par héros : hero_name -> Array[String] d'ids de cartes
 ## (jusqu'à LOADOUT_MAX_SLOTS). Géré depuis l'onglet LOADOUT du menu.
 var equipped_loadout: Dictionary = {}
+## Stock d'Arkanites d'Éveil (consommables) possédées, par id de carte.
+## Gagnées rarement en fin de match (CONSUMABLE_DROP_CHANCE) ; chaque
+## utilisation (bouton UTILISER) en décrémente une.
+var consumable_stock: Dictionary = {}
 var _save_path: String = ""
 var _loaded: bool = false
 
@@ -256,6 +264,57 @@ func award_match_arkanite_fragments(player_won: bool, hero_name: String) -> Dict
 	}
 
 
+func get_consumable_stock(card_id: String) -> int:
+	_ensure_loaded()
+	return int(consumable_stock.get(card_id, 0))
+
+
+func add_consumable(card_id: String, amount: int = 1) -> void:
+	_ensure_loaded()
+	if amount <= 0 or card_id == "":
+		return
+	consumable_stock[card_id] = get_consumable_stock(card_id) + amount
+	_save()
+
+
+## Consomme une Arkanite d'Éveil du stock (bouton UTILISER). Retourne false
+## sans rien changer si le stock est déjà à 0.
+func consume_arkanite(card_id: String) -> bool:
+	_ensure_loaded()
+	var current: int = get_consumable_stock(card_id)
+	if current <= 0:
+		return false
+	if current <= 1:
+		consumable_stock.erase(card_id)
+	else:
+		consumable_stock[card_id] = current - 1
+	_save()
+	return true
+
+
+## Tire, rarement (CONSUMABLE_DROP_CHANCE), une Arkanite d'Éveil aléatoire en
+## fin de match et l'ajoute au stock. Retourne un résumé pour l'affichage
+## (vide si pas de chance cette fois).
+func award_match_consumable() -> Dictionary:
+	_ensure_loaded()
+	if randf() >= CONSUMABLE_DROP_CHANCE:
+		return {}
+	var pool: Array[ArkaniteCard] = []
+	for card in ArkaniteDB.get_all():
+		if not card.is_equipable:
+			pool.append(card)
+	if pool.is_empty():
+		return {}
+	pool.shuffle()
+	var card: ArkaniteCard = pool[0]
+	add_consumable(card.id, 1)
+	return {
+		"card_id": card.id,
+		"display_name": card.display_name,
+		"stock": get_consumable_stock(card.id),
+	}
+
+
 func _on_level_up(new_level: int) -> void:
 	if new_level % CHEST_LEVEL_INTERVAL != 0:
 		return
@@ -316,6 +375,7 @@ func _load() -> void:
 	arkanite_fragments = {}
 	owned_arkanites = []
 	equipped_loadout = {}
+	consumable_stock = {}
 	if not FileAccess.file_exists(_save_path):
 		return
 	var file := FileAccess.open(_save_path, FileAccess.READ)
@@ -344,6 +404,10 @@ func _load() -> void:
 			for card_id in loadout_data[hero_name]:
 				ids.append(str(card_id))
 			equipped_loadout[str(hero_name)] = ids
+	var stock_data: Variant = parsed.get("consumable_stock", {})
+	if typeof(stock_data) == TYPE_DICTIONARY:
+		for card_id in stock_data.keys():
+			consumable_stock[str(card_id)] = int(stock_data[card_id])
 
 
 func _save() -> void:
@@ -358,5 +422,6 @@ func _save() -> void:
 		"arkanite_fragments": arkanite_fragments,
 		"owned_arkanites": owned_arkanites,
 		"equipped_loadout": equipped_loadout,
+		"consumable_stock": consumable_stock,
 	}))
 	file.close()

@@ -264,6 +264,18 @@ size = Vector3(0.4, 11.0, 18.0)
 [sub_resource type="BoxShape3D" id="guard_shape"]
 size = Vector3(0.4, 11.0, 18.0)
 
+[sub_resource type="BoxMesh" id="wallmesh_southgap_a"]
+size = Vector3(75.0, 6.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_southgap_a"]
+size = Vector3(75.0, 6.0, 0.4)
+
+[sub_resource type="BoxMesh" id="wallmesh_southgap_b"]
+size = Vector3(69.0, 6.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="wallshape_southgap_b"]
+size = Vector3(69.0, 6.0, 0.4)
+
 [node name="ArenaLabyrinth" type="Node3D"]
 script = ExtResource("1_arena")
 
@@ -1480,18 +1492,6 @@ surface_material_override/0 = SubResource("wall_mat")
 
 [node name="Collision" type="CollisionShape3D" parent="MazeWalls/WallH100"]
 shape = SubResource("wallshape_3")
-
-[sub_resource type="BoxMesh" id="wallmesh_southgap_a"]
-size = Vector3(75.0, 6.0, 0.4)
-
-[sub_resource type="BoxShape3D" id="wallshape_southgap_a"]
-size = Vector3(75.0, 6.0, 0.4)
-
-[sub_resource type="BoxMesh" id="wallmesh_southgap_b"]
-size = Vector3(69.0, 6.0, 0.4)
-
-[sub_resource type="BoxShape3D" id="wallshape_southgap_b"]
-size = Vector3(69.0, 6.0, 0.4)
 
 [node name="WallH101A" type="StaticBody3D" parent="MazeWalls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -37.5, 3.0, 60.0)

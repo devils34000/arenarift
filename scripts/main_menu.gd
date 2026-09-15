@@ -1,7 +1,14 @@
 extends Control
 
 var selected_mode := "DEATHMATCH"
+## Héros réellement choisi pour la partie en cours — n'est plus modifié que
+## par le lobby de sélection des champions (après matchmaking).
 var selected_hero := "AERIS"
+## Héros actuellement affiché dans le panneau de détail de l'onglet HEROES,
+## indépendant de selected_hero : cet onglet n'est plus qu'une galerie de
+## consultation, le vrai choix se fait dans le lobby au lancement d'une
+## partie.
+var _heroes_tab_focus_hero := "AERIS"
 # Renseigné juste avant _launch() par le flux Custom Game (dépend de la map
 # choisie dans le salon, pas du mode) : sans ça, _launch() ne connaissait
 # que le cas "1V1 DUEL" et chargeait toujours arena.tscn pour tout le
@@ -53,6 +60,36 @@ const MODE_CARD_ASSETS := {
 	"2V2 CLASH": "res://assets/menu_design/champ_select/2v2_button.png",
 	"3V3 RIVALRY": "res://assets/menu_design/champ_select/3v3_button.png",
 	"CUSTOM GAME": "res://assets/menu_design/champ_select/custom_button.png",
+}
+## Le héros se choisit désormais dans le lobby de sélection des champions
+## (après matchmaking), plus dans cet écran — ce panneau ne montre donc que
+## des infos sur le mode choisi, pas un aperçu de héros.
+const MODE_DETAILS := {
+	"DEATHMATCH": {
+		"desc": "Chacun pour soi dans l'arène. Le premier à atteindre le score fatal remporte le combat.",
+		"players": "8 JOUEURS  •  FFA",
+		"map": "ARÈNE CENTRALE",
+	},
+	"1V1 DUEL": {
+		"desc": "Duel à mort, un contre un, sans échappatoire. Seule la maîtrise compte.",
+		"players": "2 JOUEURS  •  DUEL",
+		"map": "FOSSE DU DUEL",
+	},
+	"2V2 CLASH": {
+		"desc": "Deux équipes de deux s'affrontent pour le contrôle de l'arène.",
+		"players": "4 JOUEURS  •  2V2",
+		"map": "ARÈNE CENTRALE",
+	},
+	"3V3 RIVALRY": {
+		"desc": "Bataille d'équipe à trois contre trois, pour les affrontements les plus stratégiques.",
+		"players": "6 JOUEURS  •  3V3",
+		"map": "ARÈNE CENTRALE",
+	},
+	"CUSTOM GAME": {
+		"desc": "Configure ta propre partie : carte, règles et joueurs invités à ta convenance.",
+		"players": "JUSQU'À 8 JOUEURS",
+		"map": "AU CHOIX",
+	},
 }
 const MODE_CARD_HEIGHT_CATEGORY: float = 110.0
 ## 5 cartes + le panneau latéral doivent tenir sous le bas du cadre
@@ -743,22 +780,22 @@ func _show_arena_modes() -> void:
 	var side := _panel(Vector2.ZERO, Vector2(290, 380), Color("1a140b"), Color("4a3018"), 14)
 	side.custom_minimum_size = Vector2(290, 380)
 	row.add_child(side)
-	var hero_accent := _hero_accent(selected_hero)
-	side.add_child(_label("READY", 10, Color("6fb88a"), Vector2(18, 16), Vector2(90, 18)))
-	side.add_child(_label(selected_hero, 25, hero_accent, Vector2(18, 43), Vector2(250, 34)))
-	side.add_child(_label(_hero_role(selected_hero), 10, Color("8a7a5a"), Vector2(20, 79), Vector2(250, 18)))
-	var portrait := TextureRect.new()
-	portrait.position = Vector2(150, 105)
-	portrait.size = Vector2(120, 150)
-	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var portrait_path := _hero_art(selected_hero)
-	if portrait_path != "":
-		portrait.texture = load(portrait_path) as Texture2D
-	side.add_child(portrait)
-	side.add_child(_label("CURRENT LOADOUT", 9, Color("7a6a4a"), Vector2(18, 245), Vector2(150, 18)))
-	side.add_child(_label(_hero_spells(selected_hero), 10, Color("c4b394"), Vector2(18, 270), Vector2(250, 42)))
+
+	var details: Dictionary = MODE_DETAILS.get(selected_mode, {})
+	var mode_accent: Color = _mode_accent(selected_mode)
+
+	side.add_child(_label("MODE SÉLECTIONNÉ", 10, Color("6fb88a"), Vector2(18, 16), Vector2(254, 18)))
+	side.add_child(_label(selected_mode, 22, mode_accent, Vector2(18, 40), Vector2(254, 30)))
+
+	var desc_label := _label(str(details.get("desc", "")), 11, Color("c4b394"), Vector2(18, 78), Vector2(254, 84))
+	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	side.add_child(desc_label)
+
+	side.add_child(_label("JOUEURS", 9, Color("7a6a4a"), Vector2(18, 172), Vector2(120, 16)))
+	side.add_child(_label(str(details.get("players", "")), 13, Color("f3e6c8"), Vector2(18, 190), Vector2(254, 20)))
+
+	side.add_child(_label("CARTE", 9, Color("7a6a4a"), Vector2(18, 224), Vector2(120, 16)))
+	side.add_child(_label(str(details.get("map", "")), 13, Color("f3e6c8"), Vector2(18, 242), Vector2(254, 20)))
 
 	var launch := _button("SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY", Vector2(280, 48), true)
 	launch.position = Vector2(18, 320)
@@ -1996,7 +2033,11 @@ func _show_heroes() -> void:
 	_clear()
 	title.text = "HEROES"
 
-	var subtitle := _label("CHOISISSEZ VOTRE CHAMPION", 10, Color("b8935a"), Vector2(0, 44), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER)
+	# Le choix du héros pour la partie se fait désormais dans le lobby de
+	# sélection des champions (après matchmaking) — cet onglet n'est plus
+	# qu'une galerie de consultation, d'où le vocabulaire neutre ("aperçu"
+	# plutôt que "sélection") et l'absence de bouton "choisir".
+	var subtitle := _label("GALERIE DES CHAMPIONS", 10, Color("b8935a"), Vector2(0, 44), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER)
 	content.add_child(subtitle)
 
 	var main_row := HBoxContainer.new()
@@ -2011,15 +2052,27 @@ func _show_heroes() -> void:
 	cards.add_theme_constant_override("separation", 6)
 	main_row.add_child(cards)
 
-	cards.add_child(_hero_card("AERIS", "ARCANE SKIRMISHER", "DPS / BURST", Color("5b9bc4"), "ARC BOLT • TELEPORT • PHASE DASH"))
-	cards.add_child(_hero_card("MAYLINH", "MYSTIC WARDEN", "HEALER / CONTROLLER", Color("4fae7d"), "ÉCLAT • SOIN • FUITE"))
-	cards.add_child(_hero_card("KAITHLYN", "BARBARIAN", "BERSERKER / CONTROLLER", Color("c98a3d"), "HACHE • BOUCLIER • CHARGE"))
-	cards.add_child(_hero_card("EREN", "CHEVALIER DE FEU", "FIRE BURST / CONTROLLER", Color("d9691f"), "BOULE DE FEU • NOVA • CHARGE"))
+	cards.add_child(_hero_card("AERIS", "ARCANE SKIRMISHER", "DPS / BURST", Color("5b9bc4"), "ARC BOLT • TELEPORT • PHASE DASH", _heroes_tab_focus_hero == "AERIS", func():
+		_heroes_tab_focus_hero = "AERIS"
+		_show_heroes_deferred()
+	))
+	cards.add_child(_hero_card("MAYLINH", "MYSTIC WARDEN", "HEALER / CONTROLLER", Color("4fae7d"), "ÉCLAT • SOIN • FUITE", _heroes_tab_focus_hero == "MAYLINH", func():
+		_heroes_tab_focus_hero = "MAYLINH"
+		_show_heroes_deferred()
+	))
+	cards.add_child(_hero_card("KAITHLYN", "BARBARIAN", "BERSERKER / CONTROLLER", Color("c98a3d"), "HACHE • BOUCLIER • CHARGE", _heroes_tab_focus_hero == "KAITHLYN", func():
+		_heroes_tab_focus_hero = "KAITHLYN"
+		_show_heroes_deferred()
+	))
+	cards.add_child(_hero_card("EREN", "CHEVALIER DE FEU", "FIRE BURST / CONTROLLER", Color("d9691f"), "BOULE DE FEU • NOVA • CHARGE", _heroes_tab_focus_hero == "EREN", func():
+		_heroes_tab_focus_hero = "EREN"
+		_show_heroes_deferred()
+	))
 
-	main_row.add_child(_hero_detail_panel(selected_hero))
+	main_row.add_child(_hero_detail_panel(_heroes_tab_focus_hero))
 
-	content.add_child(_label("SÉLECTION  •  %s" % selected_hero, 12, _hero_accent(selected_hero), Vector2(0, 516), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER))
-	content.add_child(_label(_hero_description(selected_hero), 9, Color("9a8760"), Vector2(0, 541), Vector2(946, 25), HORIZONTAL_ALIGNMENT_CENTER))
+	content.add_child(_label("APERÇU  •  %s" % _heroes_tab_focus_hero, 12, _hero_accent(_heroes_tab_focus_hero), Vector2(0, 516), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER))
+	content.add_child(_label(_hero_description(_heroes_tab_focus_hero), 9, Color("9a8760"), Vector2(0, 541), Vector2(946, 25), HORIZONTAL_ALIGNMENT_CENTER))
 
 
 ## Lobby de sélection de personnage : affiché une fois le match trouvé et la
@@ -2365,10 +2418,15 @@ func _disconnect_lobby_signals() -> void:
 		Network.lobby_cancelled.disconnect(_on_lobby_cancelled)
 
 
-func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color, spells: String, on_pick: Callable = Callable()) -> Panel:
+## Carte de consultation d'un héros dans la galerie HEROES : plus de notion
+## de "choix" ici (le héros de la partie se sélectionne dans le lobby au
+## lancement) — cliquer une carte l'affiche simplement en grand dans le
+## panneau de détail à droite. `is_focused` reflète l'état d'affichage local
+## de cet onglet (_heroes_tab_focus_hero), pas selected_hero.
+func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color, spells: String, is_focused: bool, on_focus: Callable) -> Panel:
 	var card := _panel(Vector2.ZERO, Vector2(156, 438), Color("140f09eb"), Color("4a3018"), 13)
 	card.custom_minimum_size = Vector2(156, 438)
-	if hero_name == selected_hero:
+	if is_focused:
 		card.add_theme_stylebox_override("panel", _box(Color("2c2010f2"), accent, 13, 2))
 
 	var preview := _hero_3d_preview(hero_name, Vector2(148, 238), Vector2(4, 4), false)
@@ -2385,13 +2443,7 @@ func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color
 	info_hitbox.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	info_hitbox.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
 	info_hitbox.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
-	info_hitbox.pressed.connect(func():
-		selected_hero = hero_name
-		if on_pick.is_valid():
-			on_pick.call()
-		else:
-			_show_heroes_deferred()
-	)
+	info_hitbox.pressed.connect(on_focus)
 	card.add_child(info_hitbox)
 
 	card.add_child(_label(hero_name, 18, accent, Vector2(8, 246), Vector2(140, 24), HORIZONTAL_ALIGNMENT_CENTER))
@@ -2412,16 +2464,10 @@ func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color
 		spell_icons.add_child(icon)
 	card.add_child(spell_icons)
 
-	var button := _button("SÉLECTIONNÉ" if hero_name == selected_hero else "CHOISIR", Vector2(136, 31), hero_name == selected_hero)
+	var button := _button("VOIR LES DÉTAILS", Vector2(136, 31), is_focused)
 	button.position = Vector2(10, 397)
 	button.size = Vector2(136, 31)
-	button.pressed.connect(func():
-		selected_hero = hero_name
-		if on_pick.is_valid():
-			on_pick.call()
-		else:
-			_show_heroes_deferred()
-	)
+	button.pressed.connect(on_focus)
 	card.add_child(button)
 	return card
 
@@ -2612,7 +2658,7 @@ func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEI
 	var b := Button.new()
 	b.text = mode
 	b.custom_minimum_size = Vector2(600, card_height)
-	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_apply_banner_text_style(b, 19)

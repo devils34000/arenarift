@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdungrmboss1"]
+
+[ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
+
+[node name="RoomBoss" type="Node3D"]
+script = ExtResource("1_builder")
+room_size = Vector2(18, 18)
+wall_height = 4.2
+doors = 4
+accent_color = Color(0.5, 0.18, 0.16, 1)
+floor_color = Color(0.32, 0.14, 0.13, 1)

@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdungrmdeada1"]
+
+[ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
+
+[node name="RoomDeadEndA" type="Node3D"]
+script = ExtResource("1_builder")
+room_size = Vector2(7, 7)
+doors = 1
+accent_color = Color(0.4, 0.35, 0.4, 1)
+floor_color = Color(0.32, 0.28, 0.32, 1)

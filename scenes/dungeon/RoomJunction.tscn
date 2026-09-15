@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdungrmjunc1"]
+
+[ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
+
+[node name="RoomJunction" type="Node3D"]
+script = ExtResource("1_builder")
+room_size = Vector2(10, 10)
+doors = 15
+accent_color = Color(0.47, 0.4, 0.31, 1)
+floor_color = Color(0.38, 0.32, 0.24, 1)

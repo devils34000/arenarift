@@ -1,0 +1,17 @@
+[gd_scene load_steps=5 format=3 uid="uid://bdungarenacoop1"]
+
+[ext_resource type="Script" uid="uid://cnxhs10scv8yn" path="res://scripts/arena_3d.gd" id="1_arena3d"]
+[ext_resource type="Script" path="res://addons/dungeon_crawler_3d/nodes/dungeon_generator_3d.gd" id="2_generator"]
+[ext_resource type="Resource" path="res://scenes/dungeon/dungeon_config_coop.tres" id="3_config"]
+[ext_resource type="Script" path="res://scripts/maps/arena_dungeon_coop_setup.gd" id="4_setup"]
+
+[node name="ArenaDungeonCoop" type="Node3D"]
+script = ExtResource("1_arena3d")
+
+[node name="DungeonGenerator3D" type="Node3D" parent="."]
+script = ExtResource("2_generator")
+config = ExtResource("3_config")
+
+[node name="DungeonCoopSetup" type="Node3D" parent="."]
+script = ExtResource("4_setup")
+generator_path = NodePath("../DungeonGenerator3D")

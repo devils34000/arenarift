@@ -705,36 +705,6 @@ fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_vlacr")
 draw_pass_1 = SubResource("CylinderMesh_0w3rg")
 
-[node name="Shrapnel" type="GPUParticles3D" parent="." unique_id=61687413]
-material_override = SubResource("ShaderMaterial_7n1rb")
-emitting = false
-amount = 24
-one_shot = true
-explosiveness = 1.0
-trail_enabled = false
-process_material = SubResource("ParticleProcessMaterial_rwmal")
-draw_pass_1 = SubResource("TubeTrailMesh_3kx6f")
-
-[node name="Bits" type="GPUParticles3D" parent="." unique_id=2115321539]
-material_override = SubResource("ShaderMaterial_ot4sq")
-emitting = false
-amount = 4
-sub_emitter = NodePath("../BitsTrail")
-lifetime = 2.0
-one_shot = true
-explosiveness = 1.0
-transform_align = 2
-process_material = SubResource("ParticleProcessMaterial_51bll")
-draw_pass_1 = SubResource("SphereMesh_x8wfc")
-
-[node name="BitsTrail" type="GPUParticles3D" parent="." unique_id=1755072461]
-material_override = SubResource("ShaderMaterial_8bxkv")
-amount = 128
-lifetime = 0.6
-transform_align = 1
-process_material = SubResource("ParticleProcessMaterial_hloy3")
-draw_pass_1 = SubResource("QuadMesh_0rrcw")
-
 [node name="VFXOmniLightBB" type="OmniLight3D" parent="." unique_id=230307962]
 light_color = Color(1, 0.37254903, 0.10980392, 1)
 light_energy = 10.0

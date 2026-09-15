@@ -960,13 +960,3 @@ script = ExtResource("6_5gnia")
 light_mult = 0.0
 vfx_light_energy = 20.0
 metadata/_custom_type_script = "uid://bwmucxp58uvvt"
-
-[node name="Shrapnel" type="GPUParticles3D" parent="." unique_id=383676319]
-material_override = SubResource("ShaderMaterial_57eg0")
-emitting = false
-amount = 64
-one_shot = true
-explosiveness = 1.0
-trail_enabled = false
-process_material = SubResource("ParticleProcessMaterial_rpaum")
-draw_pass_1 = SubResource("TubeTrailMesh_cp0jp")

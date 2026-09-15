@@ -364,7 +364,10 @@ func spawn_eren_fire_projectile(projectile: Node3D, direction: Vector3) -> Node3
 	fx.scale = Vector3.ONE * 1.15
 	if direction.length_squared() > 0.001:
 		var d := direction.normalized()
-		fx.rotation.y = atan2(d.x, d.z)
+		# Ce mesh du pack est orienté "avant = +X" (sa traîne part vers -X dans
+		# la scène source), contrairement à la convention +Z utilisée ailleurs
+		# dans ce fichier — d'où la boule de feu qui partait de travers.
+		fx.rotation.y = atan2(-d.z, d.x)
 	# On conserve volontairement les couleurs, shaders et proportions du pack.
 	fx.set("emission", 3.0)
 	fx.set("light_energy", 6.0)
@@ -433,17 +436,20 @@ func spawn_eren_fire_impact(parent: Node, position: Vector3, scale_value: float 
 	return explosion if explosion != null else impact
 
 func spawn_eren_fire_trail(parent: Node, position: Vector3, direction: Vector3) -> Node3D:
-	# La traînée utilise le vrai Fire Area du pack pour le flash initial (bref),
-	# + une marque de brûlure procédurale qui reste au sol pendant 3 secondes
-	# (durée de vie réelle de la zone de dégâts, cf. eren_fire_trails côté gameplay).
+	# La traînée utilise le vrai Fire Area du pack pour le flash initial (bref, throttlé
+	# pour éviter d'empiler trop de bursts), + une marque de brûlure procédurale qui reste
+	# au sol pendant 3 secondes (durée de vie réelle de la zone de dégâts, cf.
+	# eren_fire_trails côté gameplay). Contrairement au flash, la marque n'est PAS
+	# throttlée : la charge d'Eren dure ~0.35s, il faut plusieurs marques qui se
+	# chevauchent pour que la trace se voie vraiment derrière lui.
 	if parent == null:
 		return null
+	_spawn_eren_scorch_decal(parent, position, direction)
+
 	if eren_trail_vfx_clock > 0.0:
 		eren_trail_vfx_clock = maxf(0.0, eren_trail_vfx_clock - 0.055)
 		return null
 	eren_trail_vfx_clock = 0.09
-
-	_spawn_eren_scorch_decal(parent, position, direction)
 
 	if EREN_FIRE_AREA_VFX == null:
 		return null
@@ -534,7 +540,8 @@ func spawn_maylinh_elemental_projectile(projectile: Node3D, direction: Vector3) 
 	fx.scale = Vector3.ONE * 0.95
 	if direction.length_squared() > 0.001:
 		var d := direction.normalized()
-		fx.rotation.y = atan2(d.x, d.z)
+		# Même remarque que pour Eren : ce mesh est orienté "avant = +X".
+		fx.rotation.y = atan2(-d.z, d.x)
 	# Même VFX Elemental Magic validé pour Maylinh, avec sa teinte verte.
 	fx.set("primary_color", Color("b8ff45"))
 	fx.set("secondary_color", Color("55ff2e"))

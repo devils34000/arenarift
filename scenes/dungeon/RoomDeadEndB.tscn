@@ -1,5 +1,6 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=23 format=3]
 
+[ext_resource type="Script" path="res://addons/dungeon_crawler_3d/nodes/room_connector_3d.gd" id="0_connector"]
 [ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_1"]
@@ -112,8 +113,9 @@ shape = SubResource("BoxShape3D_10")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0, 3.0, 0)
 mesh = SubResource("BoxMesh_11")
 material_override = SubResource("StandardMaterial3D_4")
-[node name="Connector_2" type="RoomConnector3D" parent="Walls"]
+[node name="Connector_2" type="Node3D" parent="Walls"]
 transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 4.0, 0, 0)
+script = ExtResource("0_connector")
 connection_type = "standard_door"
 aperture_width = 2.3
 aperture_height = 2.6

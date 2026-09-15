@@ -55,7 +55,10 @@ const MODE_CARD_ASSETS := {
 	"CUSTOM GAME": "res://assets/menu_design/champ_select/custom_button.png",
 }
 const MODE_CARD_HEIGHT_CATEGORY: float = 110.0
-const MODE_CARD_HEIGHT_LIST: float = 92.0
+## 5 cartes + le panneau latéral doivent tenir sous le bas du cadre
+## principal : à 92px la liste débordait hors du cadre (visible en bas
+## d'écran sur CUSTOM GAME) — 76px la fait rentrer avec un peu de marge.
+const MODE_CARD_HEIGHT_LIST: float = 76.0
 const CREATE_PARTY_BUTTON_ASSET := "res://assets/menu_design/champ_select/create_party_button.png"
 
 ## Les bannières font 2172x724 mais le cadre orné (médaillon + filet doré)
@@ -762,6 +765,7 @@ func _show_arena_modes() -> void:
 	launch.size = Vector2(254, 58)
 	launch.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_apply_banner_launch_style(launch)
+	_apply_banner_text_style(launch, 16)
 	if selected_mode == "CUSTOM GAME":
 		launch.pressed.connect(_show_custom_game_home)
 	else:
@@ -2611,14 +2615,7 @@ func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEI
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	b.add_theme_font_size_override("font_size", 17)
-	b.add_theme_constant_override("outline_size", 1)
-	b.add_theme_color_override("font_outline_color", Color("0a0603"))
-	# Même traitement "plaque gravée" que les autres boutons mis en avant du
-	# menu (_button()) : bronze allumé pour le mode actif, léger liseré doré
-	# pour les autres, plutôt que du brun plat sans relief.
-	b.add_theme_color_override("font_color", Color("fff2d4") if selected else Color("d4c4a0"))
-	b.add_theme_color_override("font_hover_color", Color("fff2d4"))
+	_apply_banner_text_style(b, 19)
 
 	var frame_tex: Texture2D = null
 	if MODE_CARD_ASSETS.has(mode):
@@ -2659,6 +2656,23 @@ func _mode_card(mode: String, selected: bool, card_height: float = MODE_CARD_HEI
 			b.add_theme_stylebox_override("normal", _rune_box(Color("6b3a12"), Color("e8b656"), 2))
 		b.add_theme_stylebox_override("focus", _rune_box(Color("2c2010"), Color("f4c977"), 2))
 	return b
+
+## Habillage texte lisible par-dessus une bannière illustrée chargée (photo
+## + halo) : contour épais quasi noir + ombre portée, seul moyen fiable de
+## garder le texte net quel que soit ce qu'il y a derrière, plutôt qu'un
+## simple contour fin qui se noie dans l'artwork.
+func _apply_banner_text_style(b: Button, font_size: int) -> void:
+	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_constant_override("outline_size", 3)
+	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	b.add_theme_color_override("font_color", Color("fff6e0"))
+	b.add_theme_color_override("font_hover_color", Color("ffffff"))
+	b.add_theme_color_override("font_focus_color", Color("ffffff"))
+	b.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
+	b.add_theme_constant_override("shadow_offset_x", 0)
+	b.add_theme_constant_override("shadow_offset_y", 2)
+	b.add_theme_constant_override("shadow_outline_size", 2)
+
 
 ## Skin bannière (icône groupe à gauche, flèche à droite) pour le bouton
 ## CRÉER LA PARTY / SALON CUSTOM GAME du panneau latéral — même famille

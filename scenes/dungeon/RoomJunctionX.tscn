@@ -1,263 +1,99 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=9 format=3]
 
-[ext_resource type="Script" path="res://addons/dungeon_crawler_3d/nodes/room_connector_3d.gd" id="0_connector"]
-[ext_resource type="Script" path="res://scripts/maps/dungeon_room_builder.gd" id="1_builder"]
-[ext_resource type="Material" path="res://scenes/dungeon/materials/DungeonWallMaterial.tres" id="90_wallmat"]
-[ext_resource type="Material" path="res://scenes/dungeon/materials/DungeonFloorMaterial.tres" id="91_floormat"]
-[ext_resource type="Material" path="res://scenes/dungeon/materials/DungeonPillarMaterial.tres" id="92_pillarmat"]
+[ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/floor_2x2.fbx" id="1_floor"]
+[ext_resource type="PackedScene" path="res://assets/KatsBits-fantasy-base/Meshes/wall_X_junction.fbx" id="2_walls"]
+[ext_resource type="Script" path="res://addons/dungeon_crawler_3d/nodes/room_connector_3d.gd" id="3_connector"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_Floor"]
-size = Vector3(8.0, 0.4, 8.0)
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_Floor"]
-albedo_color = Color(0.24, 0.27, 0.33, 1)
-roughness = 0.9
-[sub_resource type="BoxShape3D" id="BoxShape3D_Floor"]
-size = Vector3(8.0, 0.4, 8.0)
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_Wall"]
-albedo_color = Color(0.3, 0.35, 0.42, 1)
-roughness = 0.88
+[sub_resource type="BoxShape3D" id="FloorShape"]
+size = Vector3(4, 0.2, 4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_1A"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxShape3D" id="BoxShape3D_1A"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxMesh" id="BoxMesh_1B"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxShape3D" id="BoxShape3D_1B"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxMesh" id="BoxMesh_Lintel1"]
-size = Vector3(2.3, 0.8, 0.4)
+[sub_resource type="BoxShape3D" id="NorthShape"]
+size = Vector3(4, 2, 0.3)
 
-[sub_resource type="BoxMesh" id="BoxMesh_2A"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxShape3D" id="BoxShape3D_2A"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxMesh" id="BoxMesh_2B"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxShape3D" id="BoxShape3D_2B"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxMesh" id="BoxMesh_Lintel2"]
-size = Vector3(0.4, 0.8, 2.3)
+[sub_resource type="BoxShape3D" id="SouthShape"]
+size = Vector3(4, 2, 0.3)
 
-[sub_resource type="BoxMesh" id="BoxMesh_4A"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxShape3D" id="BoxShape3D_4A"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxMesh" id="BoxMesh_4B"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxShape3D" id="BoxShape3D_4B"]
-size = Vector3(2.85, 3.4, 0.4)
-[sub_resource type="BoxMesh" id="BoxMesh_Lintel4"]
-size = Vector3(2.3, 0.8, 0.4)
+[sub_resource type="BoxShape3D" id="EastShape"]
+size = Vector3(0.3, 2, 4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_8A"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxShape3D" id="BoxShape3D_8A"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxMesh" id="BoxMesh_8B"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxShape3D" id="BoxShape3D_8B"]
-size = Vector3(0.4, 3.4, 2.85)
-[sub_resource type="BoxMesh" id="BoxMesh_Lintel8"]
-size = Vector3(0.4, 0.8, 2.3)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_Pillar"]
-albedo_color = Color(0.255, 0.2975, 0.357, 1)
-roughness = 0.85
-[sub_resource type="CylinderMesh" id="CylinderMesh_0"]
-top_radius = 0.35
-bottom_radius = 0.4
-height = 3.4
-radial_segments = 10
-[sub_resource type="CylinderMesh" id="CylinderMesh_1"]
-top_radius = 0.35
-bottom_radius = 0.4
-height = 3.4
-radial_segments = 10
-[sub_resource type="CylinderMesh" id="CylinderMesh_2"]
-top_radius = 0.35
-bottom_radius = 0.4
-height = 3.4
-radial_segments = 10
-[sub_resource type="CylinderMesh" id="CylinderMesh_3"]
-top_radius = 0.35
-bottom_radius = 0.4
-height = 3.4
-radial_segments = 10
+[sub_resource type="BoxShape3D" id="WestShape"]
+size = Vector3(0.3, 2, 4)
 
 [node name="RoomJunctionX" type="Node3D"]
-script = ExtResource("1_builder")
-room_size = Vector2(8.0, 8.0)
-wall_height = 3.4
-wall_thickness = 0.4
-door_width = 2.3
-door_height = 2.6
-doors = 15
+
+[node name="Floor_NW" parent="." instance=ExtResource("1_floor")]
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, -1, 0, -1)
+
+[node name="Floor_NE" parent="." instance=ExtResource("1_floor")]
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, 1, 0, -1)
+
+[node name="Floor_SW" parent="." instance=ExtResource("1_floor")]
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, -1, 0, 1)
+
+[node name="Floor_SE" parent="." instance=ExtResource("1_floor")]
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, 1, 0, 1)
+
+[node name="FloorCollision" type="StaticBody3D" parent="."]
+collision_layer = 3
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FloorCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("FloorShape")
+
+[node name="Walls" parent="." instance=ExtResource("2_walls")]
+transform = Transform3D(0.97, 0, 0, 0, 1, 0, 0, 0, 0.97, 0, 0, 0)
+
+[node name="WallsCollision" type="StaticBody3D" parent="."]
+collision_layer = 3
+collision_mask = 1
+
+[node name="North" type="CollisionShape3D" parent="WallsCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1.85)
+shape = SubResource("NorthShape")
+
+[node name="South" type="CollisionShape3D" parent="WallsCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1.85)
+shape = SubResource("SouthShape")
+
+[node name="East" type="CollisionShape3D" parent="WallsCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.85, 1, 0)
+shape = SubResource("EastShape")
+
+[node name="West" type="CollisionShape3D" parent="WallsCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 1, 0)
+shape = SubResource("WestShape")
+
+[node name="Connector_North" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+script = ExtResource("3_connector")
 connection_type = "standard_door"
-accent_color = Color(0.3, 0.35, 0.42, 1)
-floor_color = Color(0.24, 0.27, 0.33, 1)
-has_torch = true
+aperture_width = 2.0
+aperture_height = 2.0
 
-[node name="Floor" type="MeshInstance3D" parent="."]
-mesh = SubResource("BoxMesh_Floor")
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
-material_override = ExtResource("91_floormat")
-[node name="FloorCollision" type="StaticBody3D" parent="Floor"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/FloorCollision"]
-shape = SubResource("BoxShape3D_Floor")
-
-[node name="Walls" type="Node3D" parent="."]
-
-[node name="Wall_1_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.575, 1.7, -3.8)
-mesh = SubResource("BoxMesh_1A")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_A"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_A/Collision"]
-shape = SubResource("BoxShape3D_1A")
-
-[node name="Wall_1_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.575, 1.7, -3.8)
-mesh = SubResource("BoxMesh_1B")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_1_B"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_1_B/Collision"]
-shape = SubResource("BoxShape3D_1B")
-
-[node name="Lintel_1" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 3.0, -3.8)
-mesh = SubResource("BoxMesh_Lintel1")
-material_override = ExtResource("90_wallmat")
-
-[node name="Connector_1" type="Node3D" parent="Walls"]
-transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 0, 0, -4.0)
-script = ExtResource("0_connector")
+[node name="Connector_South" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 2)
+script = ExtResource("3_connector")
 connection_type = "standard_door"
-aperture_width = 2.3
-aperture_height = 2.6
+aperture_width = 2.0
+aperture_height = 2.0
 
-[node name="Wall_2_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 1.7, -2.575)
-mesh = SubResource("BoxMesh_2A")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_2_A"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2_A/Collision"]
-shape = SubResource("BoxShape3D_2A")
-
-[node name="Wall_2_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 1.7, 2.575)
-mesh = SubResource("BoxMesh_2B")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_2_B"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_2_B/Collision"]
-shape = SubResource("BoxShape3D_2B")
-
-[node name="Lintel_2" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 3.0, 0.0)
-mesh = SubResource("BoxMesh_Lintel2")
-material_override = ExtResource("90_wallmat")
-
-[node name="Connector_2" type="Node3D" parent="Walls"]
-transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 4.0, 0, 0)
-script = ExtResource("0_connector")
+[node name="Connector_East" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2, 0, 0)
+script = ExtResource("3_connector")
 connection_type = "standard_door"
-aperture_width = 2.3
-aperture_height = 2.6
+aperture_width = 2.0
+aperture_height = 2.0
 
-[node name="Wall_4_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.575, 1.7, 3.8)
-mesh = SubResource("BoxMesh_4A")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_A"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_A/Collision"]
-shape = SubResource("BoxShape3D_4A")
-
-[node name="Wall_4_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.575, 1.7, 3.8)
-mesh = SubResource("BoxMesh_4B")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_4_B"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_4_B/Collision"]
-shape = SubResource("BoxShape3D_4B")
-
-[node name="Lintel_4" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 3.0, 3.8)
-mesh = SubResource("BoxMesh_Lintel4")
-material_override = ExtResource("90_wallmat")
-
-[node name="Connector_4" type="Node3D" parent="Walls"]
-transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 0, 0, 4.0)
-script = ExtResource("0_connector")
+[node name="Connector_West" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 0)
+script = ExtResource("3_connector")
 connection_type = "standard_door"
-aperture_width = 2.3
-aperture_height = 2.6
-
-[node name="Wall_8_A" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 1.7, -2.575)
-mesh = SubResource("BoxMesh_8A")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_8_A"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8_A/Collision"]
-shape = SubResource("BoxShape3D_8A")
-
-[node name="Wall_8_B" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 1.7, 2.575)
-mesh = SubResource("BoxMesh_8B")
-material_override = ExtResource("90_wallmat")
-[node name="Collision" type="StaticBody3D" parent="Walls/Wall_8_B"]
-collision_layer = 3
-collision_mask = 1
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/Wall_8_B/Collision"]
-shape = SubResource("BoxShape3D_8B")
-
-[node name="Lintel_8" type="MeshInstance3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 3.0, 0.0)
-mesh = SubResource("BoxMesh_Lintel8")
-material_override = ExtResource("90_wallmat")
-
-[node name="Connector_8" type="Node3D" parent="Walls"]
-transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -4.0, 0, 0)
-script = ExtResource("0_connector")
-connection_type = "standard_door"
-aperture_width = 2.3
-aperture_height = 2.6
-
-[node name="Pillars" type="Node3D" parent="."]
-[node name="Pillar_0" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 1.7, 3.6)
-mesh = SubResource("CylinderMesh_0")
-material_override = ExtResource("92_pillarmat")
-[node name="Pillar_1" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.6, 1.7, 3.6)
-mesh = SubResource("CylinderMesh_1")
-material_override = ExtResource("92_pillarmat")
-[node name="Pillar_2" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 1.7, -3.6)
-mesh = SubResource("CylinderMesh_2")
-material_override = ExtResource("92_pillarmat")
-[node name="Pillar_3" type="MeshInstance3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.6, 1.7, -3.6)
-mesh = SubResource("CylinderMesh_3")
-material_override = ExtResource("92_pillarmat")
+aperture_width = 2.0
+aperture_height = 2.0
 
 [node name="Torch" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.55, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
 light_color = Color(1, 0.6666667, 0.33333334, 1)
 light_energy = 2.0
 omni_range = 6.4

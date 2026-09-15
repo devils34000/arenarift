@@ -1848,7 +1848,7 @@ func _on_matchmaking_peer_arrived(peer_id: int) -> void:
 	_update_search_button_ui(false)
 	_set_matchmaking_status("MATCH TROUVÉ • CONNEXION OK")
 
-	call_deferred("_launch")
+	call_deferred("_show_hero_select_lobby")
 
 
 ## Bascule le bouton de recherche entre son rôle "RECHERCHER" (idle) et
@@ -1949,7 +1949,55 @@ func _show_heroes() -> void:
 	content.add_child(_label(_hero_description(selected_hero), 9, Color("9a8760"), Vector2(0, 541), Vector2(946, 25), HORIZONTAL_ALIGNMENT_CENTER))
 
 
-func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color, spells: String) -> Panel:
+## Lobby de sélection de personnage : affiché une fois le match trouvé et la
+## connexion au serveur de partie établie, à la place du lancement direct.
+## Le joueur choisit/confirme son héros ICI plutôt qu'à l'avance dans le
+## menu principal — la connexion réseau est déjà active (join() a réussi),
+## seul l'envoi du RPC "arena_client_ready" (déclenché par _launch() ->
+## Arena._ready() -> _send_network_ready()) est retardé jusqu'à ce que le
+## joueur confirme, donc aucun changement côté serveur n'est nécessaire :
+## le serveur attend déjà ce RPC (countdown de préparation existant).
+func _show_hero_select_lobby() -> void:
+	_clear()
+	title.text = "LOBBY"
+
+	var subtitle := _label("MATCH TROUVÉ  •  CHOISIS TON HÉROS", 10, Color("b8935a"), Vector2(0, 44), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER)
+	content.add_child(subtitle)
+
+	var main_row := HBoxContainer.new()
+	main_row.position = Vector2(0, 68)
+	main_row.size = Vector2(946, 438)
+	main_row.add_theme_constant_override("separation", 12)
+	content.add_child(main_row)
+
+	var cards := HBoxContainer.new()
+	cards.custom_minimum_size = Vector2(642, 438)
+	cards.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	cards.add_theme_constant_override("separation", 6)
+	main_row.add_child(cards)
+
+	cards.add_child(_hero_card("AERIS", "ARCANE SKIRMISHER", "DPS / BURST", Color("5b9bc4"), "ARC BOLT • TELEPORT • PHASE DASH", _show_hero_select_lobby_deferred))
+	cards.add_child(_hero_card("MAYLINH", "MYSTIC WARDEN", "HEALER / CONTROLLER", Color("4fae7d"), "ÉCLAT • SOIN • FUITE", _show_hero_select_lobby_deferred))
+	cards.add_child(_hero_card("KAITHLYN", "BARBARIAN", "BERSERKER / CONTROLLER", Color("c98a3d"), "HACHE • BOUCLIER • CHARGE", _show_hero_select_lobby_deferred))
+	cards.add_child(_hero_card("EREN", "CHEVALIER DE FEU", "FIRE BURST / CONTROLLER", Color("d9691f"), "BOULE DE FEU • NOVA • CHARGE", _show_hero_select_lobby_deferred))
+
+	main_row.add_child(_hero_detail_panel(selected_hero))
+
+	content.add_child(_label("SÉLECTION  •  %s" % selected_hero, 12, _hero_accent(selected_hero), Vector2(0, 516), Vector2(946, 22), HORIZONTAL_ALIGNMENT_CENTER))
+
+	var launch_btn := _button("ENTRER DANS LA PARTIE", Vector2(300, 48), true)
+	launch_btn.position = Vector2(323, 548)
+	launch_btn.size = Vector2(300, 48)
+	launch_btn.pressed.connect(_launch)
+	content.add_child(launch_btn)
+
+
+func _show_hero_select_lobby_deferred() -> void:
+	call_deferred("_show_hero_select_lobby")
+	call_deferred("_focus_first_control")
+
+
+func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color, spells: String, on_pick: Callable = Callable()) -> Panel:
 	var card := _panel(Vector2.ZERO, Vector2(156, 438), Color("140f09eb"), Color("4a3018"), 13)
 	card.custom_minimum_size = Vector2(156, 438)
 	if hero_name == selected_hero:
@@ -1971,7 +2019,10 @@ func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color
 	info_hitbox.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
 	info_hitbox.pressed.connect(func():
 		selected_hero = hero_name
-		_show_heroes_deferred()
+		if on_pick.is_valid():
+			on_pick.call()
+		else:
+			_show_heroes_deferred()
 	)
 	card.add_child(info_hitbox)
 
@@ -1998,7 +2049,10 @@ func _hero_card(hero_name: String, subtitle: String, role: String, accent: Color
 	button.size = Vector2(136, 31)
 	button.pressed.connect(func():
 		selected_hero = hero_name
-		_show_heroes_deferred()
+		if on_pick.is_valid():
+			on_pick.call()
+		else:
+			_show_heroes_deferred()
 	)
 	card.add_child(button)
 	return card

@@ -12,6 +12,9 @@ var selected_hero := "AERIS"
 ## consultation, le vrai choix se fait dans le lobby au lancement d'une
 ## partie.
 var _heroes_tab_focus_hero := "AERIS"
+## Héros actuellement affiché dans l'onglet LOADOUT (indépendant de
+## selected_hero, même principe que _heroes_tab_focus_hero).
+var _loadout_focus_hero := "AERIS"
 # Renseigné juste avant _launch() par le flux Custom Game (dépend de la map
 # choisie dans le salon, pas du mode) : sans ça, _launch() ne connaissait
 # que le cas "1V1 DUEL" et chargeait toujours arena.tscn pour tout le
@@ -727,6 +730,8 @@ func _navigate(item: String) -> void:
 		_show_heroes()
 	elif item == "ARKANITES":
 		_show_arkanites()
+	elif item == "LOADOUT":
+		_show_loadout()
 	else:
 		_show_placeholder(item)
 	call_deferred("_focus_first_control")
@@ -3865,35 +3870,10 @@ func _label(
 	node.horizontal_alignment = align
 
 	return node
-## Snippet à coller dans main_menu.gd (voir GUIDE_installation_arkanites.md
-## pour les deux petites modifications de routage à faire en plus).
-
-const ARKANITE_DATA_DIR := "res://data/arkanites/"
-const ARKANITE_FILES := [
-	"eveil_etude.tres",
-	"eveil_sang_vif.tres",
-	"eveil_fortune.tres",
-	"maitrise_celerite_aeris.tres",
-	"maitrise_resilience_kaithlyn.tres",
-	"maitrise_ardeur_eren.tres",
-	"invocation_voile_maylinh.tres",
-	"invocation_garde_aeris.tres",
-	"invocation_brasier_eren.tres",
-]
-
-## Stockage temporaire en mémoire (perdu à la fermeture du jeu). À remplacer
-## par une vraie sauvegarde (ConfigFile local ou requête serveur) quand vous
-## serez prêt à passer à l'étape de persistance.
-var equipped_arkanites: Dictionary = {}
-
-
-func _load_all_arkanites() -> Array[ArkaniteCard]:
-	var cards: Array[ArkaniteCard] = []
-	for file_name in ARKANITE_FILES:
-		var card := load(ARKANITE_DATA_DIR + file_name) as ArkaniteCard
-		if card != null:
-			cards.append(card)
-	return cards
+## Les 4 héros jouables, dans l'ordre affiché partout (galerie HEROES, lobby,
+## LOADOUT). Utilisé pour construire les rangées de portraits sans dupliquer
+## la liste à chaque écran.
+const HERO_ROSTER: Array[String] = ["AERIS", "MAYLINH", "KAITHLYN", "EREN"]
 
 
 func _show_arkanites() -> void:
@@ -3918,7 +3898,7 @@ func _show_arkanites() -> void:
 	)
 	content.add_child(subtitle)
 
-	var all_cards := _load_all_arkanites()
+	var all_cards := ArkaniteDB.get_all()
 
 	var columns := HBoxContainer.new()
 	columns.position = Vector2(0, 74)
@@ -3990,23 +3970,22 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 	row.add_child(effect_label)
 
 	if card.is_equipable:
-		# Consommables (Éveil) toujours disponibles ; Maîtrise/Invocation se
-		# débloquent progressivement avec le niveau du joueur.
-		var unlocked: bool = PlayerProgress.get_level() >= card.unlock_level
-		var equipped: bool = bool(equipped_arkanites.get(card.id, false))
-		var button_text: String = "ÉQUIPÉE" if equipped else "ÉQUIPER"
-		if not unlocked:
-			button_text = "NIVEAU %d REQUIS" % card.unlock_level
-		var toggle_button := _button(button_text, Vector2(120, 22), equipped)
-		toggle_button.position = Vector2(86, 88)
-		toggle_button.clip_text = true
-		toggle_button.add_theme_font_size_override("font_size", 9 if unlocked else 8)
-		toggle_button.disabled = not relevant_to_selected_hero or not unlocked
-		toggle_button.pressed.connect(func():
-			equipped_arkanites[card.id] = not bool(equipped_arkanites.get(card.id, false))
-			_show_arkanites_deferred()
-		)
-		row.add_child(toggle_button)
+		# Maîtrise/Invocation se possèdent via les fragments gagnés en fin de
+		# match (ou un coffre de palier) — l'équipement sur un héros se gère
+		# désormais dans l'onglet LOADOUT, pas ici.
+		var owned: bool = PlayerProgress.owns_arkanite(card)
+		var status_text: String
+		var status_color: Color
+		if owned:
+			status_text = "POSSÉDÉE  •  ÉQUIPE-LA DANS LOADOUT"
+			status_color = Color("62e6a7")
+		else:
+			var fragments: int = PlayerProgress.get_arkanite_fragments(card.id)
+			status_text = "%d/%d FRAGMENTS" % [fragments, card.fragments_required]
+			status_color = Color("9a8760")
+		var status_label := _label(status_text, 8, status_color, Vector2(86, 90), Vector2(196, 16))
+		status_label.clip_text = true
+		row.add_child(status_label)
 	else:
 		var use_button := _button("UTILISER", Vector2(120, 22), false)
 		use_button.position = Vector2(86, 88)
@@ -4054,6 +4033,216 @@ func _arkanite_card_row(card: ArkaniteCard) -> Panel:
 func _show_arkanites_deferred() -> void:
 	call_deferred("_show_arkanites")
 	call_deferred("_focus_first_control")
+
+
+# =========================================================
+# LOADOUT : équipement des Arkanites par héros (jusqu'à
+# PlayerProgress.LOADOUT_MAX_SLOTS emplacements chacun).
+# =========================================================
+
+func _show_loadout() -> void:
+	_clear()
+	title.text = "LOADOUT"
+
+	var subtitle := _label(
+		"ÉQUIPE TES ARKANITES PAR HÉROS  •  %d EMPLACEMENTS" % PlayerProgress.LOADOUT_MAX_SLOTS,
+		10,
+		Color("b8935a"),
+		Vector2(0, 44),
+		Vector2(946, 22),
+		HORIZONTAL_ALIGNMENT_CENTER
+	)
+	content.add_child(subtitle)
+
+	var hero_row := HBoxContainer.new()
+	hero_row.position = Vector2(0, 72)
+	hero_row.size = Vector2(946, 96)
+	hero_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	hero_row.add_theme_constant_override("separation", 14)
+	content.add_child(hero_row)
+
+	for hero_name in HERO_ROSTER:
+		hero_row.add_child(_loadout_hero_button(hero_name))
+
+	var accent := _hero_accent(_loadout_focus_hero)
+
+	content.add_child(_label(
+		"ÉQUIPÉES SUR %s" % _loadout_focus_hero,
+		12,
+		accent,
+		Vector2(0, 180),
+		Vector2(946, 20),
+		HORIZONTAL_ALIGNMENT_CENTER
+	))
+
+	var slots_row := HBoxContainer.new()
+	slots_row.position = Vector2(0, 206)
+	slots_row.size = Vector2(946, 96)
+	slots_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	slots_row.add_theme_constant_override("separation", 16)
+	content.add_child(slots_row)
+
+	var equipped_ids := PlayerProgress.get_equipped_loadout(_loadout_focus_hero)
+	for i in range(PlayerProgress.LOADOUT_MAX_SLOTS):
+		var card_id: String = equipped_ids[i] if i < equipped_ids.size() else ""
+		slots_row.add_child(_loadout_slot(card_id, accent))
+
+	content.add_child(_label(
+		"ARKANITES ÉQUIPABLES  •  %s" % _loadout_focus_hero,
+		12,
+		accent,
+		Vector2(0, 316),
+		Vector2(946, 20),
+		HORIZONTAL_ALIGNMENT_CENTER
+	))
+
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(180, 342)
+	scroll.size = Vector2(586, 210)
+	content.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.custom_minimum_size = Vector2(570, 0)
+	list.add_theme_constant_override("separation", 8)
+	scroll.add_child(list)
+
+	var pool := ArkaniteDB.get_equipable_for_hero(_loadout_focus_hero)
+	if pool.is_empty():
+		list.add_child(_label(
+			"AUCUNE ARKANITE ÉQUIPABLE POUR CE HÉROS.",
+			10,
+			Color("9a8760"),
+			Vector2.ZERO,
+			Vector2(570, 24),
+			HORIZONTAL_ALIGNMENT_CENTER
+		))
+	for card in pool:
+		list.add_child(_loadout_card_row(card, accent))
+
+
+func _loadout_hero_button(hero_name: String) -> Button:
+	var accent := _hero_accent(hero_name)
+	var selected := hero_name == _loadout_focus_hero
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(130, 90)
+	btn.focus_mode = Control.FOCUS_ALL
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_stylebox_override("normal", _box(Color("241a0df2") if selected else Color("140f09eb"), accent, 10, 3 if selected else 1))
+	btn.add_theme_stylebox_override("hover", _box(Color("241a0d"), accent, 10, 3))
+	btn.add_theme_stylebox_override("focus", _box(Color("241a0d"), accent, 10, 3))
+
+	var icon := TextureRect.new()
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.offset_bottom = -22
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.clip_contents = true
+	icon.texture = _hero_roster_texture(hero_name)
+	btn.add_child(icon)
+
+	var name_label := _label(hero_name, 10, accent, Vector2(0, 68), Vector2(130, 18), HORIZONTAL_ALIGNMENT_CENTER)
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(name_label)
+
+	btn.pressed.connect(func():
+		_loadout_focus_hero = hero_name
+		_show_loadout_deferred()
+	)
+	return btn
+
+
+func _loadout_slot(card_id: String, accent: Color) -> Panel:
+	var slot := _panel(Vector2.ZERO, Vector2(180, 90), Color("140f09eb"), accent if card_id != "" else Color("352818"), 12)
+	slot.custom_minimum_size = Vector2(180, 90)
+	if card_id == "":
+		slot.add_child(_label("EMPLACEMENT LIBRE", 9, Color("6b5d42"), Vector2(10, 34), Vector2(160, 24), HORIZONTAL_ALIGNMENT_CENTER))
+		return slot
+
+	var card := ArkaniteDB.get_by_id(card_id)
+	if card == null:
+		return slot
+
+	var thumb := TextureRect.new()
+	thumb.position = Vector2(8, 8)
+	thumb.size = Vector2(54, 74)
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	thumb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if card.image_path != "":
+		thumb.texture = load(card.image_path) as Texture2D
+	slot.add_child(thumb)
+
+	var name_label := _label(card.display_name, 10, Color("f3e6c8"), Vector2(70, 10), Vector2(104, 32))
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	slot.add_child(name_label)
+
+	var unequip_button := _button("RETIRER", Vector2(96, 20), false)
+	unequip_button.position = Vector2(70, 62)
+	unequip_button.add_theme_font_size_override("font_size", 8)
+	unequip_button.clip_text = true
+	var focus_hero := _loadout_focus_hero
+	unequip_button.pressed.connect(func():
+		PlayerProgress.unequip_arkanite(focus_hero, card_id)
+		_show_loadout_deferred()
+	)
+	slot.add_child(unequip_button)
+	return slot
+
+
+func _loadout_card_row(card: ArkaniteCard, accent: Color) -> Panel:
+	var owned := PlayerProgress.owns_arkanite(card)
+	var equipped := PlayerProgress.is_arkanite_equipped(_loadout_focus_hero, card.id)
+
+	var row := _panel(Vector2.ZERO, Vector2(570, 64), Color("140f09eb"), accent if owned else Color("352818"), 10)
+	row.custom_minimum_size = Vector2(570, 64)
+	if not owned:
+		row.modulate.a = 0.55
+
+	var thumbnail := TextureRect.new()
+	thumbnail.position = Vector2(6, 6)
+	thumbnail.size = Vector2(40, 52)
+	thumbnail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumbnail.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	thumbnail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if card.image_path != "":
+		thumbnail.texture = load(card.image_path) as Texture2D
+	row.add_child(thumbnail)
+
+	row.add_child(_label(card.display_name, 11, Color("f3e6c8"), Vector2(56, 6), Vector2(280, 20)))
+
+	var effect_label := _label(card.effect_text, 8, Color("c4b394"), Vector2(56, 26), Vector2(280, 32))
+	effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.add_child(effect_label)
+
+	var action_button: Button
+	if not owned:
+		var fragments: int = PlayerProgress.get_arkanite_fragments(card.id)
+		action_button = _button("%d/%d FRAGMENTS" % [fragments, card.fragments_required], Vector2(140, 26), false)
+		action_button.disabled = true
+		action_button.add_theme_font_size_override("font_size", 9)
+	else:
+		action_button = _button("RETIRER" if equipped else "ÉQUIPER", Vector2(110, 26), equipped)
+		action_button.clip_text = true
+		var card_id := card.id
+		var focus_hero := _loadout_focus_hero
+		action_button.pressed.connect(func():
+			if PlayerProgress.is_arkanite_equipped(focus_hero, card_id):
+				PlayerProgress.unequip_arkanite(focus_hero, card_id)
+			else:
+				PlayerProgress.equip_arkanite(focus_hero, card_id)
+			_show_loadout_deferred()
+		)
+	action_button.position = Vector2(430, 18)
+	row.add_child(action_button)
+
+	return row
+
+
+func _show_loadout_deferred() -> void:
+	call_deferred("_show_loadout")
+	call_deferred("_focus_first_control")
+
 
 func _show_arkanite_preview(card: ArkaniteCard) -> void:
 	# Empêche d'ouvrir plusieurs popups simultanément.

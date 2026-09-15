@@ -18,6 +18,7 @@ enum Family { EVEIL, MAITRISE, INVOCATION }
 @export var flavor_text: String = ""             ## citation en italique
 @export var is_equipable: bool = false           ## true pour Maîtrise/Invocation, false pour Éveil (consommable)
 @export var unlock_level: int = 1                ## niveau requis pour l'équiper (ignoré pour les consommables)
+@export var fragments_required: int = 8          ## fragments à collecter pour posséder cette Arkanite (Maîtrise/Invocation uniquement)
 
 ## Effets numériques optionnels : uniquement utilisés par les Arkanites de
 ## Maîtrise pour moduler une stat existante. Le nom du champ correspond

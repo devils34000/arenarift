@@ -526,7 +526,13 @@ func _build_controller_cta_prompt(button: Button) -> HBoxContainer:
 ## de l'icône START ; `action` est ce que déclenche START tant que ce CTA
 ## est affiché.
 func _apply_controller_primary_cta(button: Button, label_text: String, action: Callable) -> void:
-	var prompt: Control = button.get_meta("controller_prompt", null)
+	# get_meta(key, null) : passer littéralement null comme défaut ne suffit
+	# pas à éviter l'erreur "no meta values" dans Godot 4 si la clé n'existe
+	# pas encore (null est traité comme "pas de défaut fourni") — il faut
+	# vérifier avec has_meta() d'abord.
+	var prompt: Control = null
+	if button.has_meta("controller_prompt"):
+		prompt = button.get_meta("controller_prompt")
 	if prompt == null or not is_instance_valid(prompt):
 		prompt = _build_controller_cta_prompt(button)
 

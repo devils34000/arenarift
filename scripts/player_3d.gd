@@ -232,6 +232,8 @@ var _jump_start_timer: float = 0.0
 # Contrôleur : états précédents pour garantir les "just pressed/released"
 # sans dépendre de l'InputMap.
 var _controller_prev_rt := false
+var _controller_prev_a := false
+var _controller_prev_rb := false
 
 # Passifs de héros
 var passive_charges: int = 0
@@ -538,24 +540,31 @@ func _player_input(delta: float) -> void:
 			network_input_sequence += 1
 			network_node.arena_player_input.rpc_id(1, move_direction, aim_direction, network_input_sequence, _jump_buffer_left > 0.0, _sprint_active)
 
-	# Dash et nova sont déjà des InputEventJoypadButton mappés dans le
-	# project.godot (action spell_dash/spell_nova) : is_action_just_pressed()
-	# les détecte nativement, pas besoin de repoller le bouton brut en plus —
-	# et ça évitait un vrai bug : le bouton lu ici en dur (Y) ne correspondait
-	# plus au bouton réellement mappé pour spell_nova (RB/bouton 5), donc les
-	# deux déclenchaient la nova sur des boutons différents.
-	# Seule la gâchette droite (orb) a encore besoin d'un polling brut : on a
-	# besoin du front descendant (relâchement) pour le tir chargé de
-	# Kaithlyn, que l'action ne donne pas de façon fiable sur un axe.
+	# Repoll brut EN PLUS de l'action Godot (OR) pour dash/nova/orb : sur
+	# certaines manettes/configs, Input.is_action_just_pressed() sur un
+	# InputEventJoypadButton mappé dans project.godot ne se déclenche
+	# jamais alors que le bouton brut (Input.is_joy_button_pressed) est bien
+	# reçu — vérifié via les vrais button_index rapportés par la manette
+	# (A=0, RB=10, standard XInput), qui correspondent bien au mapping
+	# project.godot. Le polling brut est donc une sécurité supplémentaire,
+	# pas un correctif de mapping.
+	var controller_dash_pressed := false
+	var controller_nova_pressed := false
 	var controller_orb_pressed := false
 	var controller_orb_released := false
 	if controller >= 0:
+		var a_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_A)
+		var rb_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_RIGHT_SHOULDER)
 		var rt_now := Input.get_joy_axis(controller, JOY_AXIS_TRIGGER_RIGHT) > 0.35
+		controller_dash_pressed = a_now and not _controller_prev_a
+		controller_nova_pressed = rb_now and not _controller_prev_rb
 		controller_orb_pressed = rt_now and not _controller_prev_rt
 		controller_orb_released = not rt_now and _controller_prev_rt
+		_controller_prev_a = a_now
+		_controller_prev_rb = rb_now
 		_controller_prev_rt = rt_now
 
-	if Input.is_action_just_pressed("spell_dash"):
+	if Input.is_action_just_pressed("spell_dash") or controller_dash_pressed:
 		if hero_id == "MAYLINH":
 			try_flee()
 		elif hero_id == "KAITHLYN":
@@ -578,7 +587,7 @@ func _player_input(delta: float) -> void:
 		else:
 			try_orb(aim_direction)
 
-	if Input.is_action_just_pressed("spell_nova"):
+	if Input.is_action_just_pressed("spell_nova") or controller_nova_pressed:
 		if hero_id == "MAYLINH":
 			try_heal()
 		elif hero_id == "KAITHLYN":

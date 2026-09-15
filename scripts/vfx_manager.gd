@@ -529,15 +529,16 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.5)
 	ring_tween.parallel().tween_property(ring_mat, "emission_energy_multiplier", 0.0, 0.5)
 
-	# Pentagramme au sol (texture Free Magic d'origine) — remis, redimensionné sur le
-	# vrai rayon de la zone et enrichi de spirales pour un rendu plus soigné.
+	# Pentagramme au sol (texture Free Magic d'origine) — remis, en glyphe personnel
+	# de taille fixe et modeste centré sous ses pieds (indexer sa taille sur le rayon
+	# complet de la zone le faisait envahir tout le sol et "disparaître" à l'écran).
 	var circle_scene := load("res://scenes/vfx/free_magic_circle.tscn") as PackedScene
 	if circle_scene != null:
 		var circle := circle_scene.instantiate() as Node3D
 		if circle != null:
 			root.add_child(circle)
 			circle.position = Vector3.UP * 0.015
-			circle.scale = Vector3.ONE * (r * 0.5)
+			circle.scale = Vector3.ONE * 1.6
 			circle.set("circle_color", HEAL_PRIMARY)
 			circle.set("circle_scale", 2.0)
 			circle.set("spiral_count", 16)

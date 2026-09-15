@@ -394,13 +394,10 @@ func _build_shell() -> void:
 		b.pressed.connect(func(): _navigate_deferred(item))
 		nav.add_child(b)
 
-	_set_border_texture(%RailBorder, "res://assets/menu_design/champ_select/bordure_menu_play.png")
-
 	_build_steam_profile()
 
 	var frame: Panel = %MainFrame
 	frame.add_theme_stylebox_override("panel", _rune_box(Color("110c07eb"), Color("6b4a24"), 2))
-	_set_border_texture(%FrameBorder, "res://assets/menu_design/champ_select/bordure_menu.png")
 
 	title = %Title
 	_use_title_font(title)
@@ -514,23 +511,13 @@ func _cropped_border_texture(path: String) -> Texture2D:
 	return result
 
 
-## Assigne une bordure (recadrée sur son contenu visible) à un TextureRect
-## EXISTANT — utilisé pour les bordures de la coquille statique, dont le
-## nœud (position/taille) vit maintenant dans scenes/main_menu.tscn et est
-## éditable directement dans Godot, plutôt que créé par ce script.
-func _set_border_texture(node: TextureRect, path: String) -> void:
-	var tex := _cropped_border_texture(path)
-	if tex == null:
-		push_warning("Bordure introuvable : " + path)
-		return
-	node.texture = tex
-
-
 ## Pose une bordure décorative (image fournie par le graphiste, transparente
 ## au centre) par-dessus un panneau créé dynamiquement (écrans reconstruits
 ## à chaque navigation, ex. le panneau de détails du mode), étirée
-## exactement sur sa taille. Pour la coquille statique du menu, voir
-## _set_border_texture() à la place.
+## exactement sur sa taille. Les bordures de la coquille statique du menu
+## (rail, cadre, Steam, Niveau) sont maintenant collées directement dans
+## scenes/main_menu.tscn (textures déjà recadrées) pour rester visibles à
+## l'édition — celle-ci ne sert donc plus qu'aux écrans reconstruits.
 func _add_border_overlay(parent: Control, path: String) -> void:
 	var tex := _cropped_border_texture(path)
 	if tex == null:
@@ -586,7 +573,6 @@ func _build_steam_profile() -> void:
 
 	steam_name_label = %NameLabel
 	steam_status_label = %StatusLabel
-	_set_border_texture(%SteamBorder, "res://assets/menu_design/champ_select/bordure_steam.png")
 
 	# Carte "Niveau" séparée, juste à gauche de la carte Steam, sur la même
 	# rangée (même y, même hauteur) pour ne jamais empiéter sur le cadre
@@ -597,7 +583,6 @@ func _build_steam_profile() -> void:
 	level_label = %LevelLabel
 	xp_label = %XpLabel
 	level_progress_fill = %ProgressFill
-	_set_border_texture(%LevelBorder, "res://assets/menu_design/champ_select/bordure_level.png")
 
 	_update_level_display()
 	if not PlayerProgress.xp_changed.is_connected(_on_player_xp_changed):

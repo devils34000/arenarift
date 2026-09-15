@@ -1,8 +1,12 @@
-[gd_scene load_steps=4 format=3 uid="uid://d2dk35a842mn0"]
+[gd_scene load_steps=8 format=3 uid="uid://d2dk35a842mn0"]
 
 [ext_resource type="Script" uid="uid://bl5dlyc5hgjjf" path="res://scripts/main_menu.gd" id="1_menu"]
 [ext_resource type="Texture2D" path="res://assets/menu_art/arena_rift_background.jpg" id="2_bg"]
 [ext_resource type="Texture2D" path="res://assets/menu_art/logo_arena_rift.png" id="3_logo"]
+[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_menu_play_cropped.png" id="4_rail_border"]
+[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_steam_cropped.png" id="5_steam_border"]
+[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_level_cropped.png" id="6_level_border"]
+[ext_resource type="Texture2D" path="res://assets/menu_design/champ_select/bordure_menu_cropped.png" id="7_frame_border"]
 
 [node name="MainMenu" type="Control" unique_id=1079531850]
 layout_mode = 3
@@ -124,6 +128,7 @@ layout_mode = 0
 offset_right = 244.0
 offset_bottom = 720.0
 mouse_filter = 2
+texture = ExtResource("4_rail_border")
 expand_mode = 1
 stretch_mode = 0
 
@@ -198,6 +203,7 @@ layout_mode = 0
 offset_right = 206.0
 offset_bottom = 62.0
 mouse_filter = 2
+texture = ExtResource("5_steam_border")
 expand_mode = 1
 stretch_mode = 0
 
@@ -258,6 +264,7 @@ layout_mode = 0
 offset_right = 184.0
 offset_bottom = 62.0
 mouse_filter = 2
+texture = ExtResource("6_level_border")
 expand_mode = 1
 stretch_mode = 0
 
@@ -275,6 +282,7 @@ layout_mode = 0
 offset_right = 994.0
 offset_bottom = 614.0
 mouse_filter = 2
+texture = ExtResource("7_frame_border")
 expand_mode = 1
 stretch_mode = 0
 

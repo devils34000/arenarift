@@ -2397,15 +2397,11 @@ func _lobby_portrait_button(hero_name: String, accent: Color) -> Button:
 		highlight.offset_right = 6
 		highlight.offset_bottom = 6
 		highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var glow_shadow := Color("fff2d4")
-		glow_shadow.a = 0.6
 		var highlight_style := StyleBoxFlat.new()
 		highlight_style.bg_color = Color(0, 0, 0, 0)
 		highlight_style.border_color = Color("fff2d4")
 		highlight_style.set_border_width_all(3)
 		highlight_style.set_corner_radius_all(13)
-		highlight_style.shadow_color = glow_shadow
-		highlight_style.shadow_size = 8
 		highlight.add_theme_stylebox_override("panel", highlight_style)
 		btn.add_child(highlight)
 

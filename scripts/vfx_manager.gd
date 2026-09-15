@@ -50,7 +50,7 @@ const SMOKE_DARK := Color("2c2233")
 # Zone de soin Maylinh — halo/pluie/fumée verte.
 const HEAL_PRIMARY := Color("53f2a0")
 const HEAL_SECONDARY := Color("c9ffdf")
-const HEAL_SMOKE := Color("2f6b4a")
+const HEAL_SMOKE := Color("4fae7c")
 
 var eren_trail_vfx_clock: float = 0.0
 
@@ -494,36 +494,40 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	if parent == null:
 		return null
 
+	# Garde-fou : si jamais le rayon reçu est invalide/nul, on garde une zone lisible.
+	var r := radius if radius > 0.5 else 3.5
 	var duration := 2.0
 	var root := Node3D.new()
 	root.name = "MaylinhHealZoneFX"
 	parent.add_child(root)
 	root.global_position = position + Vector3.UP * 0.02
 
-	# Halo vert autour de la zone (contour posé au sol).
+	# Halo vert autour de la zone (contour posé au sol) — taille finale dès le
+	# premier instant, seule l'intensité pulse pour ne jamais paraître "coincé" petit.
 	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(HEAL_PRIMARY.r, HEAL_PRIMARY.g, HEAL_PRIMARY.b, 0.9)
+	ring_mat.albedo_color = Color(HEAL_PRIMARY.r, HEAL_PRIMARY.g, HEAL_PRIMARY.b, 0.95)
 	ring_mat.emission_enabled = true
 	ring_mat.emission = HEAL_PRIMARY
-	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.emission_energy_multiplier = 3.0
 	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var ring := MeshInstance3D.new()
 	var torus := TorusMesh.new()
-	torus.inner_radius = maxf(radius - 0.18, 0.05)
-	torus.outer_radius = radius
-	torus.rings = 48
-	torus.ring_segments = 10
+	torus.inner_radius = maxf(r - 0.3, 0.05)
+	torus.outer_radius = r
+	torus.rings = 64
+	torus.ring_segments = 12
 	ring.mesh = torus
 	ring.rotation_degrees.x = 90.0
 	ring.material_override = ring_mat
-	ring.scale = Vector3.ONE * 0.05
 	ring.position.y = 0.03
 	root.add_child(ring)
 	var ring_tween := root.create_tween()
-	ring_tween.tween_property(ring, "scale", Vector3.ONE, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_property(ring_mat, "emission_energy_multiplier", 9.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_property(ring_mat, "emission_energy_multiplier", 5.0, 0.4)
 	ring_tween.tween_interval(duration - 1.0)
 	ring_tween.tween_property(ring_mat, "albedo_color:a", 0.0, 0.5)
+	ring_tween.parallel().tween_property(ring_mat, "emission_energy_multiplier", 0.0, 0.5)
 
 	# Pluie verte qui tombe dans toute la zone.
 	var rain := GPUParticles3D.new()
@@ -536,7 +540,7 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	var rain_pm := ParticleProcessMaterial.new()
 	rain_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
 	rain_pm.emission_ring_axis = Vector3.UP
-	rain_pm.emission_ring_radius = radius
+	rain_pm.emission_ring_radius = r
 	rain_pm.emission_ring_inner_radius = 0.0
 	rain_pm.emission_ring_height = 0.0
 	rain_pm.direction = Vector3(0, -1, 0)
@@ -559,13 +563,13 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	# Volutes de fumée verte qui montent depuis le sol, réparties dans la zone.
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	for i in range(6):
+	for i in range(8):
 		var a := rng.randf_range(0.0, TAU)
-		var r := rng.randf_range(0.0, radius * 0.85)
-		var offset := Vector3(cos(a) * r, 0.05, sin(a) * r)
-		var tint := HEAL_SMOKE.lerp(HEAL_SECONDARY, rng.randf_range(0.0, 0.4))
-		tint.a = rng.randf_range(0.4, 0.6)
-		var size := rng.randf_range(1.3, 2.3)
+		var dist := rng.randf_range(0.0, r * 0.85)
+		var offset := Vector3(cos(a) * dist, 0.05, sin(a) * dist)
+		var tint := HEAL_SMOKE.lerp(HEAL_SECONDARY, rng.randf_range(0.2, 0.6))
+		tint.a = rng.randf_range(0.55, 0.8)
+		var size := rng.randf_range(1.4, 2.6)
 		var puff := MeshInstance3D.new()
 		puff.mesh = _soft_puff_mesh(Vector2(size, size), tint)
 		puff.position = offset
@@ -583,7 +587,7 @@ func spawn_maylinh_elemental_heal(parent: Node, position: Vector3, radius: float
 	var light := OmniLight3D.new()
 	light.light_color = HEAL_PRIMARY
 	light.light_energy = 0.0
-	light.omni_range = radius * 0.6
+	light.omni_range = r * 0.6
 	root.add_child(light)
 	var light_tween := root.create_tween()
 	light_tween.tween_property(light, "light_energy", 4.0, 0.25)

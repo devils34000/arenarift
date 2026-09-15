@@ -574,13 +574,13 @@ func _player_input(delta: float) -> void:
 				release_axe_charge()
 	elif Input.is_action_just_pressed("spell_orb") or controller_orb_pressed:
 		if hero_id == "MAYLINH":
-			try_heal()
+			try_throw_dagger(aim_direction)
 		else:
 			try_orb(aim_direction)
 
 	if Input.is_action_just_pressed("spell_nova"):
 		if hero_id == "MAYLINH":
-			try_throw_dagger(aim_direction)
+			try_heal()
 		elif hero_id == "KAITHLYN":
 			try_shield()
 		elif hero_id == "EREN":

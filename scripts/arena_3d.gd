@@ -484,6 +484,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		last_input_was_controller = true
 		if event is InputEventJoypadButton:
 			controller_device_id = event.device
+			# DEBUG TEMPORAIRE : à retirer une fois le mapping RB/A confirmé
+			# côté manette. Regarde la console Godot en appuyant sur chaque
+			# bouton pour voir le vrai button_index envoyé par la manette.
+			if event.pressed:
+				print("ARENA RIFT DEBUG manette : button_index=", event.button_index, " nom=", Input.get_joy_name(event.device))
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
 func _update_controller_input(delta: float) -> void:

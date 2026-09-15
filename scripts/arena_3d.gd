@@ -183,8 +183,13 @@ var hud: CanvasLayer
 var timer_label: Label
 var score_label: Label
 var subtitle_label: Label
-var health_bar_bg: ColorRect
-var health_bar_fill: ColorRect
+var health_bar_bg: Panel
+## Largeur réellement construite de la barre de vie (peut être < la
+## constante HERO_HEALTH_BAR_WIDTH si la bande du cadre ATH est trop
+## étroite pour l'accueillir en entier) — _update_hud() doit s'appuyer
+## dessus pour le remplissage, pas sur la constante brute.
+var _hero_hp_bar_max_width: float = 0.0
+var health_bar_fill: Panel
 const HERO_HEALTH_BAR_WIDTH: float = 140.0
 var health_text: Label
 var passive_label: Label
@@ -4235,12 +4240,13 @@ func _build_hud() -> void:
 	# reste visible, et les cercles restent alignés puisqu'ils remplissent
 	# exactement le trou transparent du cadre sans déborder sur son
 	# pourtour décoratif.
-	var ATH_SIZE := Vector2(240, 80)
+	# +12% par rapport à la taille précédente (240x80).
+	var ATH_SIZE := Vector2(268, 90)
 	# Facteur d'échelle entre le PNG source (2172x724) et la taille affichée.
 	var ATH_SCALE := ATH_SIZE.x / 2172.0
 	var hero_panel := Control.new()
 	hero_panel.name = "HeroPanel"
-	hero_panel.position = Vector2(16, 632)
+	hero_panel.position = Vector2(16, 622)
 	hero_panel.size = ATH_SIZE
 	hero_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom.add_child(hero_panel)
@@ -4282,30 +4288,49 @@ func _build_hud() -> void:
 	var bar_pos := Vector2(670.0, 270.0) * ATH_SCALE
 	var bar_size := Vector2(1510.0 - 670.0, 435.0 - 270.0) * ATH_SCALE
 
-	var hp_bar_height := 4.0
+	var hp_bar_height := 6.0
 	var hp_bar_width: float = minf(HERO_HEALTH_BAR_WIDTH, bar_size.x - 10.0)
+	_hero_hp_bar_max_width = hp_bar_width
 	var hp_bar_x: float = bar_pos.x + (bar_size.x - hp_bar_width) * 0.5
 	var hp_bar_y: float = bar_pos.y + bar_size.y * 0.28
+	var hp_bar_radius: int = int(hp_bar_height * 0.5)
 
-	# ColorRect plutôt que ProgressBar : sa taille minimale imposée par le
-	# thème ignorait la .size qu'on lui donnait et débordait du cadre du
-	# panneau (même bug déjà rencontré — et corrigé de la même façon —
-	# sur la barre d'XP du menu principal).
-	health_bar_bg = ColorRect.new()
+	# Panel + StyleBoxFlat plutôt qu'un simple ColorRect plat : coins
+	# arrondis façon pilule + fine bordure teintée à la couleur du héros,
+	# même vie/dégâts en couleur qu'avant (vert plein / fond bleu-nuit).
+	health_bar_bg = Panel.new()
 	health_bar_bg.name = "HealthBg"
-	health_bar_bg.position = Vector2(hp_bar_x, hp_bar_y)
-	health_bar_bg.size = Vector2(hp_bar_width, hp_bar_height)
-	health_bar_bg.color = Color("0c1626")
+	health_bar_bg.position = Vector2(hp_bar_x - 1.0, hp_bar_y - 1.0)
+	health_bar_bg.size = Vector2(hp_bar_width + 2.0, hp_bar_height + 2.0)
+	health_bar_bg.add_theme_stylebox_override("panel", _box(Color("0a1220"), accent.darkened(0.1), hp_bar_radius + 1, 1))
 	health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hero_panel.add_child(health_bar_bg)
 
-	health_bar_fill = ColorRect.new()
+	health_bar_fill = Panel.new()
 	health_bar_fill.name = "HealthFill"
 	health_bar_fill.position = Vector2(hp_bar_x, hp_bar_y)
 	health_bar_fill.size = Vector2(hp_bar_width, hp_bar_height)
-	health_bar_fill.color = Color("31d795")
+	var health_fill_style := StyleBoxFlat.new()
+	health_fill_style.bg_color = Color("31d795")
+	health_fill_style.set_corner_radius_all(hp_bar_radius)
+	health_bar_fill.add_theme_stylebox_override("panel", health_fill_style)
 	health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hero_panel.add_child(health_bar_fill)
+
+	# Léger reflet façon verre bombé sur la moitié haute du remplissage —
+	# purement décoratif. Enfant de health_bar_fill (pas de hero_panel) et
+	# ancré en largeur : suit automatiquement le rétrécissement de la barre
+	# quand la vie baisse, au lieu de rester à largeur fixe par-dessus le
+	# fond vide.
+	var hp_highlight := ColorRect.new()
+	hp_highlight.name = "HealthHighlight"
+	hp_highlight.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	hp_highlight.position = Vector2(1.0, 1.0)
+	hp_highlight.offset_right = -1.0
+	hp_highlight.size.y = hp_bar_height * 0.42
+	hp_highlight.color = Color(1.0, 1.0, 1.0, 0.16)
+	hp_highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	health_bar_fill.add_child(hp_highlight)
 
 	# Chiffres de vie combinés ("100 / 100") sur une seule ligne compacte.
 	health_text = _label("", "100 / 100", Vector2(bar_pos.x, hp_bar_y + hp_bar_height + 2.0), Vector2(bar_size.x, 12), 8, Color("eafff5"), HORIZONTAL_ALIGNMENT_CENTER)
@@ -4416,7 +4441,7 @@ func _update_hud() -> void:
 
 	if health_bar_fill != null and is_instance_valid(health_bar_fill):
 		var health_ratio: float = clampf(player.health / maxf(1.0, player.max_health), 0.0, 1.0)
-		health_bar_fill.size.x = HERO_HEALTH_BAR_WIDTH * health_ratio
+		health_bar_fill.size.x = _hero_hp_bar_max_width * health_ratio
 	health_text.text = "%d / %d" % [int(player.health), int(player.max_health)]
 	passive_caption_label.text = player.get_passive_short_label()
 	passive_label.text = player.get_passive_value_text()

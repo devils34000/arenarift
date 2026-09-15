@@ -296,6 +296,20 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_controller_connection()
+	# Filet de sécurité manette : beaucoup d'écrans (MULTIJOUEUR ARENA, PARTY,
+	# CUSTOM GAME, lobby de héros...) sont ouverts par un bouton connecté
+	# directement (pas via _navigate()), donc sans réappliquer le focus après
+	# _clear() — le bouton précédemment focus est détruit et plus rien n'a
+	# le focus, ce qui bloquait totalement la navigation manette sur ces
+	# écrans. Au lieu de patcher un par un tous les points d'entrée (et tous
+	# ceux à venir), on revérifie chaque frame et on réapplique le focus dès
+	# qu'il est perdu.
+	if controller_connected:
+		var viewport := get_viewport()
+		if viewport != null:
+			var focused := viewport.gui_get_focus_owner()
+			if focused == null or not is_instance_valid(focused) or not focused.is_visible_in_tree():
+				_focus_first_control()
 	if _lobby_active_screen and _lobby_countdown_label != null and is_instance_valid(_lobby_countdown_label):
 		_lobby_seconds_left_local = maxf(0.0, _lobby_seconds_left_local - _delta)
 		_lobby_countdown_label.text = str(int(ceil(_lobby_seconds_left_local)))
@@ -365,6 +379,28 @@ func _focus_first_control() -> void:
 			first = _find_first_focusable(arena_screen)
 	if first != null:
 		first.grab_focus()
+
+
+## Glyphe texte à préfixer devant un bouton pour indiquer la touche manette
+## qui le déclenche. Pas d'icônes réelles Xbox/PlayStation (droits d'image,
+## et pas d'assets dispo) : juste les lettres "A"/"B" — ce sont d'ailleurs
+## les constantes moteur (JOY_BUTTON_A/B) réellement lues dans le code de
+## confirmation/retour, quel que soit le nom imprimé sur la manette.
+func _controller_button_glyph(kind: String) -> String:
+	if kind == "confirm":
+		return "[A]  "
+	if kind == "cancel":
+		return "[B]  "
+	return ""
+
+
+## Préfixe un texte de bouton par le glyphe manette correspondant, mais
+## seulement si une manette est connectée (sinon le bouton reste tel quel
+## pour un joueur clavier/souris).
+func _with_controller_hint(text: String, kind: String) -> String:
+	if not controller_connected:
+		return text
+	return _controller_button_glyph(kind) + text
 
 
 func _find_first_focusable(root: Node) -> Control:
@@ -839,7 +875,7 @@ func _show_arena_modes() -> void:
 	map_value.text = str(details.get("map", ""))
 
 	var launch: Button = %LaunchButton
-	launch.text = "SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY"
+	launch.text = _with_controller_hint("SALON CUSTOM GAME" if selected_mode == "CUSTOM GAME" else "CRÉER LA PARTY", "confirm")
 	_apply_banner_launch_style(launch)
 	_apply_banner_text_style(launch, 16)
 	if launch.pressed.is_connected(_show_custom_game_home):
@@ -2360,7 +2396,7 @@ func _build_lobby_validate_button() -> Control:
 		_lobby_validate_button.add_theme_font_size_override("font_size", 16)
 		_lobby_validate_button.disabled = true
 	else:
-		_lobby_validate_button.text = "VALIDER MON CHOIX"
+		_lobby_validate_button.text = _with_controller_hint("VALIDER MON CHOIX", "confirm")
 		_lobby_validate_button.add_theme_font_size_override("font_size", 19)
 		_lobby_validate_button.pressed.connect(_on_lobby_validate_pressed)
 	return _lobby_validate_button

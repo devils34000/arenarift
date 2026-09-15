@@ -231,8 +231,6 @@ var _jump_start_timer: float = 0.0
 
 # Contrôleur : états précédents pour garantir les "just pressed/released"
 # sans dépendre de l'InputMap.
-var _controller_prev_a := false
-var _controller_prev_y := false
 var _controller_prev_rt := false
 
 # Passifs de héros
@@ -536,23 +534,24 @@ func _player_input(delta: float) -> void:
 			network_input_sequence += 1
 			network_node.arena_player_input.rpc_id(1, move_direction, aim_direction, network_input_sequence, _jump_buffer_left > 0.0, _sprint_active)
 
-	var controller_dash_pressed := false
-	var controller_nova_pressed := false
+	# Dash et nova sont déjà des InputEventJoypadButton mappés dans le
+	# project.godot (action spell_dash/spell_nova) : is_action_just_pressed()
+	# les détecte nativement, pas besoin de repoller le bouton brut en plus —
+	# et ça évitait un vrai bug : le bouton lu ici en dur (Y) ne correspondait
+	# plus au bouton réellement mappé pour spell_nova (RB/bouton 5), donc les
+	# deux déclenchaient la nova sur des boutons différents.
+	# Seule la gâchette droite (orb) a encore besoin d'un polling brut : on a
+	# besoin du front descendant (relâchement) pour le tir chargé de
+	# Kaithlyn, que l'action ne donne pas de façon fiable sur un axe.
 	var controller_orb_pressed := false
 	var controller_orb_released := false
 	if controller >= 0:
-		var a_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_A)
-		var y_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_Y)
 		var rt_now := Input.get_joy_axis(controller, JOY_AXIS_TRIGGER_RIGHT) > 0.35
-		controller_dash_pressed = a_now and not _controller_prev_a
-		controller_nova_pressed = y_now and not _controller_prev_y
 		controller_orb_pressed = rt_now and not _controller_prev_rt
 		controller_orb_released = not rt_now and _controller_prev_rt
-		_controller_prev_a = a_now
-		_controller_prev_y = y_now
 		_controller_prev_rt = rt_now
 
-	if Input.is_action_just_pressed("spell_dash") or controller_dash_pressed:
+	if Input.is_action_just_pressed("spell_dash"):
 		if hero_id == "MAYLINH":
 			try_flee()
 		elif hero_id == "KAITHLYN":
@@ -575,7 +574,7 @@ func _player_input(delta: float) -> void:
 		else:
 			try_orb(aim_direction)
 
-	if Input.is_action_just_pressed("spell_nova") or controller_nova_pressed:
+	if Input.is_action_just_pressed("spell_nova"):
 		if hero_id == "MAYLINH":
 			try_throw_dagger(aim_direction)
 		elif hero_id == "KAITHLYN":

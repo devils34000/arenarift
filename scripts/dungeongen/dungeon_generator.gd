@@ -111,7 +111,7 @@ func _place_first(data: DungeonPieceData) -> bool:
 	p.piece_data = data
 	p.category = _get_category(inst)
 	p.world_transform = Transform3D.IDENTITY
-	p.door_local_transforms = Array[Transform3D](doors.map(func(d: Marker3D) -> Transform3D: return d.transform))
+	p.door_local_transforms = _door_local_transforms(doors)
 	p.door_used.resize(doors.size())
 	p.door_used.fill(false)
 
@@ -169,7 +169,7 @@ func _extend_from(from_idx: int, pool: Array[DungeonPieceData]) -> bool:
 			p.piece_data = candidate
 			p.category = _get_category(inst)
 			p.world_transform = world_transform
-			p.door_local_transforms = Array[Transform3D](doors.map(func(d: Marker3D) -> Transform3D: return d.transform))
+			p.door_local_transforms = _door_local_transforms(doors)
 			p.door_used.resize(doors.size())
 			p.door_used.fill(false)
 			p.door_used[door_idx] = true
@@ -221,6 +221,13 @@ static func _align(door_a_world: Transform3D, door_b_local: Transform3D) -> Tran
 	var flip := Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO)
 	var door_a_flipped := door_a_world * flip
 	return door_a_flipped * door_b_local.affine_inverse()
+
+
+func _door_local_transforms(doors: Array[Marker3D]) -> Array[Transform3D]:
+	var out: Array[Transform3D] = []
+	for d in doors:
+		out.append(d.transform)
+	return out
 
 
 func _get_doors(inst: Node3D) -> Array[Marker3D]:

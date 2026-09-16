@@ -4012,7 +4012,10 @@ func _launch() -> void:
 		arena_scene_path = "res://scenes/Arena1v1.tscn"
 	pending_arena_scene_path = ""
 
-	get_tree().change_scene_to_file(arena_scene_path)
+	var loading_screen_scene: PackedScene = load("res://scenes/LoadingScreen.tscn")
+	var loading_screen: Node = loading_screen_scene.instantiate()
+	get_tree().root.add_child(loading_screen)
+	loading_screen.start(arena_scene_path)
 
 
 # =========================================================

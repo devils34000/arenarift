@@ -81,7 +81,11 @@ func _physics_process(delta: float) -> void:
 			return
 
 	# Fallback de proximité pour les fighters si leur collision n'est pas
-	# disponible au moment précis du raycast.
+	# disponible au moment précis du raycast. Ce filet de sécurité ignorait
+	# les murs (juste une distance XZ) : un monstre de l'autre côté d'une
+	# cloison fine pouvait donc quand même toucher, la distance à vol
+	# d'oiseau restant sous le seuil. On revérifie donc qu'aucun mur ne
+	# sépare réellement le projectile de la cible avant de valider le coup.
 	for body_node in get_tree().get_nodes_in_group("fighters"):
 		var fighter: CharacterBody3D = body_node as CharacterBody3D
 		if fighter == null or fighter == owner_player or not is_instance_valid(fighter):
@@ -90,6 +94,12 @@ func _physics_process(delta: float) -> void:
 		var dx: float = fighter.global_position.x - global_position.x
 		var dz: float = fighter.global_position.z - global_position.z
 		if Vector2(dx, dz).length() < 0.85:
+			var wall_query := PhysicsRayQueryParameters3D.create(global_position, fighter.global_position + Vector3.UP * 0.9)
+			wall_query.collision_mask = 2
+			wall_query.collide_with_bodies = true
+			wall_query.collide_with_areas = false
+			if not space_state.intersect_ray(wall_query).is_empty():
+				continue
 			hit.emit(fighter, self)
 			queue_free()
 			return

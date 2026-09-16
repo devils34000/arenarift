@@ -296,6 +296,8 @@ var coop_victory: bool = false
 var coop_defeat: bool = false
 var coop_chest_positions: Dictionary = {}
 var coop_chest_looted: Dictionary = {}
+var coop_portal_shown: bool = false
+var coop_portal_vfx_node: Node3D = null
 var network_sync_timer: float = 0.0
 var network_server_initialized: bool = false
 var network_match_countdown_active: bool = false
@@ -1332,6 +1334,7 @@ func _start_coop_dungeon() -> void:
 	coop_key_dropped = false
 	coop_victory = false
 	coop_defeat = false
+	coop_portal_shown = false
 
 	var defs := _coop_room_defs()
 	var monster_rooms := {"B_REST": 2, "C_HUB": 3, "D_PUZZLE": 3, "E_REWARD": 2}
@@ -1384,7 +1387,12 @@ func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	# et rentre s'y reposer une fois le joueur hors de portée d'aggro.
 	monster.monster_home_position = monster.global_position
 	var room_def: Dictionary = _coop_room_defs().get(room_id, {})
-	monster.monster_leash_range = float(room_def.get("half_x", 11.0)) + 5.0
+	# Marge large : une fois l'aggro pris, le monstre doit pouvoir vraiment
+	# poursuivre dans toute sa salle (et un peu au-delà, vers le couloir de
+	# sortie) sans décrocher au moindre pas en arrière du joueur — avec une
+	# marge trop courte, il abandonnait le combat en pleine poursuite,
+	# donnant l'impression d'être "bloqué par une zone".
+	monster.monster_leash_range = float(room_def.get("half_x", 11.0)) + 20.0
 	monster.monster_aggro_range = 15.0 if is_boss else 12.0
 	monster.monster_melee_damage = 26 if is_boss else 14
 	monster.set_meta("coop_room", room_id)
@@ -1438,6 +1446,34 @@ func _update_coop_dungeon(delta: float) -> void:
 				coop_key_dropped = true
 				_broadcast_coop_notice("LE BOSS EST TOMBÉ — LA CLÉ DU PORTAIL EST DISPONIBLE !")
 			_coop_check_room_cleared(room_id)
+
+	# Aggro de meute : dès qu'un monstre d'une salle repère le joueur, tous
+	# les autres monstres de cette même salle rejoignent le combat même
+	# s'ils n'ont pas eux-mêmes le joueur dans leur portée de détection —
+	# une seule sentinelle qui vous repère suffit à alerter toute la pièce.
+	var room_alert_target: Dictionary = {}
+	for monster in coop_monsters:
+		if monster.is_aggroed and is_instance_valid(monster.target):
+			var alert_room_id: String = str(coop_monster_room.get(monster, ""))
+			if alert_room_id != "":
+				room_alert_target[alert_room_id] = monster.target
+	for monster in coop_monsters:
+		if monster.is_aggroed:
+			continue
+		var monster_room_id: String = str(coop_monster_room.get(monster, ""))
+		if room_alert_target.has(monster_room_id):
+			monster.is_aggroed = true
+			monster.target = room_alert_target[monster_room_id]
+
+	# Le portail apparaît automatiquement dès que le donjon est fini (pas
+	# besoin d'aller à l'entrée pour le déclencher) et reste actif — seul
+	# l'interact dans la zone de l'entrée valide vraiment la sortie.
+	if not coop_portal_shown and _coop_all_clear():
+		coop_portal_shown = true
+		var portal_defs := _coop_room_defs()
+		var portal_entrance: Dictionary = portal_defs["A_ENTRANCE"]
+		_broadcast_coop_portal_vfx(Vector3(float(portal_entrance["x"]), ORIGINAL_SPAWN_Y, float(portal_entrance["z"])))
+		_broadcast_coop_notice("LE PORTAIL EST APPARU À L'ENTRÉE DU DONJON !")
 
 	var total_players := 0
 	var alive_count := 0
@@ -1512,6 +1548,12 @@ func _network_client_coop_portal_vfx(pos: Vector3) -> void:
 ## cosmétique (aucune logique de jeu), se détruit tout seul après quelques
 ## secondes.
 func _spawn_coop_portal_vfx(pos: Vector3) -> void:
+	# Le portail doit apparaître une seule fois et rester actif jusqu'à la
+	# fin de la partie (victoire ou défaite) : pas de doublon si l'appel se
+	# déclenche deux fois (auto à 100% + interact), pas de disparition.
+	if coop_portal_vfx_node != null and is_instance_valid(coop_portal_vfx_node):
+		return
+
 	if vfx_manager != null and is_instance_valid(vfx_manager):
 		vfx_manager.spawn_teleport_start(self, pos + Vector3.UP * 0.1, 2.6)
 		vfx_manager.spawn_explosion(self, pos + Vector3.UP * 0.3, 1.8)
@@ -1521,6 +1563,7 @@ func _spawn_coop_portal_vfx(pos: Vector3) -> void:
 	portal_root.name = "CoopPortalVFX"
 	portal_root.position = pos + Vector3.UP * 1.1
 	add_child(portal_root)
+	coop_portal_vfx_node = portal_root
 
 	var portal_light := OmniLight3D.new()
 	portal_light.light_color = Color("7fe9c8")
@@ -1549,13 +1592,14 @@ func _spawn_coop_portal_vfx(pos: Vector3) -> void:
 		portal_root.add_child(ring)
 		rings.append(ring)
 
+	# Rotation en boucle infinie tant que le portail est actif : contrairement
+	# à la première version, il ne doit plus s'éteindre tout seul après
+	# quelques secondes, seulement à la fin de la partie (_end_coop_match).
 	var tween := portal_root.create_tween()
+	tween.set_loops()
 	tween.set_parallel(true)
 	for ring in rings:
-		tween.tween_property(ring, "rotation_degrees:y", ring.rotation_degrees.y + 720.0, 6.0)
-	tween.tween_property(portal_light, "light_energy", 0.0, 6.0)
-	tween.set_parallel(false)
-	tween.tween_callback(portal_root.queue_free)
+		tween.tween_property(ring, "rotation_degrees:y", ring.rotation_degrees.y + 360.0, 4.0)
 
 func _update_coop_progress_display() -> void:
 	if coop_progress_bar == null or not is_instance_valid(coop_progress_bar) or coop_progress_label == null or not is_instance_valid(coop_progress_label):

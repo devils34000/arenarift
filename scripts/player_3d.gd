@@ -753,6 +753,8 @@ func try_monster_melee() -> void:
 const MONSTER_MELEE_RANGE := 2.3
 const MONSTER_MELEE_COOLDOWN := 1.3
 const MONSTER_RANGED_RANGE := 11.0
+const MONSTER_RANGED_MIN_DISTANCE := 5.0
+const MONSTER_RANGED_MAX_DISTANCE := 9.0
 
 ## IA des monstres du donjon : gardiens de salle plutôt que poursuivants
 ## infatigables comme les bots PvP (_bot_input). Restent immobiles/en
@@ -798,8 +800,21 @@ func _monster_bot_input(delta: float) -> void:
 	if engaged:
 		_monster_stuck_timer = 0.0
 		var forward: Vector3 = to_player.normalized() if distance_to_player > 0.05 else _character_forward()
-		if distance_to_player > attack_range * 0.7:
-			var target_velocity: Vector3 = forward * (_current_speed() * 0.78)
+		var move_direction := Vector3.ZERO
+		if monster_kind == "melee":
+			if distance_to_player > attack_range * 0.7:
+				move_direction = forward
+		else:
+			# Un monstre à distance (mage) ne doit pas foncer au corps-à-corps
+			# comme les autres : il garde ses distances (recule si le joueur
+			# s'approche trop, avance seulement s'il est trop loin pour
+			# toucher) et caste plutôt que de charger.
+			if distance_to_player < MONSTER_RANGED_MIN_DISTANCE:
+				move_direction = -forward
+			elif distance_to_player > MONSTER_RANGED_MAX_DISTANCE:
+				move_direction = forward
+		if move_direction != Vector3.ZERO:
+			var target_velocity: Vector3 = move_direction * (_current_speed() * 0.78)
 			velocity.x = move_toward(velocity.x, target_velocity.x, 32.0 * delta)
 			velocity.z = move_toward(velocity.z, target_velocity.z, 32.0 * delta)
 		else:

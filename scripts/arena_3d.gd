@@ -674,9 +674,12 @@ func _build_world() -> void:
 	if world.get_node_or_null("Sun") == null:
 		var sun := DirectionalLight3D.new()
 		sun.name = "Sun"
-		sun.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
+		# Soleil "à midi" (quasi à la verticale) : éclaire sans projeter de
+		# longues ombres obliques sur les murs comme le faisait l'angle
+		# rasant précédent.
+		sun.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 		sun.light_energy = 1.35
-		sun.shadow_enabled = true
+		sun.shadow_enabled = false
 		world.add_child(sun)
 
 	objective_position = Vector3(

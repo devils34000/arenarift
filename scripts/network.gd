@@ -185,6 +185,26 @@ func arena_spell_visual(kind: String, origin: Vector3, direction: Vector3, caste
 	if arena != null:
 		arena.call("_network_client_spell_visual", kind, origin, direction, caster_id, value)
 
+## Co-op Donjon : petit bandeau d'info transitoire (salle nettoyée, boss
+## abattu, coffre ouvert...) diffusé par le serveur à tous les clients.
+@rpc("authority", "call_remote", "reliable")
+func arena_coop_notice(text: String) -> void:
+	if multiplayer.is_server():
+		return
+	var arena := _get_network_arena()
+	if arena != null:
+		arena.call("_network_client_coop_notice", text)
+
+## Co-op Donjon : fin de partie (portail ouvert = victoire, toute l'équipe
+## à terre = défaite), diffusée à tous les clients.
+@rpc("authority", "call_remote", "reliable")
+func arena_coop_result(victory: bool) -> void:
+	if multiplayer.is_server():
+		return
+	var arena := _get_network_arena()
+	if arena != null:
+		arena.call("_network_client_coop_result", victory)
+
 ## Récupération de la hache de Kaithlyn : le serveur seul décide du moment
 ## exact où la hache est ramassée (position/cooldown remis à zéro), et le
 ## diffuse ici. Sans cette RPC, chaque client décidait indépendamment quand

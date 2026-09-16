@@ -130,6 +130,12 @@ class RoomStartRequest(BaseModel):
     steam_id: str
 
 
+class RoomReadyRequest(BaseModel):
+    steam_id: str
+    character: Optional[str] = None
+    ready: Optional[bool] = None
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -650,6 +656,8 @@ def create_room(request: CreateRoomRequest):
                     "steam_id": request.steam_id,
                     "name": request.name,
                     "team": "",
+                    "character": "",
+                    "ready": False,
                 }
             },
             "server": None,
@@ -687,10 +695,13 @@ def join_room(code: str, request: JoinRoomRequest):
         if len(room["members"]) >= 8 and request.steam_id not in room["members"]:
             raise HTTPException(status_code=400, detail="Salon complet")
 
+        existing = room["members"].get(request.steam_id, {})
         room["members"][request.steam_id] = {
             "steam_id": request.steam_id,
             "name": request.name,
-            "team": room["members"].get(request.steam_id, {}).get("team", ""),
+            "team": existing.get("team", ""),
+            "character": existing.get("character", ""),
+            "ready": existing.get("ready", False),
         }
         bump_room_version_locked(room)
 
@@ -756,12 +767,44 @@ def set_room_settings(code: str, request: RoomSettingsRequest):
             room["map"] = request.map
 
         if request.mode is not None:
-            if request.mode not in ("TEAM", "FFA", "EXPLORE"):
+            if request.mode not in ("TEAM", "FFA", "EXPLORE", "COOP"):
                 raise HTTPException(status_code=400, detail="Mode invalide")
             room["mode"] = request.mode
 
         if request.random_teams is not None:
             room["random_teams"] = request.random_teams
+
+        bump_room_version_locked(room)
+
+        return serialize_room_locked(room)
+
+
+@app.post("/rooms/{code}/ready")
+def set_room_ready(code: str, request: RoomReadyRequest):
+
+    code = code.strip().upper()
+
+    with _lock:
+        room = rooms.get(code)
+
+        if room is None:
+            raise HTTPException(status_code=404, detail="Salon introuvable")
+
+        member = room["members"].get(request.steam_id)
+        if member is None:
+            raise HTTPException(status_code=400, detail="Pas dans ce salon")
+
+        if request.character is not None:
+            member["character"] = request.character
+            # Changer de personnage annule le statut prêt : on ne veut pas
+            # lancer la partie avec un choix entre-temps modifié sans
+            # confirmation explicite du joueur.
+            member["ready"] = False
+
+        if request.ready is not None:
+            if request.ready and not member.get("character"):
+                raise HTTPException(status_code=400, detail="Choisis un personnage avant de te marquer prêt")
+            member["ready"] = request.ready
 
         bump_room_version_locked(room)
 
@@ -816,6 +859,11 @@ def start_room(code: str, request: RoomStartRequest):
         if not members:
             raise HTTPException(status_code=400, detail="Salon vide")
 
+        if room["mode"] == "COOP":
+            not_ready = [m["name"] for m in members if not m.get("ready")]
+            if not_ready:
+                raise HTTPException(status_code=400, detail="Tout le monde n'est pas prêt : " + ", ".join(not_ready))
+
         # Assignation finale des camps : aléatoire si demandé, sinon le choix
         # individuel de chacun (ceux qui n'ont rien choisi partent sur
         # ASTRAL par défaut plutôt que de bloquer le lancement).
@@ -835,6 +883,8 @@ def start_room(code: str, request: RoomStartRequest):
             server_mode = "CUSTOM DEATHMATCH"
         elif room["mode"] == "EXPLORE":
             server_mode = "CUSTOM EXPLORE"
+        elif room["mode"] == "COOP":
+            server_mode = "CUSTOM COOP DUNGEON"
         else:
             server_mode = "CUSTOM GAME"
 

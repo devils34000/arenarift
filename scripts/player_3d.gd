@@ -168,6 +168,11 @@ var match_damage_dealt: float = 0.0
 var match_kills: int = 0
 var is_bot: bool = false
 
+# Mode Co-op Donjon : à terre, un joueur ne peut plus agir ni se déplacer
+# tant qu'un allié ne l'a pas réanimé (interact) avant la fin du minuteur.
+var is_downed: bool = false
+var down_time_left: float = 0.0
+
 # Multiplayer V2 : le serveur simule les joueurs et les bots.
 var network_peer_id: int = 0
 var network_move_direction: Vector3 = Vector3.ZERO
@@ -234,6 +239,7 @@ var _jump_start_timer: float = 0.0
 var _controller_prev_rt := false
 var _controller_prev_a := false
 var _controller_prev_rb := false
+var _controller_prev_x := false
 
 # Passifs de héros
 var passive_charges: int = 0
@@ -309,6 +315,20 @@ func _physics_process(delta: float) -> void:
 	invulnerable_left = maxf(0.0, invulnerable_left - delta)
 	_jump_start_timer = maxf(0.0, _jump_start_timer - delta)
 	_jump_buffer_left = maxf(0.0, _jump_buffer_left - delta)
+
+	if is_downed:
+		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
+		if not is_grounded:
+			vertical_velocity -= gravity * delta
+		velocity.y = vertical_velocity
+		move_and_slide()
+		is_grounded = is_on_floor()
+		if is_grounded:
+			vertical_velocity = 0.0
+			velocity.y = 0.0
+		_update_animation()
+		return
 
 	if is_bot:
 		_bot_input(delta)
@@ -552,17 +572,24 @@ func _player_input(delta: float) -> void:
 	var controller_nova_pressed := false
 	var controller_orb_pressed := false
 	var controller_orb_released := false
+	var controller_interact_pressed := false
 	if controller >= 0:
 		var a_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_A)
 		var rb_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_RIGHT_SHOULDER)
 		var rt_now := Input.get_joy_axis(controller, JOY_AXIS_TRIGGER_RIGHT) > 0.35
+		var x_now := Input.is_joy_button_pressed(controller, JOY_BUTTON_X)
 		controller_dash_pressed = a_now and not _controller_prev_a
 		controller_nova_pressed = rb_now and not _controller_prev_rb
 		controller_orb_pressed = rt_now and not _controller_prev_rt
 		controller_orb_released = not rt_now and _controller_prev_rt
+		controller_interact_pressed = x_now and not _controller_prev_x
 		_controller_prev_a = a_now
 		_controller_prev_rb = rb_now
 		_controller_prev_rt = rt_now
+		_controller_prev_x = x_now
+
+	if Input.is_action_just_pressed("interact") or controller_interact_pressed:
+		try_interact()
 
 	if Input.is_action_just_pressed("spell_dash") or controller_dash_pressed:
 		if hero_id == "MAYLINH":
@@ -861,6 +888,13 @@ func try_flee() -> void:
 	spell_cast.emit("flee", global_position + Vector3.UP * 0.04, direction, self)
 
 
+## Action contextuelle Co-op Donjon (réanimer un allié à terre, ouvrir un
+## coffre, ou caster le portail de sortie) : la résolution réelle se fait
+## côté serveur dans Arena3D._resolve_coop_interact, ce signal ne fait que
+## transporter la demande jusque là (même mécanisme que les autres sorts).
+func try_interact() -> void:
+	spell_cast.emit("interact", global_position + Vector3.UP * 0.5, aim_direction, self)
+
 func apply_root(duration: float) -> void:
 	rooted_left = maxf(rooted_left, duration)
 	velocity.x = 0.0
@@ -927,6 +961,26 @@ func take_damage(amount: int, force: Vector3) -> bool:
 	recoil += force
 	if health > 0.0:
 		return false
+
+	# Mode Co-op Donjon : pas de respawn classique. Les monstres/le boss
+	# meurent définitivement (Arena3D._update_coop_dungeon nettoie leur nœud).
+	# Un joueur passe "à terre" une première fois (réanimable) puis meurt
+	# définitivement s'il est achevé ou si le minuteur de réanimation expire.
+	if network_node != null and str(network_node.get("match_mode")) == "CUSTOM COOP DUNGEON":
+		if is_bot:
+			health = 0.0
+			velocity = Vector3.ZERO
+			return true
+		if not is_downed:
+			is_downed = true
+			down_time_left = 30.0
+			health = 1.0
+			velocity = Vector3.ZERO
+			return false
+		health = 0.0
+		velocity = Vector3.ZERO
+		return true
+
 	health = max_health
 	if hero_id == "EREN":
 		eren_fury = 0

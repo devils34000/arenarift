@@ -205,6 +205,7 @@ var monster_home_position: Vector3 = Vector3.ZERO
 var monster_leash_range: float = 11.0
 var monster_aggro_range: float = 8.0
 var _monster_melee_timer: float = 0.0
+var _monster_stuck_timer: float = 0.0
 ## Vrai tant que ce monstre a le joueur en ligne de mire et l'attaque
 ## activement — lu par Arena3D._update_enemy_health_bars pour afficher un
 ## repère d'alerte au-dessus de sa tête.
@@ -795,6 +796,7 @@ func _monster_bot_input(delta: float) -> void:
 	is_aggroed = engaged
 
 	if engaged:
+		_monster_stuck_timer = 0.0
 		var forward: Vector3 = to_player.normalized() if distance_to_player > 0.05 else _character_forward()
 		if distance_to_player > attack_range * 0.7:
 			var target_velocity: Vector3 = forward * (_current_speed() * 0.78)
@@ -818,15 +820,28 @@ func _monster_bot_input(delta: float) -> void:
 			try_orb(forward)
 	elif distance_home > 1.0:
 		# Hors combat : rentre calmement à son poste au lieu de rester figé
-		# là où la poursuite s'est arrêtée.
-		var home_direction: Vector3 = monster_home_position - global_position
-		home_direction.y = 0.0
-		home_direction = home_direction.normalized()
-		var target_velocity: Vector3 = home_direction * (_current_speed() * 0.45)
-		velocity.x = move_toward(velocity.x, target_velocity.x, 32.0 * delta)
-		velocity.z = move_toward(velocity.z, target_velocity.z, 32.0 * delta)
-		_face_direction(home_direction, delta)
+		# là où la poursuite s'est arrêtée. Le trajet est une ligne droite,
+		# sans évitement d'obstacle : un monstre peut donc rester coincé
+		# contre un coin de mur en rentrant. Sans filet, il resterait bloqué
+		# à jamais loin de sa salle — la salle ne se nettoie jamais côté
+		# joueur (il est bien vivant, juste introuvable), et le portail ne
+		# s'ouvre donc jamais. Au bout de quelques secondes sans progrès
+		# réel vers la maison, on le téléporte directement chez lui.
+		_monster_stuck_timer += delta
+		if _monster_stuck_timer > 8.0:
+			global_position = monster_home_position
+			velocity = Vector3.ZERO
+			_monster_stuck_timer = 0.0
+		else:
+			var home_direction: Vector3 = monster_home_position - global_position
+			home_direction.y = 0.0
+			home_direction = home_direction.normalized()
+			var target_velocity: Vector3 = home_direction * (_current_speed() * 0.45)
+			velocity.x = move_toward(velocity.x, target_velocity.x, 32.0 * delta)
+			velocity.z = move_toward(velocity.z, target_velocity.z, 32.0 * delta)
+			_face_direction(home_direction, delta)
 	else:
+		_monster_stuck_timer = 0.0
 		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
 		velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
 

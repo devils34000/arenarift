@@ -1402,7 +1402,16 @@ func _update_coop_dungeon(delta: float) -> void:
 	for i in range(coop_monsters.size() - 1, -1, -1):
 		var monster: ArenaPlayer3D = coop_monsters[i]
 		if monster == null or not is_instance_valid(monster):
+			# Un monstre peut disparaître sans jamais passer par la branche
+			# "health <= 0" ci-dessous (libéré par un autre système, sorti
+			# de la scène...) : sans revérifier sa salle ici aussi, celle-ci
+			# restait bloquée "non nettoyée" pour toujours, même à 0 monstre
+			# réellement restant — c'est le bug du portail qui ne s'ouvre
+			# jamais malgré un donjon visuellement vidé.
+			var orphan_room_id: String = str(coop_monster_room.get(monster, ""))
 			coop_monsters.remove_at(i)
+			coop_monster_room.erase(monster)
+			_coop_check_room_cleared(orphan_room_id)
 			continue
 		if monster.health <= 0.0:
 			var room_id: String = str(coop_monster_room.get(monster, ""))

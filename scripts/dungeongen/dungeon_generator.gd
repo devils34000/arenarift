@@ -30,6 +30,15 @@ signal generation_failed(reason: String)
 var _rng := RandomNumberGenerator.new()
 
 
+func _init() -> void:
+	generation_completed.connect(func(room_count: int) -> void:
+		print("Dungeon Generator : génération réussie (%d salles)." % room_count)
+	)
+	generation_failed.connect(func(reason: String) -> void:
+		push_error("Dungeon Generator : échec -> %s" % reason)
+	)
+
+
 class Placement:
 	var piece_data: DungeonPieceData
 	var category: String
@@ -43,9 +52,14 @@ var _world_aabbs: Array[AABB] = []
 
 
 func generate() -> void:
+	print("=== Dungeon Generator : generate() ===")
 	if not config:
 		generation_failed.emit("Aucune DungeonGenConfig assignée")
 		return
+	print("  entrance_pool: %d, corridor_pool: %d, room_pool: %d, dead_end_pool: %d, boss_pool: %d" % [
+		config.entrance_pool.size(), config.corridor_pool.size(), config.room_pool.size(),
+		config.dead_end_pool.size(), config.boss_pool.size()
+	])
 	if config.entrance_pool.is_empty():
 		generation_failed.emit("entrance_pool est vide")
 		return
@@ -81,8 +95,10 @@ func _try_generate() -> bool:
 
 	var entrance_data := _pick_weighted(config.entrance_pool)
 	if not entrance_data or not entrance_data.piece_scene:
+		print("  _try_generate: pas de piece_scene valide dans entrance_pool")
 		return false
 	if not _place_first(entrance_data):
+		print("  _try_generate: échec de placement de l'entrée (piece_scene invalide ou sans porte ?)")
 		return false
 
 	for step in range(1, config.main_path_length):

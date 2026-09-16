@@ -4842,54 +4842,53 @@ func _show_coop_intro_overlay() -> void:
 func _update_hud() -> void:
 	if player == null or not is_instance_valid(player):
 		return
-	if _is_coop_mode():
-		# Pas de round/BO3/camp adverse en Co-op : timer_label/score_label/
-		# subtitle_label n'existent même pas (_build_coop_progress_panel
-		# les remplace), les toucher plantait _update_hud() à chaque appel.
-		# La barre de progression est mise à jour par pushs serveur
-		# (_broadcast_coop_progress), pas ici.
-		return
+	# Pas de round/BO3/camp adverse en Co-op : timer_label/score_label/
+	# subtitle_label n'existent même pas (_build_coop_progress_panel les
+	# remplace par la barre de progression, mise à jour par pushs serveur
+	# via _broadcast_coop_progress, pas ici) — tout ce bloc scoreboard PvP
+	# est donc sauté, mais le reste de la fonction (vie du joueur, passif,
+	# cooldowns, respawn...) doit continuer à tourner normalement.
+	if not _is_coop_mode():
+		var seconds := 0
+		var display_time := 0.0
+		if _is_explore_mode():
+			timer_label.text = "∞"
+		else:
+			display_time = network_round_time if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() else round_time
+			seconds = int(ceil(display_time))
+			timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
+		if _is_team_mode():
+			seconds = int(ceil(display_time))
+			timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
+		if _is_duel_mode():
+			timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
+			score_label.text = "%d  —  %d" % [duel_astral_rounds, duel_arcane_rounds]
+			var top_node := hud.get_node_or_null("ControlTop")
+			if top_node == null:
+				top_node = hud.get_child(0)
+			var kills_value := top_node.get_node_or_null("KillsValue")
+			if kills_value != null:
+				kills_value.text = "%d  —  %d" % [duel_astral_kills, duel_arcane_kills]
+			var round_value := top_node.get_node_or_null("RoundValue")
+			if round_value != null:
+				round_value.text = "ROUND %d / 3" % duel_round_number
+		elif _is_team_mode():
+			score_label.text = "%d  —  %d" % [team_astral_rounds, team_arcane_rounds]
+			var top_node := hud.get_node_or_null("ControlTop")
+			if top_node == null:
+				top_node = hud.get_child(0)
+			var kills_value := top_node.get_node_or_null("KillsValue")
+			if kills_value != null:
+				kills_value.text = "%d  —  %d" % [team_astral_kills, team_arcane_kills]
+			var round_value := top_node.get_node_or_null("RoundValue")
+			if round_value != null:
+				round_value.text = "ROUND %d / 3" % team_round_number
+		else:
+			score_label.text = "%d  —  %d" % [kills, deaths]
 
-	var seconds := 0
-	var display_time := 0.0
-	if _is_explore_mode():
-		timer_label.text = "∞"
-	else:
-		display_time = network_round_time if multiplayer.has_multiplayer_peer() and not multiplayer.is_server() else round_time
-		seconds = int(ceil(display_time))
-		timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
-	if _is_team_mode():
-		seconds = int(ceil(display_time))
-		timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
-	if _is_duel_mode():
-		timer_label.text = "%02d:%02d" % [seconds / 60, seconds % 60]
-		score_label.text = "%d  —  %d" % [duel_astral_rounds, duel_arcane_rounds]
-		var top_node := hud.get_node_or_null("ControlTop")
-		if top_node == null:
-			top_node = hud.get_child(0)
-		var kills_value := top_node.get_node_or_null("KillsValue")
-		if kills_value != null:
-			kills_value.text = "%d  —  %d" % [duel_astral_kills, duel_arcane_kills]
-		var round_value := top_node.get_node_or_null("RoundValue")
-		if round_value != null:
-			round_value.text = "ROUND %d / 3" % duel_round_number
-	elif _is_team_mode():
-		score_label.text = "%d  —  %d" % [team_astral_rounds, team_arcane_rounds]
-		var top_node := hud.get_node_or_null("ControlTop")
-		if top_node == null:
-			top_node = hud.get_child(0)
-		var kills_value := top_node.get_node_or_null("KillsValue")
-		if kills_value != null:
-			kills_value.text = "%d  —  %d" % [team_astral_kills, team_arcane_kills]
-		var round_value := top_node.get_node_or_null("RoundValue")
-		if round_value != null:
-			round_value.text = "ROUND %d / 3" % team_round_number
-	else:
-		score_label.text = "%d  —  %d" % [kills, deaths]
-
-	var network_node := get_node_or_null("/root/Network")
-	if network_node != null:
-		subtitle_label.text = "%s // BO3" % str(network_node.get("match_mode")) if _is_team_mode() or _is_duel_mode() else "%s // 3D THIRD PERSON" % str(network_node.get("match_mode"))
+		var network_node := get_node_or_null("/root/Network")
+		if network_node != null:
+			subtitle_label.text = "%s // BO3" % str(network_node.get("match_mode")) if _is_team_mode() or _is_duel_mode() else "%s // 3D THIRD PERSON" % str(network_node.get("match_mode"))
 	var controller_help := hud.get_node_or_null("BottomMOBA/ControllerHelp")
 	if controller_help != null:
 		controller_help.text = "MANETTE" if last_input_was_controller else "WASD  •  SOURIS"

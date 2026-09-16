@@ -1566,6 +1566,22 @@ func _coop_all_clear() -> bool:
 			return false
 	return true
 
+## Diagnostic : liste précisément ce qui bloque encore _coop_all_clear(),
+## salle par salle + monstres restants, plutôt qu'un message générique —
+## le seul moyen de savoir SANS accès aux logs serveur si une salle donnée
+## reste bloquée à tort (monstre fantôme, room_id qui ne correspond pas...).
+func _coop_status_text() -> String:
+	var parts: Array[String] = []
+	for room_id in coop_rooms_cleared.keys():
+		var cleared: bool = bool(coop_rooms_cleared[room_id])
+		var remaining := 0
+		for monster in coop_monsters:
+			if str(coop_monster_room.get(monster, "")) == room_id:
+				remaining += 1
+		parts.append("%s:%s(%d)" % [room_id, ("OK" if cleared else "NON"), remaining])
+	parts.append("CLÉ:%s" % ("OUI" if coop_key_dropped else "NON"))
+	return " | ".join(parts)
+
 ## Résout l'action "interact" en Co-op Donjon : réanimer un allié à terre à
 ## proximité, sinon ouvrir un coffre à proximité, sinon (dans la salle
 ## d'entrée, donjon nettoyé + clé du boss récupérée) ouvrir le portail de
@@ -1608,7 +1624,7 @@ func _resolve_coop_interact(caster: ArenaPlayer3D) -> void:
 	# que rater le portail parce que le joueur est jugé "à quelques mètres".
 	if to_entrance.length() < float(entrance["half_x"]) + 6.0:
 		if not _coop_all_clear():
-			_broadcast_coop_notice("IL FAUT NETTOYER TOUT LE DONJON ET RÉCUPÉRER LA CLÉ DU BOSS")
+			_broadcast_coop_notice("IL FAUT NETTOYER TOUT LE DONJON ET RÉCUPÉRER LA CLÉ DU BOSS — %s" % _coop_status_text())
 		else:
 			coop_victory = true
 			_broadcast_coop_notice("LE PORTAIL S'OUVRE — VICTOIRE !")
@@ -1633,13 +1649,14 @@ func _network_client_coop_notice(text: String) -> void:
 	if hud == null or not is_instance_valid(hud):
 		return
 	var label := Label.new()
-	label.position = Vector2(390, 40)
-	label.size = Vector2(500, 50)
+	label.position = Vector2(290, 40)
+	label.size = Vector2(700, 70)
 	label.text = text
-	_style_banner_label(label, Color("c9a24d"), 15)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_style_banner_label(label, Color("c9a24d"), 14)
 	hud.add_child(label)
 	var tween := create_tween()
-	tween.tween_interval(3.5)
+	tween.tween_interval(5.0)
 	tween.tween_property(label, "modulate:a", 0.0, 0.6)
 	tween.tween_callback(label.queue_free)
 

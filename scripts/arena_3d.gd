@@ -1374,11 +1374,19 @@ func _update_coop_dungeon(delta: float) -> void:
 		if monster.health <= 0.0:
 			var room_id: String = str(coop_monster_room.get(monster, ""))
 			var was_boss: bool = bool(monster.get_meta("coop_is_boss", false))
+			var dead_peer_id: int = monster.network_peer_id
 			coop_monsters.remove_at(i)
 			coop_monster_room.erase(monster)
-			network_fighters.erase(monster.network_peer_id)
+			network_fighters.erase(dead_peer_id)
 			monster.remove_from_group("fighters")
 			monster.queue_free()
+			# Sans ça, le monstre reste figé (visible, plus mis à jour) sur
+			# l'écran de chaque client : le serveur seul le retirait de sa
+			# propre scène, jamais de celles des clients.
+			var network_node_despawn := get_node_or_null("/root/Network")
+			if network_node_despawn != null and multiplayer.has_multiplayer_peer():
+				for target_id in multiplayer.get_peers():
+					network_node_despawn.arena_despawn_fighter.rpc_id(int(target_id), dead_peer_id)
 			if was_boss:
 				coop_key_dropped = true
 				_broadcast_coop_notice("LE BOSS EST TOMBÉ — LA CLÉ DU PORTAIL EST DISPONIBLE !")
@@ -1594,9 +1602,9 @@ func _network_send_all_to(target_id: int) -> void:
 		var fighter := network_fighters[id] as ArenaPlayer3D
 		if fighter == null or not is_instance_valid(fighter):
 			continue
-		network_node.arena_spawn_fighter.rpc_id(target_id, int(id), fighter.hero_id, fighter.team_color, fighter.global_position, fighter.global_rotation.y, fighter.is_bot)
+		network_node.arena_spawn_fighter.rpc_id(target_id, int(id), fighter.hero_id, fighter.team_color, fighter.global_position, fighter.global_rotation.y, fighter.is_bot, fighter.monster_skin, fighter.model_scale)
 
-func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool) -> void:
+func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool, monster_skin: String = "", model_scale: float = -1.0) -> void:
 	if multiplayer.is_server() or network_fighters.has(fighter_id):
 		return
 	var fighter := PlayerScene.new() as ArenaPlayer3D
@@ -1606,6 +1614,14 @@ func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, p
 	fighter.network_round_serial = network_round_serial
 	fighter.hero_id = hero
 	fighter.team_color = team
+	# Les monstres du donjon n'ont pas de "hero" au sens propre : le modèle
+	# (squelette KayKit + échelle du boss) doit être transmis explicitement,
+	# sinon chaque client faisait apparaître le monstre avec l'apparence du
+	# héros hero_id (Eren) au lieu du squelette choisi côté serveur.
+	if monster_skin != "":
+		fighter.monster_skin = monster_skin
+	if model_scale > 0.0:
+		fighter.model_scale = model_scale
 	if not bot and fighter_id == multiplayer.get_unique_id():
 		_apply_arkanite_loadout(fighter, hero)
 	fighter.set_multiplayer_authority(fighter_id if fighter_id > 0 else 1)

@@ -265,6 +265,8 @@ var eren_fury: int = 0
 var _model: Node3D
 var _visual_root: Node3D
 var _animation_player: AnimationPlayer
+var _health_bar_root: Node3D
+var _health_bar_fill: MeshInstance3D
 var _idle_anim: StringName = &"Idle_A"
 var _walk_anim: StringName = &"Walking_A"
 var _run_anim: StringName = &"Running_A"
@@ -676,22 +678,40 @@ func _bot_input(delta: float) -> void:
 
 	_bot_orb_timer = maxf(0.0, _bot_orb_timer - delta)
 	_bot_nova_timer = maxf(0.0, _bot_nova_timer - delta)
+	# Un bot ne doit jamais pouvoir attaquer (sort ou téléportation) à travers
+	# un mur juste parce que la cible est à portée : sans ce test, un
+	# monstre de l'autre côté d'une cloison touchait quand même le joueur.
+	var has_los: bool = _has_line_of_sight(target.global_position + Vector3.UP * 0.9)
 	if hero_id == "KAITHLYN":
-		if distance < 12.0 and _bot_orb_timer <= 0.0:
+		if distance < 12.0 and _bot_orb_timer <= 0.0 and has_los:
 			_bot_orb_timer = 2.0
 			try_throw_axe(forward, 1.0)
-		if distance < 3.0 and _bot_nova_timer <= 0.0:
+		if distance < 3.0 and _bot_nova_timer <= 0.0 and has_los:
 			_bot_nova_timer = 4.0
 			try_shield()
-		if distance < 2.4 and charge_cooldown <= 0.0:
+		if distance < 2.4 and charge_cooldown <= 0.0 and has_los:
 			try_charge(forward)
 	else:
-		if distance < 14.0 and _bot_orb_timer <= 0.0:
+		if distance < 14.0 and _bot_orb_timer <= 0.0 and has_los:
 			_bot_orb_timer = 0.85
 			try_orb(forward)
-		if distance < 3.4 and _bot_nova_timer <= 0.0:
+		if distance < 3.4 and _bot_nova_timer <= 0.0 and has_los:
 			_bot_nova_timer = 4.2
 			try_teleport()
+
+## Layer 2 = terrain/murs (les murs du labyrinthe sont sur collision_layer=3,
+## qui inclut le bit 2) — même masque que le raycast sol utilisé pour les
+## sorts. Les combattants sont sur le layer 1 uniquement, donc ce masque ne
+## risque pas de se bloquer lui-même sur la capsule de la cible.
+func _has_line_of_sight(target_position: Vector3) -> bool:
+	var space_state := get_world_3d().direct_space_state
+	var from: Vector3 = global_position + Vector3.UP * 1.0
+	var query := PhysicsRayQueryParameters3D.create(from, target_position)
+	query.collision_mask = 2
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	var hit: Dictionary = space_state.intersect_ray(query)
+	return hit.is_empty()
 
 func _face_direction(direction: Vector3, delta: float) -> void:
 	direction.y = 0.0
@@ -1182,6 +1202,64 @@ func _setup_model() -> void:
 
 	_import_animation_libraries(movement_anims_path)
 	_import_animation_libraries(general_anims_path)
+
+	if monster_skin != "":
+		_create_monster_health_bar()
+
+const _MONSTER_HEALTH_BAR_WIDTH := 0.9
+const _MONSTER_HEALTH_BAR_HEIGHT := 0.11
+
+## Petite barre de vie flottante au-dessus des monstres du donjon (toujours
+## face caméra), pour que les joueurs voient combien de coups il reste à
+## donner. Deux quads superposés (fond + remplissage) plutôt qu'un Label3D :
+## plus lisible d'un coup d'œil en plein combat.
+func _create_monster_health_bar() -> void:
+	if _visual_root == null or not is_instance_valid(_visual_root):
+		return
+	_health_bar_root = Node3D.new()
+	_health_bar_root.name = "HealthBar"
+	_health_bar_root.position = Vector3(0.0, 2.3 * model_scale, 0.0)
+	_visual_root.add_child(_health_bar_root)
+
+	var background := MeshInstance3D.new()
+	var background_mesh := QuadMesh.new()
+	background_mesh.size = Vector2(_MONSTER_HEALTH_BAR_WIDTH + 0.05, _MONSTER_HEALTH_BAR_HEIGHT + 0.05)
+	background.mesh = background_mesh
+	var background_material := StandardMaterial3D.new()
+	background_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	background_material.albedo_color = Color(0.05, 0.02, 0.02, 0.85)
+	background_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	background_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	background_material.no_depth_test = true
+	background_material.render_priority = 10
+	background.material_override = background_material
+	_health_bar_root.add_child(background)
+
+	_health_bar_fill = MeshInstance3D.new()
+	var fill_mesh := QuadMesh.new()
+	fill_mesh.size = Vector2(_MONSTER_HEALTH_BAR_WIDTH, _MONSTER_HEALTH_BAR_HEIGHT)
+	_health_bar_fill.mesh = fill_mesh
+	var fill_material := StandardMaterial3D.new()
+	fill_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fill_material.albedo_color = Color(0.85, 0.15, 0.15, 1.0)
+	fill_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	fill_material.no_depth_test = true
+	fill_material.render_priority = 11
+	_health_bar_fill.material_override = fill_material
+	_health_bar_fill.position.z = 0.001
+	_health_bar_root.add_child(_health_bar_fill)
+
+func _process(_delta: float) -> void:
+	if monster_skin == "" or _health_bar_fill == null or not is_instance_valid(_health_bar_fill):
+		return
+	var ratio: float = clampf(health / max_health, 0.0, 1.0) if max_health > 0.0 else 0.0
+	if _health_bar_root != null and is_instance_valid(_health_bar_root):
+		_health_bar_root.visible = health > 0.0
+	_health_bar_fill.scale.x = maxf(ratio, 0.001)
+	# Un QuadMesh se réduit depuis son centre : on recale à gauche pour que
+	# la barre se vide vers la droite comme une barre de vie classique.
+	_health_bar_fill.position.x = -(_MONSTER_HEALTH_BAR_WIDTH * (1.0 - ratio)) * 0.5
+	_health_bar_fill.material_override.albedo_color = Color(0.85, 0.15, 0.15, 1.0).lerp(Color(0.35, 0.85, 0.25, 1.0), ratio)
 
 func _create_kaithlyn_weapons_independent() -> void:
 	_axe_weapon = _load_weapon_or_fallback(kaithlyn_axe_scene_path, "KaithlynAxe", true)

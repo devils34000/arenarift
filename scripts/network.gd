@@ -142,13 +142,13 @@ func arena_client_ready(hero: String, mode: String, team: String = "") -> void:
 	arena_client_ready_signal.emit(sender, hero, mode, team)
 
 @rpc("any_peer", "call_remote", "reliable")
-func arena_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool) -> void:
+func arena_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool, monster_skin: String = "", model_scale: float = -1.0) -> void:
 	print("NETWORK : SPAWN RPC RECU id=", fighter_id, " bot=", bot, " pos=", pos)
 	if multiplayer.is_server():
 		return
 	var arena := _get_network_arena()
 	if arena != null:
-		arena.call("_network_client_spawn_fighter", fighter_id, hero, team, pos, rot_y, bot)
+		arena.call("_network_client_spawn_fighter", fighter_id, hero, team, pos, rot_y, bot, monster_skin, model_scale)
 
 @rpc("authority", "call_remote", "unreliable_ordered", 1)
 func arena_transform(fighter_id: int, pos: Vector3, rot_y: float, net_velocity: Vector3, health_value: float = 100.0, round_serial: int = 1, state_sequence: int = 0) -> void:

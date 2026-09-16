@@ -1309,7 +1309,12 @@ func _start_network_bots() -> void:
 ## "Room_*" laissés tels quels depuis l'ancienne version de la map).
 func _coop_room_defs() -> Dictionary:
 	return {
-		"A_ENTRANCE": {"x": 7.0, "z": 49.0, "half_x": 10.5, "half_z": 10.5},
+		# Coordonnée réelle du spawn (confirmée par les logs client : le
+		# joueur apparaît vers (3, 84.9)), pas la formule de grille d'origine
+		# qui plaçait l'entrée à (7, 49) — la salle de spawn a été
+		# repositionnée/agrandie depuis sans que cette valeur soit mise à
+		# jour, d'où le portail introuvable malgré un donjon nettoyé.
+		"A_ENTRANCE": {"x": 7.0, "z": 85.0, "half_x": 14.0, "half_z": 14.0},
 		"B_REST": {"x": -49.0, "z": 28.0, "half_x": 10.5, "half_z": 10.5},
 		"C_HUB": {"x": 7.0, "z": 7.0, "half_x": 10.5, "half_z": 10.5},
 		"D_PUZZLE": {"x": -56.0, "z": -28.0, "half_x": 10.5, "half_z": 10.5},

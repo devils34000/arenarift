@@ -1,50 +1,39 @@
-[gd_resource type="Resource" script_class="DungeonGenConfig" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="DungeonGenConfig" format=3 uid="uid://401vioquvwwm"]
 
-[ext_resource type="Script" path="res://scripts/dungeongen/dungeon_gen_config.gd" id="1_cfg"]
-[ext_resource type="Script" path="res://scripts/dungeongen/dungeon_piece_data.gd" id="2_data"]
+[ext_resource type="Script" uid="uid://dikqenb05cvj" path="res://scripts/dungeongen/dungeon_gen_config.gd" id="1_cfg"]
+[ext_resource type="Script" uid="uid://klvasu2c32r5" path="res://scripts/dungeongen/dungeon_piece_data.gd" id="2_data"]
 [ext_resource type="PackedScene" path="res://scenes/dungeongen/pieces/RealEntrance.tscn" id="3_entrance"]
 [ext_resource type="PackedScene" path="res://scenes/dungeongen/pieces/RealCorridor.tscn" id="4_corridor"]
 [ext_resource type="PackedScene" path="res://scenes/dungeongen/pieces/RealJunction.tscn" id="5_junction"]
 [ext_resource type="PackedScene" path="res://scenes/dungeongen/pieces/RealDeadEnd.tscn" id="6_deadend"]
 [ext_resource type="PackedScene" path="res://scenes/dungeongen/pieces/RealBoss.tscn" id="7_boss"]
 
-[sub_resource type="Resource" id="Data_entrance"]
+[sub_resource type="Resource" id="Data_boss"]
 script = ExtResource("2_data")
-piece_scene = ExtResource("3_entrance")
-spawn_weight = 1.0
+piece_scene = ExtResource("7_boss")
 
 [sub_resource type="Resource" id="Data_corridor"]
 script = ExtResource("2_data")
 piece_scene = ExtResource("4_corridor")
-spawn_weight = 1.0
-
-[sub_resource type="Resource" id="Data_junction"]
-script = ExtResource("2_data")
-piece_scene = ExtResource("5_junction")
-spawn_weight = 1.0
 
 [sub_resource type="Resource" id="Data_deadend"]
 script = ExtResource("2_data")
 piece_scene = ExtResource("6_deadend")
-spawn_weight = 1.0
 
-[sub_resource type="Resource" id="Data_boss"]
+[sub_resource type="Resource" id="Data_entrance"]
 script = ExtResource("2_data")
-piece_scene = ExtResource("7_boss")
-spawn_weight = 1.0
+piece_scene = ExtResource("3_entrance")
+
+[sub_resource type="Resource" id="Data_junction"]
+script = ExtResource("2_data")
+piece_scene = ExtResource("5_junction")
 
 [resource]
 script = ExtResource("1_cfg")
-entrance_pool = Array[DungeonPieceData]([SubResource("Data_entrance")])
-corridor_pool = Array[DungeonPieceData]([SubResource("Data_corridor")])
-room_pool = Array[DungeonPieceData]([SubResource("Data_junction")])
-dead_end_pool = Array[DungeonPieceData]([SubResource("Data_deadend")])
-boss_pool = Array[DungeonPieceData]([SubResource("Data_boss")])
-main_path_length = 8
-branch_count = 3
-branch_depth_min = 1
+entrance_pool = Array[ExtResource("2_data")]([SubResource("Data_entrance")])
+corridor_pool = Array[ExtResource("2_data")]([SubResource("Data_corridor")])
+room_pool = Array[ExtResource("2_data")]([SubResource("Data_junction")])
+dead_end_pool = Array[ExtResource("2_data")]([SubResource("Data_deadend")])
+boss_pool = Array[ExtResource("2_data")]([SubResource("Data_boss")])
 branch_depth_max = 2
 overlap_margin = 0.15
-max_attempts_per_step = 25
-max_generation_attempts = 20
-random_seed = 0

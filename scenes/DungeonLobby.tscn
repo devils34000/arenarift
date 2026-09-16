@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://scripts/dungeon_lobby.gd" id="1_script"]
 
-[node name="DungeonLobby" type="CanvasLayer"]
+[node name="DungeonLobby" type="Node"]
 script = ExtResource("1_script")

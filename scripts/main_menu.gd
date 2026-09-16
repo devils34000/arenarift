@@ -3959,9 +3959,11 @@ func _setup_menu_music() -> void:
 ## il gère lui-même tout son cycle de vie (salon, prêt, lancement,
 ## connexion) et se détruit (queue_free) une fois fermé ou la partie lancée.
 func _open_dungeon_lobby() -> void:
+	_clear()
 	var lobby_scene: PackedScene = load("res://scenes/DungeonLobby.tscn")
 	var lobby: Node = lobby_scene.instantiate()
-	add_child(lobby)
+	content.add_child(lobby)
+	lobby.call("attach", content, title, _show_home)
 
 
 func _show_play_placeholder(mode_title: String, description: String) -> void:

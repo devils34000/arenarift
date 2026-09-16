@@ -1,15 +1,9 @@
-extends CanvasLayer
-## Salon Co-op Donjon : entièrement séparé du Custom Game de l'Arena
-## (fichier neuf, pas de dépendance à main_menu.gd au-delà du signal de
-## fermeture). Créé/affiché par-dessus le menu principal quand on clique
-## sur "CO-OP DONJON".
-##
-## Flux : créer/rejoindre un salon (code partagé) -> chaque joueur choisit
-## son perso (visible par les autres) et se marque "prêt" -> l'host ne
-## peut lancer que si tout le monde est prêt -> écran de chargement (10s)
-## + connexion réseau réelle en parallèle -> ArenaLabyrinth.tscn.
-
-signal closed
+extends Node
+## Salon Co-op Donjon : toute la LOGIQUE (réseau, état du salon, flux
+## prêt/lancement) reste dans ce fichier neuf, séparé du Custom Game de
+## l'Arena. Seul l'AFFICHAGE s'intègre dans le cadre doré partagé du menu
+## (%MainFrame) via attach() — sinon l'écran ressort comme un calque
+## flottant par-dessus le menu au lieu d'un vrai écran à sa place.
 
 const MATCHMAKING_BASE_URL := "http://149.202.91.92:8080"
 const HEROES: Array[String] = ["AERIS", "MAYLINH", "KAITHLYN", "EREN"]
@@ -31,13 +25,19 @@ var _pending_action: String = ""
 var _connect_triggered: bool = false
 var _my_character: String = ""
 
-var _root: Control
-var _content: Control
+var _content: VBoxContainer  # %MainFrame/content, fourni par main_menu
+var _title_label: Label      # %MainFrame title, fourni par main_menu
+var _on_back: Callable = Callable()
+var _screen: VBoxContainer   # notre seul enfant dans _content, reconstruit à chaque écran
 
 
-func _ready() -> void:
-	layer = 50
-	process_mode = Node.PROCESS_MODE_ALWAYS
+## Point d'entrée : appelé par main_menu.gd juste après avoir instancié
+## cette scène et l'avoir ajoutée sous %MainFrame/content (déjà nettoyé
+## via _clear()). on_back doit ramener à l'écran PLAY.
+func attach(target_content: VBoxContainer, target_title: Label, on_back: Callable) -> void:
+	_content = target_content
+	_title_label = target_title
+	_on_back = on_back
 
 	_http_action = HTTPRequest.new()
 	add_child(_http_action)
@@ -51,19 +51,6 @@ func _ready() -> void:
 	_poll_timer.wait_time = 1.0
 	add_child(_poll_timer)
 	_poll_timer.timeout.connect(_poll_room)
-
-	_root = Control.new()
-	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-
-	var dim := ColorRect.new()
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0.03, 0.024, 0.045, 1.0)
-	_root.add_child(dim)
-
-	_content = Control.new()
-	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(_content)
 
 	_show_home()
 
@@ -83,17 +70,33 @@ func _my_steam_name() -> String:
 	return n if n != "" else "Joueur"
 
 
-func _clear_content() -> void:
-	for child in _content.get_children():
-		child.queue_free()
+func _new_screen() -> VBoxContainer:
+	if _screen != null and is_instance_valid(_screen):
+		_screen.queue_free()
+	_screen = VBoxContainer.new()
+	_screen.add_theme_constant_override("separation", 14)
+	_content.add_child(_screen)
+	return _screen
 
 
-func _close() -> void:
+func _back_button() -> Button:
+	var back_btn := Button.new()
+	back_btn.text = "←  PLAY"
+	back_btn.flat = true
+	back_btn.custom_minimum_size = Vector2(120, 26)
+	back_btn.focus_mode = Control.FOCUS_ALL
+	back_btn.add_theme_font_size_override("font_size", 11)
+	back_btn.add_theme_color_override("font_color", Color("c9a24d"))
+	back_btn.pressed.connect(_leave_and_back)
+	return back_btn
+
+
+func _leave_and_back() -> void:
 	if _room_code != "":
 		_leave_room()
 	_poll_timer.stop()
-	closed.emit()
-	queue_free()
+	if _on_back.is_valid():
+		_on_back.call()
 
 
 # =========================================================
@@ -101,35 +104,29 @@ func _close() -> void:
 # =========================================================
 
 func _show_home() -> void:
-	_clear_content()
+	_title_label.text = "CO-OP DONJON"
+	var screen := _new_screen()
+	screen.add_child(_back_button())
 
-	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_CENTER)
-	box.position = Vector2(-220, -160)
-	box.custom_minimum_size = Vector2(440, 320)
-	box.add_theme_constant_override("separation", 16)
-	_content.add_child(box)
-
-	var title := Label.new()
-	title.text = "CO-OP DONJON"
-	title.add_theme_font_size_override("font_size", 34)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = "Explorez un donjon généré à plusieurs contre des vagues d'ennemis."
+	subtitle.add_theme_font_size_override("font_size", 13)
+	subtitle.add_theme_color_override("font_color", Color("b8a880"))
+	screen.add_child(subtitle)
 
 	var create_btn := Button.new()
 	create_btn.text = "CRÉER UN SALON"
-	create_btn.custom_minimum_size = Vector2(0, 56)
+	create_btn.custom_minimum_size = Vector2(320, 56)
 	create_btn.pressed.connect(_create_room)
-	box.add_child(create_btn)
+	screen.add_child(create_btn)
 
 	var sep := Label.new()
 	sep.text = "— ou —"
-	sep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(sep)
+	screen.add_child(sep)
 
 	var join_row := HBoxContainer.new()
 	join_row.add_theme_constant_override("separation", 8)
-	box.add_child(join_row)
+	screen.add_child(join_row)
 
 	var code_input := LineEdit.new()
 	code_input.placeholder_text = "CODE DU SALON"
@@ -145,21 +142,16 @@ func _show_home() -> void:
 
 	var status := Label.new()
 	status.name = "StatusLabel"
-	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status.modulate = Color("e06666")
-	box.add_child(status)
-
-	var back_btn := Button.new()
-	back_btn.text = "RETOUR"
-	back_btn.custom_minimum_size = Vector2(0, 44)
-	back_btn.pressed.connect(_close)
-	box.add_child(back_btn)
+	status.add_theme_color_override("font_color", Color("e06666"))
+	screen.add_child(status)
 
 	create_btn.grab_focus()
 
 
 func _set_home_error(text: String) -> void:
-	var status := _content.find_child("StatusLabel", true, false)
+	if _screen == null:
+		return
+	var status := _screen.find_child("StatusLabel", true, false)
 	if status is Label:
 		(status as Label).text = text
 
@@ -229,7 +221,7 @@ func _on_action_completed(result: int, response_code: int, _headers: PackedStrin
 		_show_lobby()
 		return
 
-	# ready / settings / start
+	# ready / start
 	if typeof(parsed) == TYPE_DICTIONARY and result == HTTPRequest.RESULT_SUCCESS and response_code >= 200 and response_code < 300:
 		_apply_room_state(parsed as Dictionary)
 	elif typeof(parsed) == TYPE_DICTIONARY:
@@ -283,7 +275,9 @@ func _apply_room_state(state: Dictionary) -> void:
 
 
 func _flash_lobby_error(text: String) -> void:
-	var status := _content.find_child("LobbyStatusLabel", true, false)
+	if _screen == null:
+		return
+	var status := _screen.find_child("LobbyStatusLabel", true, false)
 	if status is Label:
 		(status as Label).text = text
 
@@ -297,61 +291,64 @@ func _is_host() -> bool:
 
 
 func _show_lobby() -> void:
-	_clear_content()
-
-	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_CENTER)
-	box.position = Vector2(-320, -260)
-	box.custom_minimum_size = Vector2(640, 520)
-	box.add_theme_constant_override("separation", 14)
-	_content.add_child(box)
+	_title_label.text = "CO-OP DONJON"
+	var screen := _new_screen()
+	screen.add_child(_back_button())
 
 	var header := HBoxContainer.new()
-	box.add_child(header)
+	header.add_theme_constant_override("separation", 10)
+	screen.add_child(header)
 
 	var code_label := Label.new()
 	code_label.text = "SALON  DJ-" + _room_code
-	code_label.add_theme_font_size_override("font_size", 26)
+	code_label.add_theme_font_size_override("font_size", 24)
+	code_label.add_theme_color_override("font_color", Color("f4c977"))
 	header.add_child(code_label)
 
 	var copy_btn := Button.new()
 	copy_btn.text = "COPIER"
+	copy_btn.flat = true
 	copy_btn.pressed.connect(func(): DisplayServer.clipboard_set("DJ-" + _room_code))
 	header.add_child(copy_btn)
 
-	box.add_child(HSeparator.new())
+	screen.add_child(HSeparator.new())
 
 	var players_label := Label.new()
 	players_label.text = "JOUEURS"
-	box.add_child(players_label)
+	players_label.add_theme_font_size_override("font_size", 12)
+	players_label.add_theme_color_override("font_color", Color("8a7550"))
+	screen.add_child(players_label)
 
 	var players_list := VBoxContainer.new()
 	players_list.name = "PlayersList"
 	players_list.add_theme_constant_override("separation", 6)
-	box.add_child(players_list)
+	screen.add_child(players_list)
 
-	box.add_child(HSeparator.new())
+	screen.add_child(HSeparator.new())
 
 	var hero_label := Label.new()
 	hero_label.text = "CHOISIS TON PERSONNAGE"
-	box.add_child(hero_label)
+	hero_label.add_theme_font_size_override("font_size", 12)
+	hero_label.add_theme_color_override("font_color", Color("8a7550"))
+	screen.add_child(hero_label)
 
 	var hero_row := HBoxContainer.new()
 	hero_row.name = "HeroRow"
 	hero_row.add_theme_constant_override("separation", 10)
-	box.add_child(hero_row)
+	screen.add_child(hero_row)
 
 	for hero in HEROES:
 		var btn := Button.new()
 		btn.text = hero
 		btn.custom_minimum_size = Vector2(130, 56)
 		btn.toggle_mode = true
+		btn.add_theme_color_override("font_color", HERO_ACCENTS.get(hero, Color.WHITE))
 		btn.pressed.connect(func(): _pick_character(hero))
 		hero_row.add_child(btn)
 
 	var actions_row := HBoxContainer.new()
 	actions_row.add_theme_constant_override("separation", 12)
-	box.add_child(actions_row)
+	screen.add_child(actions_row)
 
 	var ready_btn := Button.new()
 	ready_btn.name = "ReadyButton"
@@ -368,17 +365,10 @@ func _show_lobby() -> void:
 	launch_btn.pressed.connect(_start_room)
 	actions_row.add_child(launch_btn)
 
-	var leave_btn := Button.new()
-	leave_btn.text = "QUITTER"
-	leave_btn.custom_minimum_size = Vector2(140, 56)
-	leave_btn.pressed.connect(_close)
-	actions_row.add_child(leave_btn)
-
 	var status := Label.new()
 	status.name = "LobbyStatusLabel"
-	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status.modulate = Color("e06666")
-	box.add_child(status)
+	status.add_theme_color_override("font_color", Color("e06666"))
+	screen.add_child(status)
 
 	_refresh_lobby()
 	ready_btn.grab_focus()
@@ -397,7 +387,7 @@ func _pick_character(hero: String) -> void:
 
 
 func _toggle_ready() -> void:
-	var ready_btn := _content.find_child("ReadyButton", true, false) as Button
+	var ready_btn := _screen.find_child("ReadyButton", true, false) as Button
 	var want_ready: bool = ready_btn.button_pressed if ready_btn else true
 	if want_ready and _my_character == "":
 		_flash_lobby_error("CHOISIS UN PERSONNAGE D'ABORD")
@@ -428,7 +418,9 @@ func _start_room() -> void:
 
 
 func _refresh_lobby() -> void:
-	var players_list := _content.find_child("PlayersList", true, false) as VBoxContainer
+	if _screen == null:
+		return
+	var players_list := _screen.find_child("PlayersList", true, false) as VBoxContainer
 	if players_list == null:
 		return
 	for child in players_list.get_children():
@@ -452,7 +444,7 @@ func _refresh_lobby() -> void:
 		hero_label.text = character if character != "" else "—"
 		hero_label.custom_minimum_size = Vector2(140, 0)
 		if character != "" and HERO_ACCENTS.has(character):
-			hero_label.modulate = HERO_ACCENTS[character]
+			hero_label.add_theme_color_override("font_color", HERO_ACCENTS[character])
 		row.add_child(hero_label)
 
 		var ready := bool(m.get("ready", false))
@@ -460,17 +452,17 @@ func _refresh_lobby() -> void:
 			all_ready = false
 		var ready_label := Label.new()
 		ready_label.text = "PRÊT" if ready else "..."
-		ready_label.modulate = Color("6fcf6f") if ready else Color("8a7550")
+		ready_label.add_theme_color_override("font_color", Color("6fcf6f") if ready else Color("8a7550"))
 		row.add_child(ready_label)
 
 		players_list.add_child(row)
 
-	var launch_btn := _content.find_child("LaunchButton", true, false) as Button
+	var launch_btn := _screen.find_child("LaunchButton", true, false) as Button
 	if launch_btn:
 		launch_btn.visible = _is_host()
 		launch_btn.disabled = not all_ready
 
-	var hero_row := _content.find_child("HeroRow", true, false) as HBoxContainer
+	var hero_row := _screen.find_child("HeroRow", true, false) as HBoxContainer
 	if hero_row:
 		for child in hero_row.get_children():
 			if child is Button:
@@ -510,5 +502,3 @@ func _check_server_ready() -> void:
 		if network_node.has_signal("peer_arrived"):
 			network_node.connect("peer_arrived", func(_id): loading.call("mark_connected"), CONNECT_ONE_SHOT)
 		network_node.call("join", ip, port)
-
-	queue_free()

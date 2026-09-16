@@ -1329,7 +1329,12 @@ func _coop_room_defs() -> Dictionary:
 	# (~1.6x) — à corriger si une salle se révèle encore trop petite/grande
 	# en jeu (portail introuvable, monstres qui débordent dans le couloir...).
 	return {
-		"A_ENTRANCE": {"x": 7.1, "z": 17.75, "half_x": 20.0, "half_z": 20.0},
+		# Recalculée sur le vrai centre des points de spawn joueurs
+		# (SpawnPoints/Ally_Astral_*+Enemy_Arcane_*) après que la maps
+		# upscalée a été repositionnée une 2e fois par l'utilisateur — le
+		# Marker3D "Room_A_ENTRANCE" ne correspond toujours pas à la vraie
+		# salle de spawn, comme avant l'upscale.
+		"A_ENTRANCE": {"x": 9.0, "z": 82.66, "half_x": 20.0, "half_z": 20.0},
 		"B_REST": {"x": -71.4, "z": 49.48, "half_x": 18.0, "half_z": 18.0},
 		"C_HUB": {"x": 5.24, "z": 3.0, "half_x": 18.0, "half_z": 18.0},
 		"D_PUZZLE": {"x": -85.6, "z": -40.91, "half_x": 18.0, "half_z": 18.0},
@@ -1339,6 +1344,31 @@ func _coop_room_defs() -> Dictionary:
 
 ## Lance la partie Co-op Donjon : peuple les 5 salles (hors salle d'entrée)
 ## de monstres, place le boss dans la salle F_BOSS et deux coffres à looter.
+## Points de spawn placés à la main dans l'éditeur (nœud "MonsterSpawnPoints"
+## à la racine de la map, marqueurs nommés "<ROOM_ID>_01", "<ROOM_ID>_02"...
+## — voir ArenaLabyrinth.tscn) plutôt que calculés depuis _coop_room_defs().
+## Permet de choisir précisément où apparaissent les monstres au lieu de
+## subir un cercle généré autour du centre de la salle. Tableau vide si le
+## nœud/les marqueurs n'existent pas encore : l'appelant retombe alors sur
+## l'ancien calcul automatique, donc rien ne casse pour une map qui n'a pas
+## (encore) ces marqueurs.
+func _coop_monster_spawn_points(room_id: String) -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	if map_root == null:
+		return points
+	var spawn_root: Node = map_root.get_node_or_null("MonsterSpawnPoints")
+	if spawn_root == null:
+		return points
+	var matches: Array[Marker3D] = []
+	for child in spawn_root.get_children():
+		var marker := child as Marker3D
+		if marker != null and String(marker.name).begins_with(room_id + "_"):
+			matches.append(marker)
+	matches.sort_custom(func(a: Marker3D, b: Marker3D) -> bool: return a.name < b.name)
+	for marker in matches:
+		points.append(marker.global_position)
+	return points
+
 func _start_coop_dungeon() -> void:
 	coop_monsters.clear()
 	coop_monster_room.clear()
@@ -1371,15 +1401,27 @@ func _start_coop_dungeon() -> void:
 		coop_rooms_cleared[room_id] = false
 		var def: Dictionary = defs[room_id]
 		var count: int = int(monster_rooms[room_id]) + extra_players
+		var spawn_points := _coop_monster_spawn_points(room_id)
 		for i in range(count):
-			var angle: float = (float(i) / float(count)) * TAU
-			var offset := Vector3(cos(angle) * 4.5, 0.0, sin(angle) * 4.5)
-			var pos := Vector3(float(def["x"]), ORIGINAL_SPAWN_Y, float(def["z"])) + offset
+			var pos: Vector3
+			if not spawn_points.is_empty():
+				pos = spawn_points[i % spawn_points.size()]
+				if i >= spawn_points.size():
+					# Plus de monstres que de points placés à la main
+					# (adaptation au nombre de joueurs) : petit décalage
+					# aléatoire pour ne pas les faire apparaître superposés.
+					pos += Vector3(randf_range(-2.0, 2.0), 0.0, randf_range(-2.0, 2.0))
+			else:
+				var angle: float = (float(i) / float(count)) * TAU
+				var offset := Vector3(cos(angle) * 4.5, 0.0, sin(angle) * 4.5)
+				pos = Vector3(float(def["x"]), ORIGINAL_SPAWN_Y, float(def["z"])) + offset
 			_spawn_coop_monster(room_id, pos, false)
 
 	coop_rooms_cleared["F_BOSS"] = false
 	var boss_def: Dictionary = defs["F_BOSS"]
-	_spawn_coop_monster("F_BOSS", Vector3(float(boss_def["x"]), ORIGINAL_SPAWN_Y, float(boss_def["z"])), true)
+	var boss_spawn_points := _coop_monster_spawn_points("F_BOSS")
+	var boss_pos: Vector3 = boss_spawn_points[0] if not boss_spawn_points.is_empty() else Vector3(float(boss_def["x"]), ORIGINAL_SPAWN_Y, float(boss_def["z"]))
+	_spawn_coop_monster("F_BOSS", boss_pos, true)
 
 	coop_chest_positions = {
 		"chest_reward": Vector3(float(defs["E_REWARD"]["x"]), ORIGINAL_SPAWN_Y, float(defs["E_REWARD"]["z"])),

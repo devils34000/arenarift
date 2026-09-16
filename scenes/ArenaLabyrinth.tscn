@@ -4305,6 +4305,41 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.001154, 0.2, 80.930145)
 [node name="Enemy_Arcane_06" type="Marker3D" parent="SpawnPoints" unique_id=813777116]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.001154, 0.2, 80.930145)
 
+[node name="MonsterSpawnPoints" type="Node3D" parent="."]
+
+[node name="B_REST_01" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66.9, 0.2, 49.48)
+
+[node name="B_REST_02" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.9, 0.2, 49.48)
+
+[node name="C_HUB_01" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.74, 0.2, 3.0)
+
+[node name="C_HUB_02" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.99, 0.2, 6.897)
+
+[node name="C_HUB_03" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.99, 0.2, -0.897)
+
+[node name="D_PUZZLE_01" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -81.1, 0.2, -40.91)
+
+[node name="D_PUZZLE_02" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -87.85, 0.2, -37.013)
+
+[node name="D_PUZZLE_03" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -87.85, 0.2, -44.807)
+
+[node name="E_REWARD_01" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 84.56, 0.2, 47.52)
+
+[node name="E_REWARD_02" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75.56, 0.2, 47.52)
+
+[node name="F_BOSS_01" type="Marker3D" parent="MonsterSpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.36, 0.2, -72.36)
+
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1090981793]
 transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 7, 60, 89)
 

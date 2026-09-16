@@ -1321,18 +1321,20 @@ func _start_network_bots() -> void:
 ## donc garantis à l'intérieur du sol carvé (contrairement aux Marker3D
 ## "Room_*" laissés tels quels depuis l'ancienne version de la map).
 func _coop_room_defs() -> Dictionary:
+	# Coordonnées reprises directement des Marker3D "Room_*" de la map
+	# (repositionnés ensemble par la maps upscalée — cf. commit "upscale"),
+	# pas recalculées à la main : la formule de grille d'origine ne
+	# correspond plus à rien depuis l'upscale. Demi-tailles estimées par le
+	# facteur d'échelle observé entre les anciennes/nouvelles coordonnées
+	# (~1.6x) — à corriger si une salle se révèle encore trop petite/grande
+	# en jeu (portail introuvable, monstres qui débordent dans le couloir...).
 	return {
-		# Coordonnée réelle du spawn (confirmée par les logs client : le
-		# joueur apparaît vers (3, 84.9)), pas la formule de grille d'origine
-		# qui plaçait l'entrée à (7, 49) — la salle de spawn a été
-		# repositionnée/agrandie depuis sans que cette valeur soit mise à
-		# jour, d'où le portail introuvable malgré un donjon nettoyé.
-		"A_ENTRANCE": {"x": 7.0, "z": 85.0, "half_x": 14.0, "half_z": 14.0},
-		"B_REST": {"x": -49.0, "z": 28.0, "half_x": 10.5, "half_z": 10.5},
-		"C_HUB": {"x": 7.0, "z": 7.0, "half_x": 10.5, "half_z": 10.5},
-		"D_PUZZLE": {"x": -56.0, "z": -28.0, "half_x": 10.5, "half_z": 10.5},
-		"E_REWARD": {"x": 56.0, "z": 28.0, "half_x": 10.5, "half_z": 10.5},
-		"F_BOSS": {"x": 7.0, "z": -42.0, "half_x": 17.5, "half_z": 17.5},
+		"A_ENTRANCE": {"x": 7.1, "z": 17.75, "half_x": 20.0, "half_z": 20.0},
+		"B_REST": {"x": -71.4, "z": 49.48, "half_x": 18.0, "half_z": 18.0},
+		"C_HUB": {"x": 5.24, "z": 3.0, "half_x": 18.0, "half_z": 18.0},
+		"D_PUZZLE": {"x": -85.6, "z": -40.91, "half_x": 18.0, "half_z": 18.0},
+		"E_REWARD": {"x": 80.06, "z": 47.52, "half_x": 18.0, "half_z": 18.0},
+		"F_BOSS": {"x": 14.36, "z": -72.36, "half_x": 29.0, "half_z": 29.0},
 	}
 
 ## Lance la partie Co-op Donjon : peuple les 5 salles (hors salle d'entrée)

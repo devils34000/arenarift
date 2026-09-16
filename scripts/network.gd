@@ -216,6 +216,17 @@ func arena_coop_progress(cleared: int, total: int, key_dropped: bool) -> void:
 	if arena != null:
 		arena.call("_network_client_coop_progress", cleared, total, key_dropped)
 
+## Co-op Donjon : effet visuel du portail de sortie qui s'ouvre à la
+## victoire, diffusé à tous les clients (le joueur qui déclenche
+## l'ouverture ne doit pas être le seul à le voir).
+@rpc("authority", "call_remote", "reliable")
+func arena_coop_portal_vfx(pos: Vector3) -> void:
+	if multiplayer.is_server():
+		return
+	var arena := _get_network_arena()
+	if arena != null:
+		arena.call("_network_client_coop_portal_vfx", pos)
+
 ## Récupération de la hache de Kaithlyn : le serveur seul décide du moment
 ## exact où la hache est ramassée (position/cooldown remis à zéro), et le
 ## diffuse ici. Sans cette RPC, chaque client décidait indépendamment quand

@@ -1482,6 +1482,67 @@ func _apply_coop_progress(cleared: int, total: int, key: bool) -> void:
 	coop_progress_key = key
 	_update_coop_progress_display()
 
+func _broadcast_coop_portal_vfx(pos: Vector3) -> void:
+	_spawn_coop_portal_vfx(pos)
+	var network_node := get_node_or_null("/root/Network")
+	if network_node == null or not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	for target_id in multiplayer.get_peers():
+		network_node.arena_coop_portal_vfx.rpc_id(int(target_id), pos)
+
+func _network_client_coop_portal_vfx(pos: Vector3) -> void:
+	_spawn_coop_portal_vfx(pos)
+
+## Portail de sortie qui s'ouvre à la victoire du donjon : anneaux tournants
+## lumineux + lumière + flash, plutôt qu'un simple message texte. Purement
+## cosmétique (aucune logique de jeu), se détruit tout seul après quelques
+## secondes.
+func _spawn_coop_portal_vfx(pos: Vector3) -> void:
+	if vfx_manager != null and is_instance_valid(vfx_manager):
+		vfx_manager.spawn_teleport_start(self, pos + Vector3.UP * 0.1, 2.6)
+		vfx_manager.spawn_explosion(self, pos + Vector3.UP * 0.3, 1.8)
+	_play_sfx(TELEPORT_SFX, pos, -2.0)
+
+	var portal_root := Node3D.new()
+	portal_root.name = "CoopPortalVFX"
+	portal_root.position = pos + Vector3.UP * 1.1
+	add_child(portal_root)
+
+	var portal_light := OmniLight3D.new()
+	portal_light.light_color = Color("7fe9c8")
+	portal_light.light_energy = 3.2
+	portal_light.omni_range = 8.0
+	portal_root.add_child(portal_light)
+
+	var ring_material := StandardMaterial3D.new()
+	ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_material.emission_enabled = true
+	ring_material.emission = Color("7fe9c8")
+	ring_material.emission_energy_multiplier = 6.0
+	ring_material.albedo_color = Color("bdfbe8")
+
+	var rings: Array[MeshInstance3D] = []
+	for i in range(3):
+		var ring := MeshInstance3D.new()
+		var torus := TorusMesh.new()
+		torus.inner_radius = 1.5 + float(i) * 0.18
+		torus.outer_radius = 1.7 + float(i) * 0.18
+		torus.rings = 48
+		torus.ring_segments = 12
+		ring.mesh = torus
+		ring.rotation_degrees = Vector3(90.0, float(i) * 40.0, 0.0)
+		ring.material_override = ring_material
+		portal_root.add_child(ring)
+		rings.append(ring)
+
+	var tween := portal_root.create_tween()
+	tween.set_parallel(true)
+	for ring in rings:
+		tween.tween_property(ring, "rotation_degrees:y", ring.rotation_degrees.y + 720.0, 6.0)
+	tween.tween_property(portal_light, "light_energy", 0.0, 6.0)
+	tween.set_parallel(false)
+	tween.tween_callback(portal_root.queue_free)
+
 func _update_coop_progress_display() -> void:
 	if coop_progress_bar == null or not is_instance_valid(coop_progress_bar) or coop_progress_label == null or not is_instance_valid(coop_progress_label):
 		return
@@ -1489,7 +1550,7 @@ func _update_coop_progress_display() -> void:
 	coop_progress_bar.value = clampf(float(coop_progress_rooms_cleared) / float(total), 0.0, 1.0) * 100.0
 	if coop_progress_rooms_cleared >= total and coop_progress_key:
 		coop_progress_label.text = "DONJON NETTOYÉ — TÉLÉPORTATION REQUISE : REJOIGNEZ L'ENTRÉE"
-		coop_progress_label.add_theme_color_override("font_color", Color("62e6a7"))
+		coop_progress_label.add_theme_color_override("font_color", Color("ffe08a"))
 	elif coop_progress_rooms_cleared >= total:
 		coop_progress_label.text = "DONJON NETTOYÉ — RÉCUPÉREZ LA CLÉ DU BOSS"
 		coop_progress_label.add_theme_color_override("font_color", Color("ffcc55"))
@@ -1546,6 +1607,7 @@ func _resolve_coop_interact(caster: ArenaPlayer3D) -> void:
 		else:
 			coop_victory = true
 			_broadcast_coop_notice("LE PORTAIL S'OUVRE — VICTOIRE !")
+			_broadcast_coop_portal_vfx(Vector3(float(entrance["x"]), caster.global_position.y, float(entrance["z"])))
 			_end_coop_match(true)
 
 func _broadcast_coop_notice(text: String) -> void:
@@ -4517,17 +4579,18 @@ func _build_pause_menu() -> void:
 ## une barre de progression du donjon : le Co-op Donjon n'a ni round ni
 ## camp adverse, ces éléments n'y avaient pas de sens.
 func _build_coop_progress_panel() -> void:
-	var panel := _panel(Vector2(430, 14), Vector2(420, 70), Color("081321e8"), Color("315b8d"), 16)
+	var panel := _panel(Vector2(410, 14), Vector2(460, 84), Color("081321e8"), Color("315b8d"), 16)
 	panel.name = "CoopProgressPanel"
 	hud.add_child(panel)
 
-	var title := _label("", "PROGRESSION DU DONJON", Vector2(10, 8), Vector2(400, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
+	var title := _label("", "PROGRESSION DU DONJON", Vector2(10, 8), Vector2(440, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
 	panel.add_child(title)
 
 	coop_progress_bar = ProgressBar.new()
 	coop_progress_bar.name = "ProgressBar"
 	coop_progress_bar.position = Vector2(20, 28)
-	coop_progress_bar.size = Vector2(380, 14)
+	coop_progress_bar.size = Vector2(420, 14)
+	coop_progress_bar.custom_minimum_size = Vector2(420, 14)
 	coop_progress_bar.min_value = 0.0
 	coop_progress_bar.max_value = 100.0
 	coop_progress_bar.value = 0.0
@@ -4542,7 +4605,13 @@ func _build_coop_progress_panel() -> void:
 	coop_progress_bar.add_theme_stylebox_override("fill", bar_fill)
 	panel.add_child(coop_progress_bar)
 
-	coop_progress_label = _label("", "SALLES NETTOYÉES : 0 / 5", Vector2(10, 46), Vector2(400, 16), 10, Color("cfe0f5"), HORIZONTAL_ALIGNMENT_CENTER)
+	# Texte du "message d'état" (ex. "TÉLÉPORTATION REQUISE") en clair avec
+	# contour noir : sans ça, un texte de la même teinte que la barre (verte
+	# une fois le donjon nettoyé) devenait illisible juste au-dessus d'elle.
+	coop_progress_label = _label("", "SALLES NETTOYÉES : 0 / 5", Vector2(10, 48), Vector2(440, 30), 10, Color("cfe0f5"), HORIZONTAL_ALIGNMENT_CENTER)
+	coop_progress_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	coop_progress_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	coop_progress_label.add_theme_constant_override("outline_size", 5)
 	panel.add_child(coop_progress_label)
 
 	_update_coop_progress_display()
@@ -4802,26 +4871,30 @@ func _show_coop_intro_overlay() -> void:
 	overlay.add_child(backdrop)
 
 	var panel := Panel.new()
-	panel.position = Vector2(310, 110)
-	panel.size = Vector2(660, 500)
+	panel.position = Vector2(290, 40)
+	panel.size = Vector2(700, 640)
 	panel.add_theme_stylebox_override("panel", _box(Color("07111fef"), Color("6b4d1f"), 22, 2))
 	overlay.add_child(panel)
 
-	var title := _label("", "LE DONJON D'ARKANOR", Vector2(0, 28), Vector2(660, 40), 26, Color("d9a441"), HORIZONTAL_ALIGNMENT_CENTER)
+	var title := _label("", "LE DONJON D'ARKANOR", Vector2(0, 26), Vector2(700, 40), 24, Color("d9a441"), HORIZONTAL_ALIGNMENT_CENTER)
 	panel.add_child(title)
 
+	# La hauteur réservée au texte (et donc la position du bouton en
+	# dessous) doit avoir de la marge : ce texte est long, et un simple
+	# calcul approximatif du nombre de lignes suffit à éviter tout
+	# chevauchement plutôt que de mesurer le layout réel du Label.
 	var lore := Label.new()
-	lore.position = Vector2(46, 84)
-	lore.size = Vector2(568, 300)
+	lore.position = Vector2(50, 76)
+	lore.size = Vector2(600, 460)
 	lore.autowrap_mode = TextServer.AUTOWRAP_WORD
-	lore.add_theme_font_size_override("font_size", 14)
+	lore.add_theme_font_size_override("font_size", 13)
 	lore.add_theme_color_override("font_color", Color("dbe4f2"))
 	lore.text = "Sous les ruines d'Arkanor dort un labyrinthe que même les cartographes du Rift refusent de tracer. Des morts-vivants en gardent chaque salle depuis la chute du dernier convoi qui s'y est aventuré.\n\nLA RÈGLE DU DONJON :\n— Nettoyez les salles une à une. Les morts-vivants ne pardonnent aucune imprudence.\n— Le plus grand d'entre eux garde la clé du portail de sortie. Il ne la lâchera qu'en mourant.\n— Un allié à terre peut être réanimé (touche interact) avant qu'il ne soit trop tard. Une fois mort, il ne se relèvera plus.\n— Une fois le donjon nettoyé et la clé en main, retournez à l'entrée et ouvrez le portail (interact) pour sortir vivants.\n\nArkanor ne vous laissera pas repartir facilement."
 	panel.add_child(lore)
 
 	var ready_button := Button.new()
 	ready_button.text = "PRÊT À MOURIR"
-	ready_button.position = Vector2(230, 420)
+	ready_button.position = Vector2(250, 570)
 	ready_button.size = Vector2(200, 46)
 	ready_button.add_theme_font_size_override("font_size", 16)
 	ready_button.add_theme_color_override("font_color", Color("1a0d04"))

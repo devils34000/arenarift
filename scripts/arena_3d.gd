@@ -1330,6 +1330,14 @@ func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	monster.network_round_serial = network_round_serial
 	monster.hero_id = "EREN"
 	monster.team_color = Color("ff6276")
+	# Apparence uniquement : monster_skin remplace le modèle 3D du héros par
+	# un squelette KayKit, les stats/sorts restent ceux d'EREN (hero_id).
+	if is_boss:
+		monster.monster_skin = "warrior"
+		monster.model_scale *= 1.6
+	else:
+		var regular_skins := ["minion", "rogue", "mage"]
+		monster.monster_skin = regular_skins[bot_id % regular_skins.size()]
 	add_child(monster)
 	monster.global_position = _resolve_spawn_position(pos, monster)
 	monster.spell_cast.connect(_on_spell_cast)

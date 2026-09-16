@@ -132,6 +132,15 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var general_anims_path: String = "res://assets/kaykit/Rig_Medium_General.glb"
 @export var model_scale: float = 1.15
 
+## Modèles des monstres du Co-op Donjon (KayKit Skeletons, même rig
+## "Rig_Medium" que les héros : les animations movement_anims_path /
+## general_anims_path ci-dessus s'appliquent donc telles quelles).
+@export_group("Modèles 3D — Monstres Donjon")
+@export var skeleton_minion_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/characters/gltf/Skeleton_Minion.glb"
+@export var skeleton_rogue_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/characters/gltf/Skeleton_Rogue.glb"
+@export var skeleton_mage_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/characters/gltf/Skeleton_Mage.glb"
+@export var skeleton_warrior_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/characters/gltf/Skeleton_Warrior.glb"
+
 ## ------------------------------------------------------------------
 ## FIN DES STATS ÉDITABLES. Le reste du fichier est la logique du jeu :
 ## ne pas modifier sauf si vous savez ce que vous faites.
@@ -172,6 +181,12 @@ var is_bot: bool = false
 # tant qu'un allié ne l'a pas réanimé (interact) avant la fin du minuteur.
 var is_downed: bool = false
 var down_time_left: float = 0.0
+
+## Squelette KayKit à utiliser comme modèle 3D au lieu du héros habituel :
+## "minion"/"rogue"/"mage"/"warrior", ou "" pour garder l'apparence du héros
+## (hero_id continue de piloter les stats/sorts même pour un monstre, seul
+## le modèle visuel change — cf. Arena3D._spawn_coop_monster).
+var monster_skin: String = ""
 
 # Multiplayer V2 : le serveur simule les joueurs et les bots.
 var network_peer_id: int = 0
@@ -1093,14 +1108,28 @@ func _setup_collision() -> void:
 	add_child(shape_node)
 
 func _setup_model() -> void:
-	if hero_id == "EREN":
+	var node_name: String
+	if monster_skin != "":
+		var monster_paths := {
+			"minion": skeleton_minion_scene_path,
+			"rogue": skeleton_rogue_scene_path,
+			"mage": skeleton_mage_scene_path,
+			"warrior": skeleton_warrior_scene_path,
+		}
+		_model_path = String(monster_paths.get(monster_skin, skeleton_minion_scene_path))
+		node_name = "Monster"
+	elif hero_id == "EREN":
 		_model_path = eren_scene_path
+		node_name = "Eren"
 	elif hero_id == "KAITHLYN":
 		_model_path = kaithlyn_scene_path
+		node_name = "Kaithlyn"
 	elif hero_id == "MAYLINH":
 		_model_path = maylinh_scene_path
+		node_name = "Maylinh"
 	else:
 		_model_path = mage_scene_path
+		node_name = "Mage"
 	var scene: PackedScene = load(_model_path) as PackedScene
 	if scene == null:
 		push_error("Modèle KayKit introuvable : " + _model_path)
@@ -1120,7 +1149,7 @@ func _setup_model() -> void:
 		_visual_root.queue_free()
 		_visual_root = null
 		return
-	_model.name = "Eren" if hero_id == "EREN" else ("Kaithlyn" if hero_id == "KAITHLYN" else ("Maylinh" if hero_id == "MAYLINH" else "Mage"))
+	_model.name = node_name
 	_model.scale = Vector3.ONE * model_scale
 	_model.position = Vector3.ZERO
 	_model.rotation = Vector3.ZERO
@@ -1134,18 +1163,21 @@ func _setup_model() -> void:
 	# dans le dos ou sur le bras selon les personnages.
 	_skeleton = _find_skeleton(_model)
 
-	if hero_id == "KAITHLYN":
-		_create_kaithlyn_weapons_independent()
-	elif hero_id == "AERIS":
-		_held_weapon = _create_simple_held_weapon(aeris_staff_scene_path, "AerisStaff", aeris_staff_held_position, aeris_staff_held_rotation_degrees, aeris_staff_scale)
-	elif hero_id == "EREN":
-		_held_weapon = _create_simple_held_weapon(eren_sword_scene_path, "ErenSword", eren_sword_held_position, eren_sword_held_rotation_degrees, eren_sword_scale)
-	elif hero_id == "MAYLINH":
-		_held_weapon = _create_simple_held_weapon(maylinh_dagger_scene_path, "MaylinhDagger", maylinh_dagger_held_position, maylinh_dagger_held_rotation_degrees, maylinh_dagger_scale)
+	# Les monstres du donjon attaquent uniquement via les sorts existants
+	# (orb/teleport, cf. _bot_input) : pas d'arme tenue à créer pour eux.
+	if monster_skin == "":
+		if hero_id == "KAITHLYN":
+			_create_kaithlyn_weapons_independent()
+		elif hero_id == "AERIS":
+			_held_weapon = _create_simple_held_weapon(aeris_staff_scene_path, "AerisStaff", aeris_staff_held_position, aeris_staff_held_rotation_degrees, aeris_staff_scale)
+		elif hero_id == "EREN":
+			_held_weapon = _create_simple_held_weapon(eren_sword_scene_path, "ErenSword", eren_sword_held_position, eren_sword_held_rotation_degrees, eren_sword_scale)
+		elif hero_id == "MAYLINH":
+			_held_weapon = _create_simple_held_weapon(maylinh_dagger_scene_path, "MaylinhDagger", maylinh_dagger_held_position, maylinh_dagger_held_rotation_degrees, maylinh_dagger_scale)
 
 	_animation_player = AnimationPlayer.new()
 	_animation_player.name = "AnimationPlayer"
-	_animation_player.root_node = NodePath("../VisualRoot/Eren" if hero_id == "EREN" else ("../VisualRoot/Kaithlyn" if hero_id == "KAITHLYN" else ("../VisualRoot/Maylinh" if hero_id == "MAYLINH" else "../VisualRoot/Mage")))
+	_animation_player.root_node = NodePath("../VisualRoot/" + node_name)
 	add_child(_animation_player)
 
 	_import_animation_libraries(movement_anims_path)

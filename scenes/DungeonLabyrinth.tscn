@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cd5mo00vp0yvp"]
+
+[ext_resource type="Script" uid="uid://byitgxkteacln" path="res://scripts/dungeon_labyrinth.gd" id="1"]
+
+[node name="DungeonLabyrinth" type="Node3D" unique_id=315392366]
+script = ExtResource("1")

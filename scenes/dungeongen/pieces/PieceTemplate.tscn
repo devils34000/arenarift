@@ -1,9 +1,35 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://jb5p152akkt3"]
 
-[ext_resource type="Script" path="res://scripts/dungeongen/dungeon_piece.gd" id="1_piece"]
+[ext_resource type="Script" uid="uid://bpdglssev8e6d" path="res://scripts/dungeongen/dungeon_piece.gd" id="1_piece"]
+[ext_resource type="PackedScene" uid="uid://dxq5rb1ig5xvk" path="res://assets/simpledongeon/Wall00.fbx" id="2_ns3oh"]
+[ext_resource type="PackedScene" uid="uid://6wui47nfc5lr" path="res://assets/simpledongeon/Pillar01.fbx" id="3_h4t4x"]
+[ext_resource type="PackedScene" uid="uid://dor7hv27ia7ck" path="res://assets/simpledongeon/Pillar02.fbx" id="4_lsfpx"]
 
-[node name="PieceTemplate" type="Node3D"]
+[node name="PieceTemplate" type="Node3D" unique_id=203717584]
 script = ExtResource("1_piece")
-category = "corridor"
 
-[node name="Door1" type="Marker3D" parent="."]
+[node name="Door1" type="Marker3D" parent="." unique_id=336888118]
+
+[node name="Wall00" parent="." unique_id=775947013 instance=ExtResource("2_ns3oh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.04033935, 0, 0.7067423)
+
+[node name="Wall01" parent="." unique_id=54169570 instance=ExtResource("2_ns3oh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9365392, 0, 0.7117586)
+
+[node name="Wall02" parent="." unique_id=568476100 instance=ExtResource("2_ns3oh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16210794, 0, -7.6148896)
+
+[node name="Wall03" parent="." unique_id=1071378116 instance=ExtResource("2_ns3oh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8228903, -4.7683716e-07, -7.616014)
+
+[node name="Pillar01" parent="." unique_id=654538039 instance=ExtResource("3_h4t4x")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.759287, 0, 0.6898794)
+
+[node name="Pillar02" parent="." unique_id=1828096938 instance=ExtResource("3_h4t4x")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.26941, 0, 0.7196913)
+
+[node name="Pillar03" parent="." unique_id=2015751761 instance=ExtResource("3_h4t4x")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.901813, 0, -7.575475)
+
+[node name="Pillar04" parent="." unique_id=937530399 instance=ExtResource("4_lsfpx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.24092, 0, -7.5759606)

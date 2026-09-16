@@ -104,10 +104,10 @@ adjustment_enabled = true
 adjustment_saturation = 1.16
 
 [sub_resource type="BoxShape3D" id="WallCollisionX"]
-size = Vector3(94.2055212, 13.538332, 1.9442952)
+size = Vector3(94.20552, 13.538332, 1.9442952)
 
 [sub_resource type="BoxShape3D" id="WallCollisionZ"]
-size = Vector3(1.79439088, 13.538332, 82.632546)
+size = Vector3(1.7943909, 13.538332, 82.632545)
 
 [node name="Arena1v1" type="Node3D" unique_id=418335436]
 script = ExtResource("49_arena3d")
@@ -349,23 +349,21 @@ transform = Transform3D(0.99999464, 0, 0.0030714879, 0, 0.9999999, 0, -0.0030714
 transform = Transform3D(-0.99999523, 0, -0.002982648, 0, 0.99999994, 0, 0.0029826239, 0, -0.9999965, -0.049275763, -0.008658357, 0.01249218)
 
 [node name="MapBoundary" type="StaticBody3D" parent="." unique_id=593245287]
-collision_layer = 1
-collision_mask = 1
 
 [node name="CollisionNorth" type="CollisionShape3D" parent="MapBoundary" unique_id=1386546963]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769166, -23.257556)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769166, -23.257557)
 shape = SubResource("WallCollisionX")
 
 [node name="CollisionSouth" type="CollisionShape3D" parent="MapBoundary" unique_id=27097286]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769166, 22.232837)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.769166, 22.232838)
 shape = SubResource("WallCollisionX")
 
 [node name="CollisionWest" type="CollisionShape3D" parent="MapBoundary" unique_id=662183654]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.15250, 6.769166, -9.338277)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.1525, 6.769166, -9.338277)
 shape = SubResource("WallCollisionZ")
 
 [node name="CollisionEast" type="CollisionShape3D" parent="MapBoundary" unique_id=1013169753]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.024676, 6.769166, -17.180781)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.024675, 6.769166, -17.18078)
 shape = SubResource("WallCollisionZ")
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1804120483]

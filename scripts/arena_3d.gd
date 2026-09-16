@@ -1102,13 +1102,19 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 	# deathmatch_scores (voir ligne ~2238).
 	deathmatch_scores[fighter] = 0
 	deathmatch_deaths[fighter] = 0
+	# "is_first_connection" est capturé AVANT _start_network_match() : cette
+	# dernière met network_server_initialized à true pour le tout premier
+	# joueur, donc tester "not network_server_initialized" juste après
+	# (l'ancien code) ne se déclenchait JAMAIS — ni pour les bots de
+	# remplissage PvP, ni pour les monstres du donjon Co-op.
+	var is_first_connection := player == null
 	if player == null:
 		player = fighter
 		_start_network_match()
 	else:
 		enemies.append(fighter)
 
-	if not network_server_initialized:
+	if is_first_connection:
 		if _is_coop_mode():
 			_start_coop_dungeon()
 		else:

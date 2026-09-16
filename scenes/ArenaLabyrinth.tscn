@@ -1,6 +1,18 @@
 [gd_scene format=3 uid="uid://dcc68rxuq72bo"]
 
 [ext_resource type="Script" uid="uid://cnxhs10scv8yn" path="res://scripts/arena_3d.gd" id="1_arena"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Ancient_Cobblestone_5/Ancient_Cobblestone_5_Albedo.png" id="90_wall_albedo"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Ancient_Cobblestone_5/Ancient_Cobblestone_5_Normal.png" id="91_wall_normal"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Ancient_Cobblestone_5/Ancient_Cobblestone_5_AO.png" id="92_wall_ao"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Pavement_7/Pavement_7_Albedo.png" id="93_floor_albedo"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Pavement_7/Pavement_7_Normal.png" id="94_floor_normal"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Pavement_7/Pavement_7_AO.png" id="95_floor_ao"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Cliff_Rock_Surface_21/Cliff_Rock_Surface_21_Albedo.png" id="96_bwall_albedo"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Cliff_Rock_Surface_21/Cliff_Rock_Surface_21_Normal.png" id="97_bwall_normal"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Cliff_Rock_Surface_21/Cliff_Rock_Surface_21_AO.png" id="98_bwall_ao"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Cracked_Concrete_26/Cracked_Concrete_26_Albedo.png" id="99_bfloor_albedo"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Cracked_Concrete_26/Cracked_Concrete_26_Normal.png" id="100_bfloor_normal"]
+[ext_resource type="Texture2D" path="res://assets/Free_stylised_texture/Textures/Cracked_Concrete_26/Cracked_Concrete_26_AO.png" id="101_bfloor_ao"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 2
@@ -15,15 +27,27 @@ fog_density = 0.008
 size = Vector2(156, 126)
 
 [sub_resource type="StandardMaterial3D" id="floor_mat"]
-albedo_color = Color(0.16, 0.15, 0.14, 1)
+albedo_texture = ExtResource("93_floor_albedo")
+ao_enabled = true
+ao_texture = ExtResource("95_floor_ao")
+normal_enabled = true
+normal_texture = ExtResource("94_floor_normal")
 roughness = 0.95
+uv1_triplanar = true
+uv1_scale = Vector3(0.4, 0.4, 0.4)
 
 [sub_resource type="BoxMesh" id="wallmesh_1"]
 size = Vector3(150, 6, 0.4)
 
 [sub_resource type="StandardMaterial3D" id="wall_mat"]
-albedo_color = Color(0.26, 0.24, 0.22, 1)
+albedo_texture = ExtResource("90_wall_albedo")
+ao_enabled = true
+ao_texture = ExtResource("92_wall_ao")
+normal_enabled = true
+normal_texture = ExtResource("91_wall_normal")
 roughness = 0.9
+uv1_triplanar = true
+uv1_scale = Vector3(0.5, 0.5, 0.5)
 
 [sub_resource type="BoxShape3D" id="wallshape_1"]
 size = Vector3(150, 6, 0.4)
@@ -134,8 +158,15 @@ size = Vector3(0.4, 6, 30)
 size = Vector2(186, 150)
 
 [sub_resource type="StandardMaterial3D" id="basement_floor_mat"]
-albedo_color = Color(0.08, 0.07, 0.09, 1)
+albedo_texture = ExtResource("99_bfloor_albedo")
+albedo_color = Color(0.6, 0.58, 0.65, 1)
+ao_enabled = true
+ao_texture = ExtResource("101_bfloor_ao")
+normal_enabled = true
+normal_texture = ExtResource("100_bfloor_normal")
 roughness = 0.95
+uv1_triplanar = true
+uv1_scale = Vector3(0.4, 0.4, 0.4)
 
 [sub_resource type="BoxShape3D" id="basement_floor_shape"]
 size = Vector3(186, 0.4, 150)
@@ -144,8 +175,15 @@ size = Vector3(186, 0.4, 150)
 size = Vector3(180, 6, 0.4)
 
 [sub_resource type="StandardMaterial3D" id="bwall_mat"]
-albedo_color = Color(0.22, 0.2, 0.26, 1)
+albedo_texture = ExtResource("96_bwall_albedo")
+albedo_color = Color(0.55, 0.5, 0.65, 1)
+ao_enabled = true
+ao_texture = ExtResource("98_bwall_ao")
+normal_enabled = true
+normal_texture = ExtResource("97_bwall_normal")
 roughness = 0.9
+uv1_triplanar = true
+uv1_scale = Vector3(0.5, 0.5, 0.5)
 
 [sub_resource type="BoxShape3D" id="bwallmesh_1_shape"]
 size = Vector3(180, 6, 0.4)

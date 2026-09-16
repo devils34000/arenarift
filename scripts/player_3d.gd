@@ -205,6 +205,10 @@ var monster_home_position: Vector3 = Vector3.ZERO
 var monster_leash_range: float = 11.0
 var monster_aggro_range: float = 8.0
 var _monster_melee_timer: float = 0.0
+## Vrai tant que ce monstre a le joueur en ligne de mire et l'attaque
+## activement — lu par Arena3D._update_enemy_health_bars pour afficher un
+## repère d'alerte au-dessus de sa tête.
+var is_aggroed: bool = false
 
 # Multiplayer V2 : le serveur simule les joueurs et les bots.
 var network_peer_id: int = 0
@@ -283,8 +287,6 @@ var eren_fury: int = 0
 var _model: Node3D
 var _visual_root: Node3D
 var _animation_player: AnimationPlayer
-var _health_bar_root: Node3D
-var _health_bar_fill: MeshInstance3D
 var _idle_anim: StringName = &"Idle_A"
 var _walk_anim: StringName = &"Walking_A"
 var _run_anim: StringName = &"Running_A"
@@ -367,7 +369,17 @@ func _physics_process(delta: float) -> void:
 
 	if is_bot:
 		if monster_skin != "":
-			_monster_bot_input(delta)
+			# L'IA des monstres (dont is_aggroed) ne doit tourner que côté
+			# serveur : sur un client, "target" n'est jamais peuplé (seul le
+			# serveur appelle _refresh_network_targets), donc rejouer cette
+			# IA localement ne ferait qu'écraser is_aggroed reçu du serveur
+			# par une valeur toujours fausse à chaque frame. La position est
+			# de toute façon corrigée par _update_network_visuals().
+			if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+				_monster_bot_input(delta)
+			else:
+				velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+				velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
 		else:
 			_bot_input(delta)
 	elif multiplayer.has_multiplayer_peer():
@@ -771,6 +783,7 @@ func _monster_bot_input(delta: float) -> void:
 		and distance_home <= monster_leash_range
 		and _has_line_of_sight(player_target.global_position + Vector3.UP * 0.9)
 	)
+	is_aggroed = engaged
 
 	if engaged:
 		var forward: Vector3 = to_player.normalized() if distance_to_player > 0.05 else _character_forward()
@@ -1311,62 +1324,6 @@ func _setup_model() -> void:
 
 	_import_animation_libraries(movement_anims_path)
 	_import_animation_libraries(general_anims_path)
-
-	if monster_skin != "":
-		_create_monster_health_bar()
-
-const _MONSTER_HEALTH_BAR_WIDTH := 0.9
-const _MONSTER_HEALTH_BAR_HEIGHT := 0.11
-
-## Petite barre de vie flottante au-dessus des monstres du donjon (toujours
-## face caméra), pour que les joueurs voient combien de coups il reste à
-## donner. Deux quads superposés (fond + remplissage) plutôt qu'un Label3D :
-## plus lisible d'un coup d'œil en plein combat.
-func _create_monster_health_bar() -> void:
-	if _visual_root == null or not is_instance_valid(_visual_root):
-		return
-	_health_bar_root = Node3D.new()
-	_health_bar_root.name = "HealthBar"
-	_health_bar_root.position = Vector3(0.0, 2.3 * model_scale, 0.0)
-	_visual_root.add_child(_health_bar_root)
-
-	var background := MeshInstance3D.new()
-	var background_mesh := QuadMesh.new()
-	background_mesh.size = Vector2(_MONSTER_HEALTH_BAR_WIDTH + 0.05, _MONSTER_HEALTH_BAR_HEIGHT + 0.05)
-	background.mesh = background_mesh
-	var background_material := StandardMaterial3D.new()
-	background_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	background_material.albedo_color = Color(0.05, 0.02, 0.02, 0.85)
-	background_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	background_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	background_material.render_priority = 10
-	background.material_override = background_material
-	_health_bar_root.add_child(background)
-
-	_health_bar_fill = MeshInstance3D.new()
-	var fill_mesh := QuadMesh.new()
-	fill_mesh.size = Vector2(_MONSTER_HEALTH_BAR_WIDTH, _MONSTER_HEALTH_BAR_HEIGHT)
-	_health_bar_fill.mesh = fill_mesh
-	var fill_material := StandardMaterial3D.new()
-	fill_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fill_material.albedo_color = Color(0.85, 0.15, 0.15, 1.0)
-	fill_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	fill_material.render_priority = 11
-	_health_bar_fill.material_override = fill_material
-	_health_bar_fill.position.z = 0.001
-	_health_bar_root.add_child(_health_bar_fill)
-
-func _process(_delta: float) -> void:
-	if monster_skin == "" or _health_bar_fill == null or not is_instance_valid(_health_bar_fill):
-		return
-	var ratio: float = clampf(health / max_health, 0.0, 1.0) if max_health > 0.0 else 0.0
-	if _health_bar_root != null and is_instance_valid(_health_bar_root):
-		_health_bar_root.visible = health > 0.0
-	_health_bar_fill.scale.x = maxf(ratio, 0.001)
-	# Un QuadMesh se réduit depuis son centre : on recale à gauche pour que
-	# la barre se vide vers la droite comme une barre de vie classique.
-	_health_bar_fill.position.x = -(_MONSTER_HEALTH_BAR_WIDTH * (1.0 - ratio)) * 0.5
-	_health_bar_fill.material_override.albedo_color = Color(0.85, 0.15, 0.15, 1.0).lerp(Color(0.35, 0.85, 0.25, 1.0), ratio)
 
 func _create_kaithlyn_weapons_independent() -> void:
 	_axe_weapon = _load_weapon_or_fallback(kaithlyn_axe_scene_path, "KaithlynAxe", true)

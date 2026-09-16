@@ -151,12 +151,12 @@ func arena_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector
 		arena.call("_network_client_spawn_fighter", fighter_id, hero, team, pos, rot_y, bot, monster_skin, model_scale, max_health_value, health_value)
 
 @rpc("authority", "call_remote", "unreliable_ordered", 1)
-func arena_transform(fighter_id: int, pos: Vector3, rot_y: float, net_velocity: Vector3, health_value: float = 100.0, round_serial: int = 1, state_sequence: int = 0) -> void:
+func arena_transform(fighter_id: int, pos: Vector3, rot_y: float, net_velocity: Vector3, health_value: float = 100.0, round_serial: int = 1, state_sequence: int = 0, aggroed: bool = false) -> void:
 	if multiplayer.is_server():
 		return
 	var arena := _get_network_arena()
 	if arena != null:
-		arena.call("_network_client_transform", fighter_id, pos, rot_y, net_velocity, health_value, round_serial, state_sequence)
+		arena.call("_network_client_transform", fighter_id, pos, rot_y, net_velocity, health_value, round_serial, state_sequence, aggroed)
 
 @rpc("authority", "call_remote", "reliable")
 func arena_hard_correction(fighter_id: int, pos: Vector3, rot_y: float, net_velocity: Vector3, health_value: float, round_serial: int, state_sequence: int) -> void:

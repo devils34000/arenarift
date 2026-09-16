@@ -1353,8 +1353,8 @@ func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	# et rentre s'y reposer une fois le joueur hors de portée d'aggro.
 	monster.monster_home_position = monster.global_position
 	var room_def: Dictionary = _coop_room_defs().get(room_id, {})
-	monster.monster_leash_range = float(room_def.get("half_x", 11.0)) + 2.0
-	monster.monster_aggro_range = 10.0 if is_boss else 8.0
+	monster.monster_leash_range = float(room_def.get("half_x", 11.0)) + 5.0
+	monster.monster_aggro_range = 15.0 if is_boss else 12.0
 	monster.monster_melee_damage = 26 if is_boss else 14
 	monster.set_meta("coop_room", room_id)
 	monster.set_meta("coop_is_boss", is_boss)
@@ -1659,7 +1659,7 @@ func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, p
 	else:
 		enemies.append(fighter)
 
-func _network_client_transform(fighter_id: int, pos: Vector3, rot_y: float, net_velocity: Vector3, health_value: float = 100.0, round_serial: int = 1, state_sequence: int = 0) -> void:
+func _network_client_transform(fighter_id: int, pos: Vector3, rot_y: float, net_velocity: Vector3, health_value: float = 100.0, round_serial: int = 1, state_sequence: int = 0, aggroed: bool = false) -> void:
 	var fighter := network_fighters.get(fighter_id) as ArenaPlayer3D
 	if fighter == null or not is_instance_valid(fighter):
 		return
@@ -1680,6 +1680,7 @@ func _network_client_transform(fighter_id: int, pos: Vector3, rot_y: float, net_
 	fighter.velocity = net_velocity
 	fighter.network_has_snapshot = true
 	fighter.health = clampf(health_value, 0.0, fighter.max_health)
+	fighter.is_aggroed = aggroed
 
 	# VisualRoot reste géré localement par le joueur et ne reçoit jamais de transform monde.
 
@@ -1796,7 +1797,7 @@ func _broadcast_network_state() -> void:
 			continue
 		if fighter.process_mode == Node.PROCESS_MODE_DISABLED:
 			continue
-		network_node.arena_transform.rpc(int(id), fighter.global_position, fighter.global_rotation.y, fighter.velocity, fighter.health, network_round_serial, network_state_sequence)
+		network_node.arena_transform.rpc(int(id), fighter.global_position, fighter.global_rotation.y, fighter.velocity, fighter.health, network_round_serial, network_state_sequence, fighter.is_aggroed)
 		# En DEATHMATCH, chaque client doit recevoir SON PROPRE score, pas
 		# celui de "player" (qui, sur un serveur dédié headless, correspond
 		# en réalité au premier client connecté - cf. _on_network_client_ready).
@@ -1950,7 +1951,7 @@ func _create_team_ring(fighter: ArenaPlayer3D) -> MeshInstance3D:
 	fighter.add_child(ring)
 	return ring
 
-const ENEMY_HEALTH_BAR_MAX_RANGE: float = 26.0
+const ENEMY_HEALTH_BAR_MAX_RANGE: float = 40.0
 
 ## Petite barre de vie flottante au-dessus de la tête de chaque ennemi
 ## (les alliés n'en ont pas besoin, ils ont déjà l'anneau au sol + leur
@@ -2001,11 +2002,18 @@ func _update_enemy_health_bars() -> void:
 		var ratio: float = clampf(fighter.health / maxf(1.0, fighter.max_health), 0.0, 1.0)
 		fill.size.x = 60.0 * ratio
 		fill.color = Color("62e6a7") if ratio > 0.5 else (Color("ffcc55") if ratio > 0.25 else Color("ff5c5c"))
+		var aggro_mark := bar.get_node_or_null("AggroMark") as Label
+		if aggro_mark != null:
+			aggro_mark.visible = fighter.is_aggroed
+	# "for fighter in enemy_health_bars.keys()" castait directement chaque
+	# clé en ArenaPlayer3D : un combattant tué/despawn (queue_free, cf. les
+	# monstres du donjon) devient un objet libéré dont Godot refuse le cast
+	# ("Trying to cast a freed object"). is_instance_valid() fonctionne sur
+	# n'importe quel Object sans cast préalable, donc on teste ça d'abord.
 	for fighter in enemy_health_bars.keys():
 		if seen.has(fighter):
 			continue
-		var stale_fighter := fighter as ArenaPlayer3D
-		if stale_fighter == null or not is_instance_valid(stale_fighter):
+		if not is_instance_valid(fighter):
 			var bar: Control = enemy_health_bars[fighter]
 			if bar != null and is_instance_valid(bar):
 				bar.queue_free()
@@ -2041,6 +2049,22 @@ func _create_enemy_health_bar() -> Control:
 	fill.color = Color("62e6a7")
 	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	container.add_child(fill)
+
+	# Repère d'alerte affiché au-dessus de la barre pendant qu'un monstre du
+	# donjon a le joueur en ligne de mire (fighter.is_aggroed, synchronisé
+	# depuis le serveur via arena_transform) — invisible par défaut/pour les
+	# ennemis PvP classiques (is_aggroed reste toujours faux pour eux).
+	var aggro_label := Label.new()
+	aggro_label.name = "AggroMark"
+	aggro_label.text = "!"
+	aggro_label.position = Vector2(26, -20)
+	aggro_label.size = Vector2(12, 18)
+	aggro_label.add_theme_font_size_override("font_size", 18)
+	aggro_label.add_theme_color_override("font_color", Color("ff3b30"))
+	aggro_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aggro_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aggro_label.visible = false
+	container.add_child(aggro_label)
 
 	hud.add_child(container)
 	return container

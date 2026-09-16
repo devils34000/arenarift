@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cqf87k81c68lf"
+path="res://.godot/imported/Skeleton_Arrow.obj-f616bdfdb1cc66ee6310e68f2e7a1bfa.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Skeleton_Arrow.obj-f616bdfdb1cc66ee6310e68f2e7a1bfa.mesh"]
+
+source_file="res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/assets/obj/Skeleton_Arrow.obj"
+dest_files=["res://.godot/imported/Skeleton_Arrow.obj-f616bdfdb1cc66ee6310e68f2e7a1bfa.mesh", "res://.godot/imported/Skeleton_Arrow.obj-f616bdfdb1cc66ee6310e68f2e7a1bfa.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

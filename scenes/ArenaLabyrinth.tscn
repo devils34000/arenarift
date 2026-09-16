@@ -59,6 +59,15 @@ size = Vector3(7, 5, 0.4)
 [sub_resource type="BoxShape3D" id="wall_shape"]
 size = Vector3(7, 5, 0.4)
 
+[sub_resource type="BoxShape3D" id="asset_pillar_shape"]
+size = Vector3(1, 2, 1)
+
+[sub_resource type="BoxShape3D" id="asset_steps_shape"]
+size = Vector3(2, 0.5, 1)
+
+[sub_resource type="BoxShape3D" id="asset_floorstep_shape"]
+size = Vector3(2, 0.1, 2)
+
 [sub_resource type="StandardMaterial3D" id="pillar_mat"]
 albedo_color = Color(0.85, 0.8, 0.75, 1)
 albedo_texture = ExtResource("90_wall_albedo")
@@ -3660,83 +3669,272 @@ transform = Transform3D(3.5569866, 0, 0, 0, 2.6119392, 0, 0, 0, 3.2076547, 23.55
 [node name="steps_1x2" parent="Walls/SpawnZone" unique_id=570625155 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.304187, 0, -0.00029775637, 0, 0.24359846, 0, 0.00028772495, 0, -0.29393893, -4.523834, 0.029596172, 38.795017)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x2" unique_id=1383158606]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x2/Collision" unique_id=249081663]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x3" parent="Walls/SpawnZone/steps_1x2" unique_id=1408569015 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.9998003, 0, -0.019983392, 0, 1, 0, 0.019983392, 0, 0.9998003, 3.983275, 0.00076049566, 0.015342712)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x2/steps_1x3" unique_id=63710184]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x2/steps_1x3/Collision" unique_id=1602467581]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x4" parent="Walls/SpawnZone/steps_1x2" unique_id=1380522594 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.9998556, 0, -0.016997255, 0, 1, 0, 0.016997255, 0, 0.9998556, 5.97851, 0.0015299916, 0.053741455)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x2/steps_1x4" unique_id=600620971]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x2/steps_1x4/Collision" unique_id=535901256]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x8" parent="Walls/SpawnZone" unique_id=1754446531 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.00011392933, 0, -0.30418718, 0, 0.24359846, 0, 0.2939391, 0, 0.00011009105, -6.5933332, 0.03654926, 40.24056)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x8" unique_id=489341423]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x8/Collision" unique_id=309655412]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x7" parent="Walls/SpawnZone" unique_id=690959698 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.00079457887, 0, -0.30418625, 0, 0.24359846, 0, 0.29393822, 0, -0.0007678095, -6.592517, 0.036361843, 39.654716)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x7" unique_id=1591559892]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x7/Collision" unique_id=230106707]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x8" parent="Walls/SpawnZone/steps_1x7" unique_id=1815434955 instance=ExtResource("12_nstko")]
 transform = Transform3D(1.0000002, 0, -0.000109460205, 0, 1, 0, 0.000109460205, 0, 1.0000002, 5.9919357, 0.0022197366, -0.0057923794)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x7/steps_1x8" unique_id=1463201078]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x7/steps_1x8/Collision" unique_id=1600571865]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x7" parent="Walls/SpawnZone/steps_1x7" unique_id=1605893517 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.999995, 0, -0.0030961465, 0, 1, 0, 0.0030961465, 0, 0.999995, 3.9988708, 0.0014503598, -0.009438515)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x7/steps_1x7" unique_id=1925941032]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x7/steps_1x7/Collision" unique_id=1181165722]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x10" parent="Walls/SpawnZone" unique_id=686976170 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.00012335856, 0, 0.30418733, 0, 0.24359846, 0, -0.29393926, 0, -0.00011920262, -3.027244, 0.031893604, 40.25555)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x10" unique_id=196699713]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x10/Collision" unique_id=1278073012]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x12" parent="Walls/SpawnZone" unique_id=1834511082 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.0016497811, 0, 0.30418268, 0, 0.24359846, 0, -0.29393476, 0, -0.0015942, -3.0322514, 0.03213383, 39.091587)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x12" unique_id=916070220]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x12/Collision" unique_id=78252793]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x11" parent="Walls/SpawnZone" unique_id=1217509631 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.0010318644, 0, 0.30418554, 0, 0.24359846, 0, -0.29393753, 0, -0.000997101, -3.0282555, 0.03208102, 39.669724)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x11" unique_id=73989047]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x11/Collision" unique_id=211209005]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="floor_step_x1_2x2" parent="Walls/SpawnZone" unique_id=465746802 instance=ExtResource("13_sx43e")]
 transform = Transform3D(1.7968328, 0, -7.093677e-09, 0, 0.24359846, 0, -5.8806666e-09, 0, 1.4523054, -4.8270245, 0.15061957, 40.25401)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/floor_step_x1_2x2" unique_id=479521477]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/floor_step_x1_2x2/Collision" unique_id=509635468]
+position = Vector3(0, -0.05, 0)
+shape = SubResource("asset_floorstep_shape")
+
 [node name="steps_1x13" parent="Walls/SpawnZone" unique_id=1109109150 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.0026291998, 0, 0.30417594, 0, 0.24359846, 0, -0.29392827, 0, 0.0025406221, -3.028627, 0.031873107, 40.841274)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x13" unique_id=1095242216]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x13/Collision" unique_id=1302825378]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x13" parent="Walls/SpawnZone/steps_1x13" unique_id=1828372581 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.9999541, 0, -0.009585839, 0, 1, 0, 0.009585839, 0, 0.9999541, -1.9886932, 0.0014765263, -0.0073537827)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x13/steps_1x13" unique_id=66985561]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x13/steps_1x13/Collision" unique_id=1215264595]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x9" parent="Walls/SpawnZone" unique_id=1244866544 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.0035470892, 0, -0.30416653, 0, 0.24359846, 0, 0.29391918, 0, -0.0034275877, -6.587763, 0.036341347, 39.069008)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x9" unique_id=437000596]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x9/Collision" unique_id=1547640408]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x6" parent="Walls/SpawnZone" unique_id=1710108984 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.30417758, 0, 0.0024125006, 0, 0.24359846, 0, -0.0023312233, 0, 0.29392985, -5.084861, 0.033166442, 41.708424)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x6" unique_id=1405616196]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/Collision" unique_id=1516083910]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x6" parent="Walls/SpawnZone/steps_1x6" unique_id=1110791437 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.99996996, 0, 0.007930966, 0, 1, 0, -0.007930966, 0, 0.99996996, 3.957354, -0.0032619238, -0.021095276)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6" unique_id=1180252923]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/Collision" unique_id=910911954]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x6" parent="Walls/SpawnZone/steps_1x6/steps_1x6" unique_id=2042620829 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.99997026, 0, 0.007930972, 0, 1, 0, -0.007930972, 0, 0.99997026, 2.0030422, -0.009766877, -0.025909424)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/steps_1x6" unique_id=483392624]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/steps_1x6/Collision" unique_id=974669077]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="pillar" parent="Walls/SpawnZone/steps_1x6/steps_1x6" unique_id=1224365497 instance=ExtResource("8_gsq78")]
 transform = Transform3D(0.99987286, 0, -0.015861424, 0, 2.2034974, 0, 0.015861424, 0, 0.99987286, 3.4988909, 0.002133906, 0.6633072)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/pillar" unique_id=1275438422]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/pillar/Collision" unique_id=607409992]
+position = Vector3(0, 1, 0)
+shape = SubResource("asset_pillar_shape")
 
 [node name="steps_1x5" parent="Walls/SpawnZone/steps_1x6" unique_id=889847445 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.9999885, 0, 0.0049443785, 0, 1, 0, -0.0049443785, 0, 0.9999885, 1.964314, -0.0040313005, -0.008666992)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x6/steps_1x5" unique_id=1748238661]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x5/Collision" unique_id=1876808229]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x5" parent="Walls/SpawnZone" unique_id=1501787922 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.30418342, 0, 0.0015040133, 0, 0.24359846, 0, -0.0014533431, 0, 0.29393548, -5.6911173, 0.032979023, 41.712067)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x5" unique_id=23955983]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x5/Collision" unique_id=1639526405]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x14" parent="Walls/SpawnZone" unique_id=1811652454 instance=ExtResource("12_nstko")]
 transform = Transform3D(0.3041846, 0, -0.0012485674, 0, 0.24359846, 0, 0.0012065031, 0, 0.2939366, -6.297263, 0.032958526, 41.711895)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x14" unique_id=1740483678]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x14/Collision" unique_id=352865762]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x15" parent="Walls/SpawnZone" unique_id=1449034373 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.30408457, 0, 0.007899492, 0, 0.24359846, 0, -0.0076333582, 0, -0.29383996, -3.3208666, 0.029737193, 38.80818)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x15" unique_id=1509242941]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x15/Collision" unique_id=917557512]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x3" parent="Walls/SpawnZone" unique_id=1279376673 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.30418476, 0, -0.0012062597, 0, 0.24359846, 0, 0.0011656209, 0, -0.29393676, -5.1308694, 0.029783621, 38.796032)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x3" unique_id=740682427]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x3/Collision" unique_id=606724164]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
+
 [node name="steps_1x4" parent="Walls/SpawnZone" unique_id=1027547755 instance=ExtResource("12_nstko")]
 transform = Transform3D(-0.30417725, 0, 0.002454807, 0, 0.24359846, 0, -0.0023721047, 0, -0.29392952, -3.9176934, 0.02957568, 38.797512)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/steps_1x4" unique_id=343889688]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x4/Collision" unique_id=472382781]
+position = Vector3(0, 0.25, 0.5)
+shape = SubResource("asset_steps_shape")
 
 [node name="pillar8" parent="Walls/SpawnZone" unique_id=1762544496 instance=ExtResource("8_gsq78")]
 transform = Transform3D(0.29885033, 0, 0, 0, 0.4862944, 0, 0, 0, 0.29393908, -2.8600745, 0.030886501, 38.648857)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/pillar8" unique_id=2065599409]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/pillar8/Collision" unique_id=1649591159]
+position = Vector3(0, 1, 0)
+shape = SubResource("asset_pillar_shape")
+
 [node name="pillar9" parent="Walls/SpawnZone" unique_id=2131308754 instance=ExtResource("8_gsq78")]
 transform = Transform3D(0.30418715, 0, 0, 0, 0.5605723, 0, 0, 0, 0.29393908, -6.792653, 0.029482156, 38.62268)
 
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/pillar9" unique_id=732831292]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/pillar9/Collision" unique_id=229494902]
+position = Vector3(0, 1, 0)
+shape = SubResource("asset_pillar_shape")
+
 [node name="pillar10" parent="Walls/SpawnZone" unique_id=360819458 instance=ExtResource("8_gsq78")]
 transform = Transform3D(0.30418715, 0, 0, 0, 0.5549596, 0, 0, 0, 0.29393908, -6.753273, 0.032346852, 41.85499)
+
+[node name="Collision" type="StaticBody3D" parent="Walls/SpawnZone/pillar10" unique_id=209170184]
+collision_layer = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/pillar10/Collision" unique_id=825887678]
+position = Vector3(0, 1, 0)
+shape = SubResource("asset_pillar_shape")
 
 [node name="Pillars" type="Node3D" parent="." unique_id=330722810]
 transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, -0.3014984, 0)

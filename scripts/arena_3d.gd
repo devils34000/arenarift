@@ -1596,9 +1596,20 @@ func _coop_status_text() -> String:
 ## d'entrée, donjon nettoyé + clé du boss récupérée) ouvrir le portail de
 ## sortie et déclarer la victoire.
 func _resolve_coop_interact(caster: ArenaPlayer3D) -> void:
-	if caster == null or not is_instance_valid(caster) or caster.is_bot or caster.is_downed:
+	if caster == null or not is_instance_valid(caster) or caster.is_bot:
 		return
-	if coop_victory or coop_defeat:
+	# Chaque branche de sortie de cette fonction doit produire un retour
+	# visible : un "interact" qui ne fait RIEN à l'écran (même pas un
+	# message d'erreur) est indiscernable d'une touche qui n'arrive jamais
+	# au serveur, ce qui rend le bug impossible à diagnostiquer à distance.
+	if caster.is_downed:
+		_broadcast_coop_notice("IMPOSSIBLE : TU ES À TERRE")
+		return
+	if coop_victory:
+		_broadcast_coop_notice("LE PORTAIL EST DÉJÀ OUVERT")
+		return
+	if coop_defeat:
+		_broadcast_coop_notice("LA MISSION EST ÉCHOUÉE")
 		return
 
 	for id in network_fighters.keys():
@@ -1720,6 +1731,10 @@ func _network_receive_ability_request(peer_id: int, kind: String, direction: Vec
 	if kind not in allowed:
 		return
 	if fighter.process_mode == Node.PROCESS_MODE_DISABLED or fighter.health <= 0.0:
+		# "interact" avalé ici sans le moindre retour était indiscernable
+		# d'une touche qui n'arrive jamais au serveur.
+		if kind == "interact":
+			_broadcast_coop_notice("INTERACT IGNORÉ (process_mode=%s health=%.1f)" % [str(fighter.process_mode), fighter.health])
 		return
 	if direction.length_squared() > 0.001:
 		direction.y = 0.0

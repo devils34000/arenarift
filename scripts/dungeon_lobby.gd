@@ -58,7 +58,7 @@ func _ready() -> void:
 
 	var dim := ColorRect.new()
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0.02, 0.015, 0.03, 0.92)
+	dim.color = Color(0.03, 0.024, 0.045, 1.0)
 	_root.add_child(dim)
 
 	_content = Control.new()

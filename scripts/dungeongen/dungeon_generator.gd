@@ -276,6 +276,12 @@ func _get_category(inst: Node3D) -> String:
 ## locale (AABB) et ses portes, met en cache, et libère l'instance
 ## immédiatement (elle ne sert qu'à la mesure, jamais gardée en mémoire).
 func _get_piece_info(piece_scene: PackedScene) -> Dictionary:
+	if _piece_cache == null:
+		# Filet de sécurité : sur une instance de nœud déjà existante avant
+		# l'ajout de ce cache, le rechargement à chaud de l'éditeur peut ne
+		# pas réinitialiser cette variable. Rouvrir la scène règle ça, mais
+		# on ne dépend pas de l'ordre d'init ici.
+		_piece_cache = {}
 	if _piece_cache.has(piece_scene):
 		return _piece_cache[piece_scene]
 

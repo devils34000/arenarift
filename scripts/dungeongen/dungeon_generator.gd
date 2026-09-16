@@ -50,6 +50,15 @@ class Placement:
 var _placements: Array[Placement] = []
 var _world_aabbs: Array[AABB] = []
 
+## Cache par PackedScene : évite de ré-instancier (et de re-parcourir tous
+## les meshes imbriqués) un même bloc à chaque tentative de placement — un
+## bloc a toujours la même géométrie locale et les mêmes portes, donc on ne
+## mesure qu'une fois par type de bloc, pas une fois par tentative. Sans ça,
+## avec des vrais assets FBX (plus lourds que des boîtes de test), la
+## génération peut devenir extrêmement lente (des milliers d'instanciations
+## pour une seule génération complète).
+var _piece_cache: Dictionary = {}
+
 
 func generate() -> void:
 	print("=== Dungeon Generator : generate() ===")
@@ -118,21 +127,19 @@ func _try_generate() -> bool:
 
 
 func _place_first(data: DungeonPieceData) -> bool:
-	var inst := data.piece_scene.instantiate() as Node3D
-	if not inst:
+	var info := _get_piece_info(data.piece_scene)
+	if info == null or (info.door_local_transforms as Array).is_empty():
 		return false
 
-	var doors := _get_doors(inst)
 	var p := Placement.new()
 	p.piece_data = data
-	p.category = _get_category(inst)
+	p.category = info.category
 	p.world_transform = Transform3D.IDENTITY
-	p.door_local_transforms = _door_local_transforms(doors)
-	p.door_used.resize(doors.size())
+	p.door_local_transforms = info.door_local_transforms
+	p.door_used.resize(p.door_local_transforms.size())
 	p.door_used.fill(false)
 
-	var aabb := _compute_world_aabb(inst, Transform3D.IDENTITY)
-	inst.free()
+	var aabb := _world_aabb_from_local(info.local_aabb, Transform3D.IDENTITY)
 
 	_placements.append(p)
 	_world_aabbs.append(aabb)
@@ -161,13 +168,9 @@ func _extend_from(from_idx: int, pool: Array[DungeonPieceData]) -> bool:
 		if not candidate or not candidate.piece_scene:
 			continue
 
-		var inst := candidate.piece_scene.instantiate() as Node3D
-		if not inst:
-			continue
-
-		var doors := _get_doors(inst)
+		var info := _get_piece_info(candidate.piece_scene)
+		var doors: Array[Transform3D] = info.door_local_transforms
 		if doors.is_empty():
-			inst.free()
 			continue
 
 		var door_order := range(doors.size())
@@ -175,17 +178,17 @@ func _extend_from(from_idx: int, pool: Array[DungeonPieceData]) -> bool:
 
 		var placed := false
 		for door_idx in door_order:
-			var candidate_local_door: Transform3D = doors[door_idx].transform
+			var candidate_local_door: Transform3D = doors[door_idx]
 			var world_transform := _align(from_door_world, candidate_local_door)
-			var world_aabb := _compute_world_aabb(inst, world_transform)
+			var world_aabb := _world_aabb_from_local(info.local_aabb, world_transform)
 			if _overlaps(world_aabb):
 				continue
 
 			var p := Placement.new()
 			p.piece_data = candidate
-			p.category = _get_category(inst)
+			p.category = info.category
 			p.world_transform = world_transform
-			p.door_local_transforms = _door_local_transforms(doors)
+			p.door_local_transforms = doors
 			p.door_used.resize(doors.size())
 			p.door_used.fill(false)
 			p.door_used[door_idx] = true
@@ -196,7 +199,6 @@ func _extend_from(from_idx: int, pool: Array[DungeonPieceData]) -> bool:
 			placed = true
 			break
 
-		inst.free()
 		if placed:
 			return true
 
@@ -270,8 +272,30 @@ func _get_category(inst: Node3D) -> String:
 	return piece.category if piece else "room"
 
 
-func _compute_world_aabb(inst: Node3D, world_transform: Transform3D) -> AABB:
-	var local_aabb := _collect_mesh_aabb(inst, Transform3D.IDENTITY, true)
+## Instancie une seule fois par PackedScene distincte, mesure sa géométrie
+## locale (AABB) et ses portes, met en cache, et libère l'instance
+## immédiatement (elle ne sert qu'à la mesure, jamais gardée en mémoire).
+func _get_piece_info(piece_scene: PackedScene) -> Dictionary:
+	if _piece_cache.has(piece_scene):
+		return _piece_cache[piece_scene]
+
+	var info := {
+		"category": "room",
+		"local_aabb": AABB(),
+		"door_local_transforms": [] as Array[Transform3D],
+	}
+	var inst := piece_scene.instantiate() as Node3D
+	if inst:
+		info["category"] = _get_category(inst)
+		info["local_aabb"] = _collect_mesh_aabb(inst, Transform3D.IDENTITY, true)
+		info["door_local_transforms"] = _door_local_transforms(_get_doors(inst))
+		inst.free()
+
+	_piece_cache[piece_scene] = info
+	return info
+
+
+func _world_aabb_from_local(local_aabb: AABB, world_transform: Transform3D) -> AABB:
 	var corners := [
 		local_aabb.position,
 		local_aabb.position + Vector3(local_aabb.size.x, 0, 0),

@@ -1,6 +1,8 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/dungeongen/dungeon_piece.gd" id="1_piece"]
+[ext_resource type="Material" path="res://scenes/dungeongen/materials/DungeonGenWallMaterial.tres" id="90_wallmat"]
+[ext_resource type="Material" path="res://scenes/dungeongen/materials/DungeonGenFloorMaterial.tres" id="91_floormat"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(8, 0.2, 8)
@@ -22,6 +24,7 @@ category = "boss"
 [node name="Floor" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 mesh = SubResource("BoxMesh_floor")
+material_override = ExtResource("91_floormat")
 [node name="FloorCollision" type="StaticBody3D" parent="Floor"]
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor/FloorCollision"]
 shape = SubResource("BoxShape3D_floor")
@@ -29,6 +32,7 @@ shape = SubResource("BoxShape3D_floor")
 [node name="Wall_East" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.5, 0)
 mesh = SubResource("BoxMesh_wall_ew")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Wall_East"]
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_East/Collision"]
 shape = SubResource("BoxShape3D_wall_ew")
@@ -36,6 +40,7 @@ shape = SubResource("BoxShape3D_wall_ew")
 [node name="Wall_West" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.5, 0)
 mesh = SubResource("BoxMesh_wall_ew")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Wall_West"]
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_West/Collision"]
 shape = SubResource("BoxShape3D_wall_ew")
@@ -43,6 +48,7 @@ shape = SubResource("BoxShape3D_wall_ew")
 [node name="Wall_South" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 4)
 mesh = SubResource("BoxMesh_wall_s")
+material_override = ExtResource("90_wallmat")
 [node name="Collision" type="StaticBody3D" parent="Wall_South"]
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_South/Collision"]
 shape = SubResource("BoxShape3D_wall_s")

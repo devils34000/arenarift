@@ -83,7 +83,7 @@ material_override = SubResource("floor_mat")
 mesh = SubResource("floor_mesh")
 
 [node name="Walls" type="Node3D" parent="." unique_id=1072643972]
-transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, -0.6847066, 0)
+transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, -0.29923534, 0)
 
 [node name="Wall_0" type="MeshInstance3D" parent="Walls" unique_id=295500548]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56, 2.5, -52.5)
@@ -3650,7 +3650,7 @@ collision_layer = 3
 shape = SubResource("wall_shape")
 
 [node name="Pillars" type="Node3D" parent="." unique_id=330722810]
-transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, -0.6847066, 0)
+transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, 6.965974, 0)
 
 [node name="Pillar_0" type="MeshInstance3D" parent="Pillars" unique_id=1645569868]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, 2.5, 42.28)
@@ -3793,419 +3793,478 @@ material_override = SubResource("pillar_mat")
 mesh = SubResource("pillar_mesh")
 
 [node name="Torches" type="Node3D" parent="." unique_id=1339104744]
-transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, 0.0052023605, 0)
+transform = Transform3D(1.4324048, 0, 0, 0, 1.5716739, 0, 0, 0, 1.6936591, 0, 7.655883, 0)
 
 [node name="Torch_0" type="OmniLight3D" parent="Torches" unique_id=1952154332]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 2.8, 42.7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_1" type="OmniLight3D" parent="Torches" unique_id=2134621059]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.3, 2.8, 55.3)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_2" type="OmniLight3D" parent="Torches" unique_id=979189195]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55.3, 2.8, 21.7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_3" type="OmniLight3D" parent="Torches" unique_id=589760960]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.7, 2.8, 34.3)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_4" type="OmniLight3D" parent="Torches" unique_id=251940423]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 2.8, 0.7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_5" type="OmniLight3D" parent="Torches" unique_id=429727335]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.3, 2.8, 13.3)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_6" type="OmniLight3D" parent="Torches" unique_id=58608531]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -62.3, 2.8, -34.3)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_7" type="OmniLight3D" parent="Torches" unique_id=1369859725]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.7, 2.8, -21.7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_8" type="OmniLight3D" parent="Torches" unique_id=512805631]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49.7, 2.8, 21.7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_9" type="OmniLight3D" parent="Torches" unique_id=25714611]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62.3, 2.8, 34.3)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_10" type="OmniLight3D" parent="Torches" unique_id=1373922571]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.25, 2.8, -42)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_11" type="OmniLight3D" parent="Torches" unique_id=45636959]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.662058, 2.8, -33.33794)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_12" type="OmniLight3D" parent="Torches" unique_id=819769741]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2.8, -29.75)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_13" type="OmniLight3D" parent="Torches" unique_id=1778380143]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6620581, 2.8, -33.33794)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_14" type="OmniLight3D" parent="Torches" unique_id=1326915194]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.25, 2.8, -42)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_15" type="OmniLight3D" parent="Torches" unique_id=850160271]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6620581, 2.8, -50.66206)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_16" type="OmniLight3D" parent="Torches" unique_id=1181316072]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 2.8, -54.25)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_17" type="OmniLight3D" parent="Torches" unique_id=979740940]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.662058, 2.8, -50.66206)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_18" type="OmniLight3D" parent="Torches" unique_id=1254291218]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63, 2.8, -56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_19" type="OmniLight3D" parent="Torches" unique_id=303712994]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 2.8, -56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_20" type="OmniLight3D" parent="Torches" unique_id=714134450]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 2.8, -56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_21" type="OmniLight3D" parent="Torches" unique_id=683436408]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 2.8, -56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_22" type="OmniLight3D" parent="Torches" unique_id=1433722098]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 2.8, -56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_23" type="OmniLight3D" parent="Torches" unique_id=992991149]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 2.8, -49)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_24" type="OmniLight3D" parent="Torches" unique_id=261020380]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 2.8, -42)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_25" type="OmniLight3D" parent="Torches" unique_id=14828447]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2.8, -42)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_26" type="OmniLight3D" parent="Torches" unique_id=1812542596]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 2.8, -42)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_27" type="OmniLight3D" parent="Torches" unique_id=1024483321]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2.8, -35)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_28" type="OmniLight3D" parent="Torches" unique_id=341055785]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 2.8, -35)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_29" type="OmniLight3D" parent="Torches" unique_id=290087270]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 2.8, -35)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_30" type="OmniLight3D" parent="Torches" unique_id=1296196064]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 2.8, -28)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_31" type="OmniLight3D" parent="Torches" unique_id=538420060]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.8, -21)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_32" type="OmniLight3D" parent="Torches" unique_id=1914423424]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2.8, -14)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_33" type="OmniLight3D" parent="Torches" unique_id=406851214]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 2.8, -14)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_34" type="OmniLight3D" parent="Torches" unique_id=608057119]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 2.8, -14)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_35" type="OmniLight3D" parent="Torches" unique_id=1955863993]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63, 2.8, -7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_36" type="OmniLight3D" parent="Torches" unique_id=496781720]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56, 2.8, -7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_37" type="OmniLight3D" parent="Torches" unique_id=1311860722]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 2.8, -7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_38" type="OmniLight3D" parent="Torches" unique_id=992809601]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63, 2.8, 0)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_39" type="OmniLight3D" parent="Torches" unique_id=1192461533]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 2.8, 0)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_40" type="OmniLight3D" parent="Torches" unique_id=1245697391]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63, 2.8, 0)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_41" type="OmniLight3D" parent="Torches" unique_id=453604952]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2.8, 7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_42" type="OmniLight3D" parent="Torches" unique_id=1615697978]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 2.8, 7)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_43" type="OmniLight3D" parent="Torches" unique_id=3841046]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56, 2.8, 14)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_44" type="OmniLight3D" parent="Torches" unique_id=2147380527]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49, 2.8, 14)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_45" type="OmniLight3D" parent="Torches" unique_id=671105665]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 2.8, 14)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_46" type="OmniLight3D" parent="Torches" unique_id=227864091]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 2.8, 21)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_47" type="OmniLight3D" parent="Torches" unique_id=876054620]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 2.8, 28)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_48" type="OmniLight3D" parent="Torches" unique_id=1110441650]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 2.8, 35)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_49" type="OmniLight3D" parent="Torches" unique_id=768360334]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 2.8, 35)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_50" type="OmniLight3D" parent="Torches" unique_id=1364878890]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.8, 35)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_51" type="OmniLight3D" parent="Torches" unique_id=246921565]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49, 2.8, 42)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_52" type="OmniLight3D" parent="Torches" unique_id=1347317874]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56, 2.8, 49)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_53" type="OmniLight3D" parent="Torches" unique_id=1162694452]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42, 2.8, 49)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_54" type="OmniLight3D" parent="Torches" unique_id=1482714406]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42, 2.8, 56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_55" type="OmniLight3D" parent="Torches" unique_id=1746380604]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 2.8, 56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_56" type="OmniLight3D" parent="Torches" unique_id=1718980178]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 2.8, 56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_57" type="OmniLight3D" parent="Torches" unique_id=701485698]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 2.8, 56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="Torch_58" type="OmniLight3D" parent="Torches" unique_id=1029936911]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63, 2.8, 56)
 light_color = Color(1, 0.58, 0.25, 1)
-light_energy = 2.4
-omni_range = 9.5
+light_energy = 4.023
+omni_range = 11.696
+omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1082077178]
@@ -4250,19 +4309,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.2, 83.13747)
 transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 7, 60, 89)
 
 [node name="Room_F_BOSS" type="Marker3D" parent="." unique_id=1676671795]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -48)
+transform = Transform3D(-0.92664826, 0, -0.37592956, 0, 1, 0, 0.37592956, 0, -0.92664826, 14.3584, 0.1, -72.35805)
 
 [node name="Room_D_PUZZLE" type="Marker3D" parent="." unique_id=797943466]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.1, -33)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85.60165, 0.1, -40.912373)
 
 [node name="Room_C_HUB" type="Marker3D" parent="." unique_id=1006204916]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.243779, 0.1, 3)
 
 [node name="Room_B_REST" type="Marker3D" parent="." unique_id=1162981312]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51, 0.1, 24)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -71.398926, 0.1, 49.482338)
 
 [node name="Room_E_REWARD" type="Marker3D" parent="." unique_id=1692910649]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 54, 0.1, 24)
+transform = Transform3D(-0.9955838, 0, 0.09387707, 0, 1, 0, -0.09387707, 0, -0.9955838, 80.057274, 0.1, 47.52167)
 
 [node name="Room_A_ENTRANCE" type="Marker3D" parent="." unique_id=535391587]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 51)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.1005964, 0.1, 17.746162)

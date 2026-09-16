@@ -1,0 +1,71 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/dungeongen/dungeon_piece.gd" id="1_piece"]
+[ext_resource type="PackedScene" path="res://assets/simpledongeon/Floor00.fbx" id="2_floor"]
+[ext_resource type="PackedScene" path="res://assets/simpledongeon/Wall00.fbx" id="3_wall"]
+[ext_resource type="PackedScene" path="res://assets/simpledongeon/Doorway00.fbx" id="4_door"]
+[ext_resource type="PackedScene" path="res://assets/simpledongeon/Pillar01.fbx" id="5_pillar"]
+
+[sub_resource type="BoxShape3D" id="WallShape"]
+size = Vector3(4.0, 3.0, 0.7)
+[sub_resource type="BoxShape3D" id="FloorShape"]
+size = Vector3(4.0, 0.3, 8.0)
+
+[node name="RealCorridor" type="Node3D"]
+script = ExtResource("1_piece")
+category = "corridor"
+
+[node name="Floor_A" parent="." instance=ExtResource("2_floor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+[node name="Floor_B" parent="." instance=ExtResource("2_floor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+
+[node name="FloorCollision" type="StaticBody3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FloorCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
+shape = SubResource("FloorShape")
+
+[node name="Wall_East_A" parent="." instance=ExtResource("3_wall")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2, 1.5, -2)
+[node name="Collision" type="StaticBody3D" parent="Wall_East_A"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_East_A/Collision"]
+shape = SubResource("WallShape")
+
+[node name="Wall_East_B" parent="." instance=ExtResource("3_wall")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2, 1.5, 2)
+[node name="Collision" type="StaticBody3D" parent="Wall_East_B"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_East_B/Collision"]
+shape = SubResource("WallShape")
+
+[node name="Wall_West_A" parent="." instance=ExtResource("3_wall")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 1.5, -2)
+[node name="Collision" type="StaticBody3D" parent="Wall_West_A"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_West_A/Collision"]
+shape = SubResource("WallShape")
+
+[node name="Wall_West_B" parent="." instance=ExtResource("3_wall")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 1.5, 2)
+[node name="Collision" type="StaticBody3D" parent="Wall_West_B"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_West_B/Collision"]
+shape = SubResource("WallShape")
+
+[node name="DoorwayMesh_North" parent="." instance=ExtResource("4_door")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -4)
+
+[node name="DoorwayMesh_South" parent="." instance=ExtResource("4_door")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 1.5, 4)
+
+[node name="Door1" type="Marker3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, -4)
+
+[node name="Door2" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+
+[node name="Pillar_NE" parent="." instance=ExtResource("5_pillar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.5, -3.5)
+[node name="Pillar_NW" parent="." instance=ExtResource("5_pillar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.5, -3.5)
+[node name="Pillar_SE" parent="." instance=ExtResource("5_pillar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.5, 3.5)
+[node name="Pillar_SW" parent="." instance=ExtResource("5_pillar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.5, 3.5)

@@ -1013,9 +1013,7 @@ func _show_home() -> void:
 	categories_box.add_child(arena_card)
 
 	var coop_card := _mode_card("CO-OP DONJON", false, MODE_CARD_HEIGHT_CATEGORY, category_card_width)
-	coop_card.pressed.connect(func():
-		_show_play_placeholder("CO-OP DONJON", "Mode coopératif roguelike en développement. Explorez un donjon généré à plusieurs contre des vagues d'ennemis — revenez bientôt !")
-	)
+	coop_card.pressed.connect(_open_dungeon_lobby)
 	categories_box.add_child(coop_card)
 
 	var impostor_card := _mode_card("IMPOSTOR", false, MODE_CARD_HEIGHT_CATEGORY, category_card_width)
@@ -3956,6 +3954,16 @@ func _setup_menu_music() -> void:
 
 ## Écran "à venir" pour les modes PLAY pas encore implémentés
 ## (Co-op Donjon, Impostor, Hide & Seek).
+## Salon Co-op Donjon : fichier neuf et séparé (scripts/dungeon_lobby.gd),
+## affiché par-dessus le menu actuel plutôt que de remplacer son contenu —
+## il gère lui-même tout son cycle de vie (salon, prêt, lancement,
+## connexion) et se détruit (queue_free) une fois fermé ou la partie lancée.
+func _open_dungeon_lobby() -> void:
+	var lobby_scene: PackedScene = load("res://scenes/DungeonLobby.tscn")
+	var lobby: Node = lobby_scene.instantiate()
+	add_child(lobby)
+
+
 func _show_play_placeholder(mode_title: String, description: String) -> void:
 	_clear()
 	title.text = mode_title + " // À VENIR"

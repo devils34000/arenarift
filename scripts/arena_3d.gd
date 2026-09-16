@@ -1212,9 +1212,18 @@ func _hide_sudden_death_banner() -> void:
 	sudden_death_label = null
 
 func _update_network_countdown_display(seconds_left: float) -> void:
+	var seconds: int = maxi(0, int(ceil(seconds_left)))
+	# En Co-op, ce texte va dans la barre de progression plutôt que dans un
+	# second panneau flottant par-dessus l'écran d'histoire du donjon
+	# (_show_coop_intro_overlay, affiché en même temps en tout début de
+	# partie) : les deux se superposaient sinon.
+	if _is_coop_mode():
+		if coop_progress_label != null and is_instance_valid(coop_progress_label) and network_match_countdown_active:
+			coop_progress_label.text = "LA PARTIE COMMENCE DANS %d" % seconds
+			coop_progress_label.add_theme_color_override("font_color", Color("fff1b8"))
+		return
 	if network_countdown_display == null or not is_instance_valid(network_countdown_display):
 		return
-	var seconds: int = maxi(0, int(ceil(seconds_left)))
 	network_countdown_display.text = "LA PARTIE COMMENCE DANS\n%d" % seconds
 
 func _create_network_countdown_display() -> void:
@@ -1235,6 +1244,11 @@ func _on_network_match_countdown(seconds_left: float) -> void:
 	network_match_countdown_active = seconds_left > 0.0
 	network_match_started = false
 	network_match_countdown_left = maxf(0.0, seconds_left)
+	if _is_coop_mode():
+		if network_countdown_display != null:
+			network_countdown_display.visible = false
+		_update_network_countdown_display(network_match_countdown_left)
+		return
 	if network_countdown_display == null:
 		return
 	network_countdown_display.visible = network_match_countdown_active
@@ -1245,6 +1259,8 @@ func _on_network_match_started() -> void:
 	network_match_countdown_active = false
 	if network_countdown_display != null and is_instance_valid(network_countdown_display):
 		network_countdown_display.visible = false
+	if _is_coop_mode():
+		_update_coop_progress_display()
 
 func _start_network_bots() -> void:
 	var mode_value := mode_value_for_bots()

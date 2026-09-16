@@ -127,7 +127,7 @@ func _extend_from(from_idx: int, pool: Array[DungeonPieceData]) -> bool:
 	if pool.is_empty():
 		return false
 
-	var from_placement := _placements[from_idx]
+	var from_placement: Placement = _placements[from_idx]
 	var from_door_idx := _find_unused_door(from_placement)
 	if from_door_idx < 0:
 		return false
@@ -140,7 +140,7 @@ func _extend_from(from_idx: int, pool: Array[DungeonPieceData]) -> bool:
 		var idx := _pick_weighted_index(working_pool)
 		if idx < 0:
 			break
-		var candidate := working_pool[idx]
+		var candidate: DungeonPieceData = working_pool[idx]
 		working_pool.remove_at(idx)
 		if not candidate or not candidate.piece_scene:
 			continue
@@ -322,7 +322,7 @@ func _pick_weighted_index(pool: Array[DungeonPieceData]) -> int:
 	var roll := _rng.randf() * total
 	var acc := 0.0
 	for i in range(pool.size()):
-		var entry := pool[i]
+		var entry: DungeonPieceData = pool[i]
 		if not entry:
 			continue
 		acc += maxf(entry.spawn_weight, 0.0)
@@ -347,7 +347,7 @@ func _bake() -> void:
 		layout.owner = get_tree().edited_scene_root
 
 	for i in range(_placements.size()):
-		var p := _placements[i]
+		var p: Placement = _placements[i]
 		var inst := p.piece_data.piece_scene.instantiate() as Node3D
 		if not inst:
 			continue

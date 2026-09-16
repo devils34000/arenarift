@@ -666,14 +666,12 @@ func _build_world() -> void:
 		environment_node.environment = environment
 		world.add_child(environment_node)
 
-	# Le Donjon a été conçu volontairement sans soleil (c'est un intérieur
-	# souterrain — "pas d'ombre de soleil bizarre" était une demande
-	# explicite) : contrairement à Arena1v1.tscn, qui elle compte sur ce
-	# soleil de secours faute d'éclairage propre, ArenaLabyrinth.tscn n'a
-	# jamais eu de nœud "Sun" à lui, donc ce filet de sécurité générique
-	# lui en ajoutait quand même un à chaque partie — la "lumière de lune"
-	# vue en jeu.
-	if world.get_node_or_null("Sun") == null and not _is_coop_mode():
+	# Filet de sécurité générique : toute map sans DirectionalLight3D propre
+	# (Arena1v1.tscn, ArenaLabyrinth.tscn, ...) reçoit ce soleil de secours.
+	# Demande explicite : le rendu du Donjon sans lui "fait bizarre", donc
+	# il reste actif aussi en Co-op malgré la tentative précédente de le
+	# retirer pour ce mode.
+	if world.get_node_or_null("Sun") == null:
 		var sun := DirectionalLight3D.new()
 		sun.name = "Sun"
 		sun.rotation_degrees = Vector3(-52.0, -28.0, 0.0)

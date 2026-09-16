@@ -298,6 +298,7 @@ var coop_chest_positions: Dictionary = {}
 var coop_chest_looted: Dictionary = {}
 var coop_portal_shown: bool = false
 var coop_portal_vfx_node: Node3D = null
+var coop_difficulty_scale: float = 1.0
 var network_sync_timer: float = 0.0
 var network_server_initialized: bool = false
 var network_match_countdown_active: bool = false
@@ -1121,18 +1122,20 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 	else:
 		enemies.append(fighter)
 
-	if is_first_connection:
-		if _is_coop_mode():
-			_start_coop_dungeon()
-		else:
-			_start_network_bots()
+	# En Co-op, le peuplement du donjon est différé jusqu'à
+	# _begin_network_matchplay() (fin du compte à rebours) plutôt que
+	# déclenché ici sur le tout premier joueur connecté : c'est le seul
+	# moment où le nombre RÉEL de joueurs de la partie est connu, condition
+	# pour adapter le nombre/la force des monstres à la taille du groupe.
+	if is_first_connection and not _is_coop_mode():
+		_start_network_bots()
 
 	_network_broadcast_spawns()
 	_refresh_network_targets()
 	# Un joueur qui rejoint en cours de partie (ou le tout premier) doit
 	# recevoir l'état actuel de la progression du donjon, pas rester bloqué
 	# à 0/5 tant qu'aucune nouvelle salle n'est nettoyée entre-temps.
-	if _is_coop_mode():
+	if _is_coop_mode() and not coop_rooms_cleared.is_empty():
 		_broadcast_coop_progress()
 	print("ARENA NETWORK V2 : PLAYER ", peer_id, " SPAWN")
 
@@ -1155,7 +1158,15 @@ func _start_network_match() -> void:
 func _begin_network_matchplay() -> void:
 	# Point d'entrée UNIQUE du gameplay après le countdown.
 	game_over = false
-	if _is_duel_mode():
+	if _is_coop_mode():
+		_start_coop_dungeon()
+		# _spawn_coop_monster n'envoie aucune RPC lui-même (comme pour les
+		# joueurs, ça se faisait jusqu'ici à la fin de
+		# _on_network_client_ready) : sans cet appel ici, les monstres
+		# existeraient bien côté serveur mais resteraient invisibles pour
+		# tous les clients, jamais notifiés de leur apparition.
+		_network_broadcast_spawns()
+	elif _is_duel_mode():
 		_start_duel_round()
 	elif _is_team_mode():
 		_start_team_round()
@@ -1336,12 +1347,28 @@ func _start_coop_dungeon() -> void:
 	coop_defeat = false
 	coop_portal_shown = false
 
+	# Adapte le nombre et la force des monstres au nombre RÉEL de joueurs
+	# de la partie (connu seulement maintenant : cette fonction tourne
+	# après le compte à rebours, une fois tout le monde connecté). Un
+	# groupe de 4 ne doit pas vider le donjon aussi facilement qu'un
+	# joueur seul.
+	var player_count := 0
+	for id in network_fighters.keys():
+		var counted_fighter := network_fighters[id] as ArenaPlayer3D
+		if counted_fighter != null and is_instance_valid(counted_fighter) and not counted_fighter.is_bot:
+			player_count += 1
+	player_count = maxi(1, player_count)
+	var extra_players: int = player_count - 1
+	coop_difficulty_scale = 1.0 + float(extra_players) * 0.35
+	if extra_players > 0:
+		_broadcast_coop_notice("DONJON ADAPTÉ À %d JOUEURS" % player_count)
+
 	var defs := _coop_room_defs()
 	var monster_rooms := {"B_REST": 2, "C_HUB": 3, "D_PUZZLE": 3, "E_REWARD": 2}
 	for room_id in monster_rooms.keys():
 		coop_rooms_cleared[room_id] = false
 		var def: Dictionary = defs[room_id]
-		var count: int = int(monster_rooms[room_id])
+		var count: int = int(monster_rooms[room_id]) + extra_players
 		for i in range(count):
 			var angle: float = (float(i) / float(count)) * TAU
 			var offset := Vector3(cos(angle) * 4.5, 0.0, sin(angle) * 4.5)
@@ -1359,6 +1386,7 @@ func _start_coop_dungeon() -> void:
 	coop_chest_looted = {"chest_reward": false, "chest_rest": false}
 
 	_refresh_network_targets()
+	_broadcast_coop_progress()
 
 func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	var bot_id := network_next_bot_id
@@ -1381,7 +1409,7 @@ func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	add_child(monster)
 	monster.global_position = _resolve_spawn_position(pos, monster)
 	monster.spell_cast.connect(_on_spell_cast)
-	monster.max_health *= 5.0 if is_boss else 1.4
+	monster.max_health *= (5.0 if is_boss else 1.4) * coop_difficulty_scale
 	monster.health = monster.max_health
 	# Garde de salle : ne poursuit pas au-delà de sa propre pièce (+marge)
 	# et rentre s'y reposer une fois le joueur hors de portée d'aggro.
@@ -1394,7 +1422,7 @@ func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	# donnant l'impression d'être "bloqué par une zone".
 	monster.monster_leash_range = float(room_def.get("half_x", 11.0)) + 20.0
 	monster.monster_aggro_range = 15.0 if is_boss else 12.0
-	monster.monster_melee_damage = 26 if is_boss else 14
+	monster.monster_melee_damage = int(float(26 if is_boss else 14) * coop_difficulty_scale)
 	monster.set_meta("coop_room", room_id)
 	monster.set_meta("coop_is_boss", is_boss)
 	network_fighters[bot_id] = monster
@@ -1599,7 +1627,12 @@ func _spawn_coop_portal_vfx(pos: Vector3) -> void:
 	tween.set_loops()
 	tween.set_parallel(true)
 	for ring in rings:
-		tween.tween_property(ring, "rotation_degrees:y", ring.rotation_degrees.y + 360.0, 4.0)
+		# as_relative() est indispensable ici : sans lui, la valeur cible
+		# (rotation actuelle + 360°) est figée à la création du tween. Au
+		# 2e tour de boucle, l'anneau est déjà à cette valeur cible — donc
+		# "from == to" et plus aucun mouvement, l'animation semblait
+		# s'arrêter après un seul tour au lieu de tourner indéfiniment.
+		tween.tween_property(ring, "rotation_degrees:y", 360.0, 4.0).as_relative()
 
 func _update_coop_progress_display() -> void:
 	if coop_progress_bar == null or not is_instance_valid(coop_progress_bar) or coop_progress_label == null or not is_instance_valid(coop_progress_label):

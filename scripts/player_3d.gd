@@ -141,6 +141,13 @@ signal spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: Cha
 @export var skeleton_mage_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/characters/gltf/Skeleton_Mage.glb"
 @export var skeleton_warrior_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/characters/gltf/Skeleton_Warrior.glb"
 
+## Armes KayKit (dossier "assets/gltf" du pack squelettes) équipées selon
+## monster_skin : voir le "match monster_skin" dans _setup_model().
+@export var skeleton_blade_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/assets/gltf/Skeleton_Blade.gltf"
+@export var skeleton_axe_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/assets/gltf/Skeleton_Axe.gltf"
+@export var skeleton_staff_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/assets/gltf/Skeleton_Staff.gltf"
+@export var skeleton_shield_scene_path: String = "res://assets/kaykit_skelleton/KayKit_Skeletons_1.1_FREE/assets/gltf/Skeleton_Shield_Large_A.gltf"
+
 ## ------------------------------------------------------------------
 ## FIN DES STATS ÉDITABLES. Le reste du fichier est la logique du jeu :
 ## ne pas modifier sauf si vous savez ce que vous faites.
@@ -187,6 +194,17 @@ var down_time_left: float = 0.0
 ## (hero_id continue de piloter les stats/sorts même pour un monstre, seul
 ## le modèle visuel change — cf. Arena3D._spawn_coop_monster).
 var monster_skin: String = ""
+## "melee" ou "ranged", déduit de monster_skin dans _setup_model() (pas
+## besoin de le synchroniser en réseau, chaque copie le recalcule pareil).
+var monster_kind: String = ""
+var monster_melee_damage: int = 14
+## Position à défendre (salle de spawn) et rayon au-delà duquel le monstre
+## abandonne la poursuite et rentre, plutôt que de suivre le joueur dans
+## tout le donjon — cf. Arena3D._spawn_coop_monster.
+var monster_home_position: Vector3 = Vector3.ZERO
+var monster_leash_range: float = 11.0
+var monster_aggro_range: float = 8.0
+var _monster_melee_timer: float = 0.0
 
 # Multiplayer V2 : le serveur simule les joueurs et les bots.
 var network_peer_id: int = 0
@@ -348,7 +366,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if is_bot:
-		_bot_input(delta)
+		if monster_skin != "":
+			_monster_bot_input(delta)
+		else:
+			_bot_input(delta)
 	elif multiplayer.has_multiplayer_peer():
 		if multiplayer.is_server():
 			_network_server_input(delta)
@@ -712,6 +733,76 @@ func _has_line_of_sight(target_position: Vector3) -> bool:
 	query.collide_with_areas = false
 	var hit: Dictionary = space_state.intersect_ray(query)
 	return hit.is_empty()
+
+func try_monster_melee() -> void:
+	spell_cast.emit("monster_melee", global_position + Vector3.UP * 0.9, aim_direction, self)
+
+const MONSTER_MELEE_RANGE := 2.3
+const MONSTER_MELEE_COOLDOWN := 1.3
+const MONSTER_RANGED_RANGE := 11.0
+
+## IA des monstres du donjon : gardiens de salle plutôt que poursuivants
+## infatigables comme les bots PvP (_bot_input). Restent immobiles/en
+## patrouille légère autour de monster_home_position tant que le joueur
+## n'est pas à la fois visible ET dans monster_aggro_range ; une fois
+## engagés, ne poursuivent jamais au-delà de monster_leash_range depuis
+## leur salle, puis rentrent. Sait toujours où est le joueur (target est la
+## référence exacte du fighter le plus proche, cf. Arena3D._refresh_network_targets)
+## — la "détection" ici ne simule pas la vue, elle limite volontairement
+## la zone d'action, comme demandé.
+func _monster_bot_input(delta: float) -> void:
+	_monster_melee_timer = maxf(0.0, _monster_melee_timer - delta)
+	_bot_orb_timer = maxf(0.0, _bot_orb_timer - delta)
+
+	var player_target: ArenaPlayer3D = target if is_instance_valid(target) else null
+	var distance_to_player: float = INF
+	var to_player: Vector3 = Vector3.ZERO
+	if player_target != null:
+		to_player = player_target.global_position - global_position
+		to_player.y = 0.0
+		distance_to_player = to_player.length()
+
+	var distance_home: float = Vector2(global_position.x - monster_home_position.x, global_position.z - monster_home_position.z).length()
+	var attack_range: float = MONSTER_MELEE_RANGE if monster_kind == "melee" else MONSTER_RANGED_RANGE
+
+	var engaged: bool = (
+		player_target != null
+		and distance_to_player <= monster_aggro_range
+		and distance_home <= monster_leash_range
+		and _has_line_of_sight(player_target.global_position + Vector3.UP * 0.9)
+	)
+
+	if engaged:
+		var forward: Vector3 = to_player.normalized() if distance_to_player > 0.05 else _character_forward()
+		if distance_to_player > attack_range * 0.7:
+			var target_velocity: Vector3 = forward * (_current_speed() * 0.78)
+			velocity.x = move_toward(velocity.x, target_velocity.x, 32.0 * delta)
+			velocity.z = move_toward(velocity.z, target_velocity.z, 32.0 * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+			velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
+		_face_direction(forward, delta)
+
+		if monster_kind == "melee":
+			if distance_to_player <= MONSTER_MELEE_RANGE and _monster_melee_timer <= 0.0:
+				_monster_melee_timer = MONSTER_MELEE_COOLDOWN
+				try_monster_melee()
+		elif distance_to_player <= MONSTER_RANGED_RANGE and _bot_orb_timer <= 0.0:
+			_bot_orb_timer = 1.1
+			try_orb(forward)
+	elif distance_home > 1.0:
+		# Hors combat : rentre calmement à son poste au lieu de rester figé
+		# là où la poursuite s'est arrêtée.
+		var home_direction: Vector3 = monster_home_position - global_position
+		home_direction.y = 0.0
+		home_direction = home_direction.normalized()
+		var target_velocity: Vector3 = home_direction * (_current_speed() * 0.45)
+		velocity.x = move_toward(velocity.x, target_velocity.x, 32.0 * delta)
+		velocity.z = move_toward(velocity.z, target_velocity.z, 32.0 * delta)
+		_face_direction(home_direction, delta)
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
 
 func _face_direction(direction: Vector3, delta: float) -> void:
 	direction.y = 0.0
@@ -1183,9 +1274,27 @@ func _setup_model() -> void:
 	# dans le dos ou sur le bras selon les personnages.
 	_skeleton = _find_skeleton(_model)
 
-	# Les monstres du donjon attaquent uniquement via les sorts existants
-	# (orb/teleport, cf. _bot_input) : pas d'arme tenue à créer pour eux.
-	if monster_skin == "":
+	if monster_skin != "":
+		# Arme + rôle (mêlée avec arme en main, ou distance au bâton) selon
+		# le squelette choisi : rend chaque type de monstre reconnaissable
+		# au premier coup d'œil au lieu qu'ils soient tous identiques.
+		match monster_skin:
+			"minion":
+				monster_kind = "melee"
+				_held_weapon = _create_simple_held_weapon(skeleton_blade_scene_path, "MonsterBlade", Vector3.ZERO, Vector3.ZERO, 1.0)
+			"rogue":
+				monster_kind = "melee"
+				_held_weapon = _create_simple_held_weapon(skeleton_axe_scene_path, "MonsterAxe", Vector3.ZERO, Vector3.ZERO, 1.0)
+			"warrior":
+				monster_kind = "melee"
+				_held_weapon = _create_simple_held_weapon(skeleton_axe_scene_path, "MonsterAxe", Vector3.ZERO, Vector3.ZERO, 1.0)
+				_attach_weapon_node(_load_weapon_or_fallback(skeleton_shield_scene_path, "MonsterShield", false), "handslot.l", Vector3.ZERO, Vector3.ZERO)
+			"mage":
+				monster_kind = "ranged"
+				_held_weapon = _create_simple_held_weapon(skeleton_staff_scene_path, "MonsterStaff", Vector3.ZERO, Vector3.ZERO, 1.0)
+			_:
+				monster_kind = "ranged"
+	else:
 		if hero_id == "KAITHLYN":
 			_create_kaithlyn_weapons_independent()
 		elif hero_id == "AERIS":

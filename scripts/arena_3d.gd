@@ -1349,6 +1349,13 @@ func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
 	monster.spell_cast.connect(_on_spell_cast)
 	monster.max_health *= 5.0 if is_boss else 1.4
 	monster.health = monster.max_health
+	# Garde de salle : ne poursuit pas au-delà de sa propre pièce (+marge)
+	# et rentre s'y reposer une fois le joueur hors de portée d'aggro.
+	monster.monster_home_position = monster.global_position
+	var room_def: Dictionary = _coop_room_defs().get(room_id, {})
+	monster.monster_leash_range = float(room_def.get("half_x", 11.0)) + 2.0
+	monster.monster_aggro_range = 10.0 if is_boss else 8.0
+	monster.monster_melee_damage = 26 if is_boss else 14
 	monster.set_meta("coop_room", room_id)
 	monster.set_meta("coop_is_boss", is_boss)
 	network_fighters[bot_id] = monster
@@ -1602,9 +1609,9 @@ func _network_send_all_to(target_id: int) -> void:
 		var fighter := network_fighters[id] as ArenaPlayer3D
 		if fighter == null or not is_instance_valid(fighter):
 			continue
-		network_node.arena_spawn_fighter.rpc_id(target_id, int(id), fighter.hero_id, fighter.team_color, fighter.global_position, fighter.global_rotation.y, fighter.is_bot, fighter.monster_skin, fighter.model_scale)
+		network_node.arena_spawn_fighter.rpc_id(target_id, int(id), fighter.hero_id, fighter.team_color, fighter.global_position, fighter.global_rotation.y, fighter.is_bot, fighter.monster_skin, fighter.model_scale, fighter.max_health, fighter.health)
 
-func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool, monster_skin: String = "", model_scale: float = -1.0) -> void:
+func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, pos: Vector3, rot_y: float, bot: bool, monster_skin: String = "", model_scale: float = -1.0, max_health_value: float = -1.0, health_value: float = -1.0) -> void:
 	if multiplayer.is_server() or network_fighters.has(fighter_id):
 		return
 	var fighter := PlayerScene.new() as ArenaPlayer3D
@@ -1628,6 +1635,16 @@ func _network_client_spawn_fighter(fighter_id: int, hero: String, team: Color, p
 	add_child(fighter)
 	fighter.global_position = pos
 	fighter.rotation.y = rot_y
+	# _ready() vient d'écraser max_health/health avec la valeur de base du
+	# héros (100 pour Eren) : pour un monstre, le serveur applique un boost
+	# (x1.4 normal, x5 boss) que le client ne connaît pas tant qu'on ne le
+	# lui transmet pas explicitement. Sans ça, la barre de vie comparait la
+	# vraie vie reçue (jusqu'à 5x plus grande) à ce max_health erroné, donc
+	# elle restait bloquée pleine (ratio saturé à 1.0) au lieu de descendre.
+	if max_health_value > 0.0:
+		fighter.max_health = max_health_value
+	if health_value > 0.0:
+		fighter.health = health_value
 
 	# Garantit que le rendu initial est exactement sur la position réseau.
 	var spawn_visual_root := fighter.get("_visual_root") as Node3D
@@ -2826,6 +2843,9 @@ func _network_client_spell_visual(kind: String, origin: Vector3, direction: Vect
 		_spawn_thrown_axe(caster, direction, value)
 	elif kind == "dagger_throw":
 		_spawn_thrown_dagger(caster, direction)
+	elif kind == "monster_melee":
+		vfx_manager.spawn_charge(self, origin, 0.4)
+		_play_sfx(HIT_SFX, origin, -6.0)
 
 func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: CharacterBody3D) -> void:
 	# En réseau, le client propriétaire ne simule jamais le gameplay du sort.
@@ -2899,6 +2919,10 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		_spawn_thrown_axe(caster, direction)
 	elif kind == "dagger_throw":
 		_spawn_thrown_dagger(caster, direction)
+	elif kind == "monster_melee":
+		var monster_caster: ArenaPlayer3D = caster as ArenaPlayer3D
+		var melee_damage: int = int(monster_caster.monster_melee_damage) if monster_caster != null else 14
+		_melee_attack(caster, 2.6, melee_damage, 0.35, 6.0, "monster_melee")
 	elif kind == "interact":
 		_resolve_coop_interact(caster as ArenaPlayer3D)
 	elif kind == "shield":

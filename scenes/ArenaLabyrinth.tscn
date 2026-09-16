@@ -10,7 +10,8 @@
 [ext_resource type="Texture2D" uid="uid://c63wy1lg68w7a" path="res://assets/Free_stylised_texture/Textures/Pavement_7/Pavement_7_AO.png" id="95_floor_ao"]
 
 [sub_resource type="Environment" id="env"]
-background_mode = 2
+background_mode = 1
+background_color = Color(0.01, 0.008, 0.015, 1)
 ambient_light_source = 2
 ambient_light_color = Color(0.1, 0.09, 0.13, 1)
 ambient_light_energy = 0.18

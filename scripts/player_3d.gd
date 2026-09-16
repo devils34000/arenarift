@@ -776,13 +776,22 @@ func _monster_bot_input(delta: float) -> void:
 
 	var distance_home: float = Vector2(global_position.x - monster_home_position.x, global_position.z - monster_home_position.z).length()
 	var attack_range: float = MONSTER_MELEE_RANGE if monster_kind == "melee" else MONSTER_RANGED_RANGE
+	var target_alive: bool = player_target != null and player_target.health > 0.0
 
-	var engaged: bool = (
-		player_target != null
+	# L'aggro est "collante" : une fois engagé, on ne le perd PAS juste parce
+	# que le joueur ressort momentanément de monster_aggro_range (sinon le
+	# combat entre/sort sans arrêt de l'aggro et le monstre arrête d'agir en
+	# plein combat, offrant des dégâts gratuits). On ne le relâche que si la
+	# cible meurt ou dépasse la laisse de la salle — même condition que pour
+	# engager l'aggro la première fois.
+	var can_start_aggro: bool = (
+		target_alive
 		and distance_to_player <= monster_aggro_range
 		and distance_home <= monster_leash_range
 		and _has_line_of_sight(player_target.global_position + Vector3.UP * 0.9)
 	)
+	var keeps_aggro: bool = is_aggroed and target_alive and distance_home <= monster_leash_range
+	var engaged: bool = can_start_aggro or keeps_aggro
 	is_aggroed = engaged
 
 	if engaged:
@@ -796,11 +805,15 @@ func _monster_bot_input(delta: float) -> void:
 			velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
 		_face_direction(forward, delta)
 
+		# La ligne de vue est revérifiée ici (pas seulement pour engager) :
+		# un monstre qui poursuit peut se retrouver de l'autre côté d'un mur
+		# à mi-chemin, il ne doit alors pas frapper à l'aveugle.
+		var attack_los: bool = _has_line_of_sight(player_target.global_position + Vector3.UP * 0.9)
 		if monster_kind == "melee":
-			if distance_to_player <= MONSTER_MELEE_RANGE and _monster_melee_timer <= 0.0:
+			if distance_to_player <= MONSTER_MELEE_RANGE and _monster_melee_timer <= 0.0 and attack_los:
 				_monster_melee_timer = MONSTER_MELEE_COOLDOWN
 				try_monster_melee()
-		elif distance_to_player <= MONSTER_RANGED_RANGE and _bot_orb_timer <= 0.0:
+		elif distance_to_player <= MONSTER_RANGED_RANGE and _bot_orb_timer <= 0.0 and attack_los:
 			_bot_orb_timer = 1.1
 			try_orb(forward)
 	elif distance_home > 1.0:
@@ -1069,7 +1082,7 @@ func try_throw_dagger(direction: Vector3 = Vector3.ZERO) -> void:
 	orb_cooldown = maylinh_dagger_throw_cooldown
 	spell_cast.emit("dagger_throw", global_position + Vector3.UP * 0.95 + direction * 0.55, direction, self)
 
-func take_damage(amount: int, force: Vector3) -> bool:
+func take_damage(amount: int, force: Vector3, attacker: ArenaPlayer3D = null) -> bool:
 	last_damage_dealt = 0.0
 	# Mode Découverte (Custom Game) : aucun combat, on ignore silencieusement
 	# tous les dégâts plutôt que de dupliquer ce garde à chaque source de
@@ -1079,6 +1092,13 @@ func take_damage(amount: int, force: Vector3) -> bool:
 		return false
 	if invulnerable_left > 0.0:
 		return false
+	# Un monstre du donjon attaqué par un joueur hors de sa portée d'aggro
+	# (dégâts venus de derrière, un allié qui l'a attiré ailleurs, etc.)
+	# doit riposter immédiatement au lieu d'ignorer le coup jusqu'à ce que
+	# l'attaquant entre "naturellement" dans sa zone de détection.
+	if monster_skin != "" and attacker != null and is_instance_valid(attacker):
+		target = attacker
+		is_aggroed = true
 	var remaining_damage: float = float(amount)
 	if get_shield_active():
 		var absorbed: float = minf(remaining_damage, shield_points)

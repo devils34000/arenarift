@@ -205,6 +205,17 @@ func arena_coop_result(victory: bool) -> void:
 	if arena != null:
 		arena.call("_network_client_coop_result", victory)
 
+## Co-op Donjon : état de la progression (salles nettoyées / clé du boss),
+## poussé par le serveur — seul lui a coop_rooms_cleared/coop_key_dropped à
+## jour, les clients affichent simplement ce qu'on leur envoie.
+@rpc("authority", "call_remote", "reliable")
+func arena_coop_progress(cleared: int, total: int, key_dropped: bool) -> void:
+	if multiplayer.is_server():
+		return
+	var arena := _get_network_arena()
+	if arena != null:
+		arena.call("_network_client_coop_progress", cleared, total, key_dropped)
+
 ## Récupération de la hache de Kaithlyn : le serveur seul décide du moment
 ## exact où la hache est ramassée (position/cooldown remis à zéro), et le
 ## diffuse ici. Sans cette RPC, chaque client décidait indépendamment quand

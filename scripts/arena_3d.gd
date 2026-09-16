@@ -183,6 +183,11 @@ var hud: CanvasLayer
 var timer_label: Label
 var score_label: Label
 var subtitle_label: Label
+var coop_progress_bar: ProgressBar
+var coop_progress_label: Label
+var coop_progress_rooms_cleared: int = 0
+var coop_progress_rooms_total: int = 5
+var coop_progress_key: bool = false
 var health_bar_bg: Panel
 ## Largeur réellement construite de la barre de vie (peut être < la
 ## constante HERO_HEALTH_BAR_WIDTH si la bande du cadre ATH est trop
@@ -1122,6 +1127,11 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 
 	_network_broadcast_spawns()
 	_refresh_network_targets()
+	# Un joueur qui rejoint en cours de partie (ou le tout premier) doit
+	# recevoir l'état actuel de la progression du donjon, pas rester bloqué
+	# à 0/5 tant qu'aucune nouvelle salle n'est nettoyée entre-temps.
+	if _is_coop_mode():
+		_broadcast_coop_progress()
 	print("ARENA NETWORK V2 : PLAYER ", peer_id, " SPAWN")
 
 func _start_network_match() -> void:
@@ -1428,6 +1438,48 @@ func _coop_check_room_cleared(room_id: String) -> void:
 			return
 	coop_rooms_cleared[room_id] = true
 	_broadcast_coop_notice("SALLE NETTOYÉE : %s" % room_id)
+	_broadcast_coop_progress()
+
+## coop_rooms_cleared/coop_key_dropped ne sont peuplés que côté serveur
+## (_start_coop_dungeon, _coop_check_room_cleared...) : la barre de
+## progression affichée par chaque client doit donc être poussée par le
+## serveur au lieu d'être relue localement, comme _broadcast_coop_notice.
+func _broadcast_coop_progress() -> void:
+	var cleared := 0
+	for room_id in coop_rooms_cleared.keys():
+		if bool(coop_rooms_cleared[room_id]):
+			cleared += 1
+	var total: int = maxi(1, coop_rooms_cleared.size())
+	_apply_coop_progress(cleared, total, coop_key_dropped)
+	var network_node := get_node_or_null("/root/Network")
+	if network_node == null or not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	for target_id in multiplayer.get_peers():
+		network_node.arena_coop_progress.rpc_id(int(target_id), cleared, total, coop_key_dropped)
+
+func _network_client_coop_progress(cleared: int, total: int, key: bool) -> void:
+	_apply_coop_progress(cleared, total, key)
+
+func _apply_coop_progress(cleared: int, total: int, key: bool) -> void:
+	coop_progress_rooms_cleared = cleared
+	coop_progress_rooms_total = total
+	coop_progress_key = key
+	_update_coop_progress_display()
+
+func _update_coop_progress_display() -> void:
+	if coop_progress_bar == null or not is_instance_valid(coop_progress_bar) or coop_progress_label == null or not is_instance_valid(coop_progress_label):
+		return
+	var total: int = maxi(1, coop_progress_rooms_total)
+	coop_progress_bar.value = clampf(float(coop_progress_rooms_cleared) / float(total), 0.0, 1.0) * 100.0
+	if coop_progress_rooms_cleared >= total and coop_progress_key:
+		coop_progress_label.text = "DONJON NETTOYÉ — TÉLÉPORTATION REQUISE : REJOIGNEZ L'ENTRÉE"
+		coop_progress_label.add_theme_color_override("font_color", Color("62e6a7"))
+	elif coop_progress_rooms_cleared >= total:
+		coop_progress_label.text = "DONJON NETTOYÉ — RÉCUPÉREZ LA CLÉ DU BOSS"
+		coop_progress_label.add_theme_color_override("font_color", Color("ffcc55"))
+	else:
+		coop_progress_label.text = "SALLES NETTOYÉES : %d / %d" % [coop_progress_rooms_cleared, total]
+		coop_progress_label.add_theme_color_override("font_color", Color("cfe0f5"))
 
 func _coop_all_clear() -> bool:
 	if not coop_key_dropped:
@@ -2005,6 +2057,9 @@ func _update_enemy_health_bars() -> void:
 		var aggro_mark := bar.get_node_or_null("AggroMark") as Label
 		if aggro_mark != null:
 			aggro_mark.visible = fighter.is_aggroed
+		var aggro_badge := bar.get_node_or_null("AggroBadge") as ColorRect
+		if aggro_badge != null:
+			aggro_badge.visible = fighter.is_aggroed
 	# "for fighter in enemy_health_bars.keys()" castait directement chaque
 	# clé en ArenaPlayer3D : un combattant tué/despawn (queue_free, cf. les
 	# monstres du donjon) devient un objet libéré dont Godot refuse le cast
@@ -2054,14 +2109,28 @@ func _create_enemy_health_bar() -> Control:
 	# donjon a le joueur en ligne de mire (fighter.is_aggroed, synchronisé
 	# depuis le serveur via arena_transform) — invisible par défaut/pour les
 	# ennemis PvP classiques (is_aggroed reste toujours faux pour eux).
+	# Badge sombre derrière le "!" : un simple label rouge sur fond de jeu
+	# clair/texturé devenait illisible, le badge garantit le contraste.
+	var aggro_badge := ColorRect.new()
+	aggro_badge.name = "AggroBadge"
+	aggro_badge.position = Vector2(20, -30)
+	aggro_badge.size = Vector2(24, 24)
+	aggro_badge.color = Color(0.08, 0.02, 0.02, 0.9)
+	aggro_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aggro_badge.visible = false
+	container.add_child(aggro_badge)
+
 	var aggro_label := Label.new()
 	aggro_label.name = "AggroMark"
 	aggro_label.text = "!"
-	aggro_label.position = Vector2(26, -20)
-	aggro_label.size = Vector2(12, 18)
-	aggro_label.add_theme_font_size_override("font_size", 18)
+	aggro_label.position = Vector2(20, -32)
+	aggro_label.size = Vector2(24, 26)
+	aggro_label.add_theme_font_size_override("font_size", 26)
 	aggro_label.add_theme_color_override("font_color", Color("ff3b30"))
+	aggro_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	aggro_label.add_theme_constant_override("outline_size", 6)
 	aggro_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aggro_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	aggro_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	aggro_label.visible = false
 	container.add_child(aggro_label)
@@ -3001,7 +3070,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 			if push_dir.length_squared() < 0.001:
 				push_dir = direction
 			push_dir = push_dir.normalized()
-			var killed: bool = bool(fighter.take_damage(nova_damage, push_dir * 5.5))
+			var killed: bool = bool(fighter.take_damage(nova_damage, push_dir * 5.5, attacker))
 			var dealt: int = int(round(fighter.last_damage_dealt))
 			if dealt > 0:
 				attacker.register_eren_damage(dealt)
@@ -3035,7 +3104,7 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 			if push_dir.length_squared() < 0.001:
 				push_dir = direction
 			push_dir = push_dir.normalized()
-			var killed: bool = bool(target_fighter.take_damage(attacker.eren_charge_hit_damage, push_dir * 7.0))
+			var killed: bool = bool(target_fighter.take_damage(attacker.eren_charge_hit_damage, push_dir * 7.0, attacker))
 			var dealt: int = int(round(target_fighter.last_damage_dealt))
 			if dealt > 0:
 				attacker.register_eren_damage(dealt)
@@ -3298,7 +3367,7 @@ func _update_thrown_axes(delta: float) -> void:
 						var is_authoritative: bool = not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
 						var killed: bool = false
 						if is_authoritative:
-							killed = bool(fighter.take_damage(owner_player.kaithlyn_axe_damage, push * 4.0))
+							killed = bool(fighter.take_damage(owner_player.kaithlyn_axe_damage, push * 4.0, owner_player))
 							owner_player.match_damage_dealt += fighter.last_damage_dealt
 						vfx_manager.spawn_axe_hit(self, fighter.global_position + Vector3.UP * 0.15, velocity_axe.normalized())
 						vfx_manager.spawn_damage_flash(self, fighter.global_position, velocity_axe.normalized())
@@ -3437,7 +3506,7 @@ func _update_thrown_daggers(delta: float) -> void:
 						var is_authoritative: bool = not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
 						var killed: bool = false
 						if is_authoritative:
-							killed = bool(fighter.take_damage(owner_player.maylinh_dagger_damage, push * 3.5))
+							killed = bool(fighter.take_damage(owner_player.maylinh_dagger_damage, push * 3.5, owner_player))
 							owner_player.match_damage_dealt += fighter.last_damage_dealt
 						vfx_manager.spawn_axe_hit(self, fighter.global_position + Vector3.UP * 0.15, velocity_dagger.normalized())
 						vfx_manager.spawn_damage_flash(self, fighter.global_position, velocity_dagger.normalized())
@@ -3651,7 +3720,7 @@ func _melee_attack(caster: CharacterBody3D, range_value: float, damage: int, stu
 		vfx_manager.spawn_shield_bash(self, best.global_position, aim)
 	else:
 		vfx_manager.spawn_charge(self, best.global_position + Vector3.UP * 0.1, 0.55)
-	var killed: bool = bool(best.take_damage(damage, force_direction * knockback))
+	var killed: bool = bool(best.take_damage(damage, force_direction * knockback, attacker))
 	attacker.match_damage_dealt += best.last_damage_dealt
 	_broadcast_damage_vfx("damage", best.global_position, force_direction)
 	if stun > 0.0:
@@ -3746,7 +3815,8 @@ func _on_projectile_hit(target: CharacterBody3D, orb: Area3D) -> void:
 	var killed: bool = bool(
 		target.take_damage(
 			damage,
-			push
+			push,
+			owner_player
 		)
 	)
 	if owner_player != null:
@@ -3823,7 +3893,7 @@ func _update_eren_fire_trails(delta: float) -> void:
 		if float(eren_trail_hit_cooldowns.get(id, 0.0)) > 0.0:
 			continue
 		const TRAIL_DAMAGE: int = 10
-		var killed: bool = bool(fighter.take_damage(TRAIL_DAMAGE, Vector3.ZERO))
+		var killed: bool = bool(fighter.take_damage(TRAIL_DAMAGE, Vector3.ZERO, best_owner))
 		var dealt: int = int(round(fighter.last_damage_dealt))
 		if dealt > 0:
 			best_owner.register_eren_damage(dealt)
@@ -4427,6 +4497,40 @@ func _build_pause_menu() -> void:
 	back_btn.pressed.connect(_show_pause_root)
 	pause_options_panel.add_child(back_btn)
 
+## Remplace le tableau de score PvP (ASTRAL/ARCANE, timer de round, BO3) par
+## une barre de progression du donjon : le Co-op Donjon n'a ni round ni
+## camp adverse, ces éléments n'y avaient pas de sens.
+func _build_coop_progress_panel() -> void:
+	var panel := _panel(Vector2(430, 14), Vector2(420, 70), Color("081321e8"), Color("315b8d"), 16)
+	panel.name = "CoopProgressPanel"
+	hud.add_child(panel)
+
+	var title := _label("", "PROGRESSION DU DONJON", Vector2(10, 8), Vector2(400, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
+	panel.add_child(title)
+
+	coop_progress_bar = ProgressBar.new()
+	coop_progress_bar.name = "ProgressBar"
+	coop_progress_bar.position = Vector2(20, 28)
+	coop_progress_bar.size = Vector2(380, 14)
+	coop_progress_bar.min_value = 0.0
+	coop_progress_bar.max_value = 100.0
+	coop_progress_bar.value = 0.0
+	coop_progress_bar.show_percentage = false
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.05, 0.06, 0.1, 0.9)
+	bar_bg.set_corner_radius_all(6)
+	coop_progress_bar.add_theme_stylebox_override("background", bar_bg)
+	var bar_fill := StyleBoxFlat.new()
+	bar_fill.bg_color = Color("62e6a7")
+	bar_fill.set_corner_radius_all(6)
+	coop_progress_bar.add_theme_stylebox_override("fill", bar_fill)
+	panel.add_child(coop_progress_bar)
+
+	coop_progress_label = _label("", "SALLES NETTOYÉES : 0 / 5", Vector2(10, 46), Vector2(400, 16), 10, Color("cfe0f5"), HORIZONTAL_ALIGNMENT_CENTER)
+	panel.add_child(coop_progress_label)
+
+	_update_coop_progress_display()
+
 func _build_hud() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
@@ -4434,40 +4538,43 @@ func _build_hud() -> void:
 	hud.name = "HUD"
 	add_child(hud)
 
-	# =====================================================
-	# TOP SCOREBOARD — MOBA / COMPETITIVE
-	# =====================================================
-	var top := _panel(Vector2(430, 14), Vector2(420, 112), Color("081321e8"), Color("315b8d"), 16)
-	top.name = "ControlTop"
-	hud.add_child(top)
+	if _is_coop_mode():
+		_build_coop_progress_panel()
+	else:
+		# =====================================================
+		# TOP SCOREBOARD — MOBA / COMPETITIVE
+		# =====================================================
+		var top := _panel(Vector2(430, 14), Vector2(420, 112), Color("081321e8"), Color("315b8d"), 16)
+		top.name = "ControlTop"
+		hud.add_child(top)
 
-	subtitle_label = _label("", ("%s  •  BO3" % mode_value_for_bots() if _is_team_mode() else "1V1 DUEL  •  BO3"), Vector2(10, 6), Vector2(400, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
-	top.add_child(subtitle_label)
+		subtitle_label = _label("", ("%s  •  BO3" % mode_value_for_bots() if _is_team_mode() else "1V1 DUEL  •  BO3"), Vector2(10, 6), Vector2(400, 14), 8, Color("7294bd"), HORIZONTAL_ALIGNMENT_CENTER)
+		top.add_child(subtitle_label)
 
-	var astral_label := _label("", "ASTRAL", Vector2(16, 27), Vector2(120, 24), 16, Color("78cfff"), HORIZONTAL_ALIGNMENT_CENTER)
-	top.add_child(astral_label)
+		var astral_label := _label("", "ASTRAL", Vector2(16, 27), Vector2(120, 24), 16, Color("78cfff"), HORIZONTAL_ALIGNMENT_CENTER)
+		top.add_child(astral_label)
 
-	var arcane_label := _label("", "ARCANE", Vector2(284, 27), Vector2(120, 24), 16, Color("d29cff"), HORIZONTAL_ALIGNMENT_CENTER)
-	top.add_child(arcane_label)
+		var arcane_label := _label("", "ARCANE", Vector2(284, 27), Vector2(120, 24), 16, Color("d29cff"), HORIZONTAL_ALIGNMENT_CENTER)
+		top.add_child(arcane_label)
 
-	timer_label = _label("", ("01:45" if _is_team_mode() else "00:45"), Vector2(140, 20), Vector2(140, 38), 28, Color("fff0b0"), HORIZONTAL_ALIGNMENT_CENTER)
-	top.add_child(timer_label)
+		timer_label = _label("", ("01:45" if _is_team_mode() else "00:45"), Vector2(140, 20), Vector2(140, 38), 28, Color("fff0b0"), HORIZONTAL_ALIGNMENT_CENTER)
+		top.add_child(timer_label)
 
-	var score_caption := _label("", "BO3", Vector2(18, 59), Vector2(35, 16), 7, Color("6786ad"), HORIZONTAL_ALIGNMENT_LEFT)
-	top.add_child(score_caption)
-	score_label = _label("", "0  —  0", Vector2(100, 62), Vector2(220, 22), 16, Color("f4f7ff"), HORIZONTAL_ALIGNMENT_CENTER)
-	score_label.name = "Score"
-	top.add_child(score_label)
+		var score_caption := _label("", "BO3", Vector2(18, 59), Vector2(35, 16), 7, Color("6786ad"), HORIZONTAL_ALIGNMENT_LEFT)
+		top.add_child(score_caption)
+		score_label = _label("", "0  —  0", Vector2(100, 62), Vector2(220, 22), 16, Color("f4f7ff"), HORIZONTAL_ALIGNMENT_CENTER)
+		score_label.name = "Score"
+		top.add_child(score_label)
 
-	var kills_caption := _label("", "KILLS", Vector2(18, 88), Vector2(40, 14), 7, Color("6786ad"), HORIZONTAL_ALIGNMENT_LEFT)
-	top.add_child(kills_caption)
-	var kills_value := _label("", "0  —  0", Vector2(55, 85), Vector2(110, 17), 10, Color("e9f1ff"), HORIZONTAL_ALIGNMENT_LEFT)
-	kills_value.name = "KillsValue"
-	top.add_child(kills_value)
+		var kills_caption := _label("", "KILLS", Vector2(18, 88), Vector2(40, 14), 7, Color("6786ad"), HORIZONTAL_ALIGNMENT_LEFT)
+		top.add_child(kills_caption)
+		var kills_value := _label("", "0  —  0", Vector2(55, 85), Vector2(110, 17), 10, Color("e9f1ff"), HORIZONTAL_ALIGNMENT_LEFT)
+		kills_value.name = "KillsValue"
+		top.add_child(kills_value)
 
-	var round_value := _label("", "ROUND 1 / 3", Vector2(270, 85), Vector2(130, 17), 9, Color("b7cbe5"), HORIZONTAL_ALIGNMENT_RIGHT)
-	round_value.name = "RoundValue"
-	top.add_child(round_value)
+		var round_value := _label("", "ROUND 1 / 3", Vector2(270, 85), Vector2(130, 17), 9, Color("b7cbe5"), HORIZONTAL_ALIGNMENT_RIGHT)
+		round_value.name = "RoundValue"
+		top.add_child(round_value)
 
 	# =====================================================
 	# RESPAWN OVERLAY — CENTRE DE L'ECRAN
@@ -4656,8 +4763,75 @@ func _build_hud() -> void:
 	var help := _label("ControllerHelp", "WASD  •  SOURIS", Vector2(1110, 704), Vector2(145, 10), 6, Color("526b89"), HORIZONTAL_ALIGNMENT_RIGHT)
 	bottom.add_child(help)
 
+	if _is_coop_mode():
+		_show_coop_intro_overlay()
+
+## Écran d'intro affiché une fois à l'arrivée dans le donjon (histoire +
+## règles), avec un bouton pour le fermer. Purement cosmétique côté client
+## : ne bloque pas le compte à rebours réseau (déjà géré ailleurs), pour ne
+## pas avoir à resynchroniser un nouvel état "prêt" entre joueurs en plus
+## de celui déjà validé dans le salon avant de lancer la partie.
+func _show_coop_intro_overlay() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	var overlay := Control.new()
+	overlay.name = "CoopIntroOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud.add_child(overlay)
+
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.01, 0.01, 0.02, 0.86)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(backdrop)
+
+	var panel := Panel.new()
+	panel.position = Vector2(310, 110)
+	panel.size = Vector2(660, 500)
+	panel.add_theme_stylebox_override("panel", _box(Color("07111fef"), Color("6b4d1f"), 22, 2))
+	overlay.add_child(panel)
+
+	var title := _label("", "LE DONJON D'ARKANOR", Vector2(0, 28), Vector2(660, 40), 26, Color("d9a441"), HORIZONTAL_ALIGNMENT_CENTER)
+	panel.add_child(title)
+
+	var lore := Label.new()
+	lore.position = Vector2(46, 84)
+	lore.size = Vector2(568, 300)
+	lore.autowrap_mode = TextServer.AUTOWRAP_WORD
+	lore.add_theme_font_size_override("font_size", 14)
+	lore.add_theme_color_override("font_color", Color("dbe4f2"))
+	lore.text = "Sous les ruines d'Arkanor dort un labyrinthe que même les cartographes du Rift refusent de tracer. Des morts-vivants en gardent chaque salle depuis la chute du dernier convoi qui s'y est aventuré.\n\nLA RÈGLE DU DONJON :\n— Nettoyez les salles une à une. Les morts-vivants ne pardonnent aucune imprudence.\n— Le plus grand d'entre eux garde la clé du portail de sortie. Il ne la lâchera qu'en mourant.\n— Un allié à terre peut être réanimé (touche interact) avant qu'il ne soit trop tard. Une fois mort, il ne se relèvera plus.\n— Une fois le donjon nettoyé et la clé en main, retournez à l'entrée et ouvrez le portail (interact) pour sortir vivants.\n\nArkanor ne vous laissera pas repartir facilement."
+	panel.add_child(lore)
+
+	var ready_button := Button.new()
+	ready_button.text = "PRÊT À MOURIR"
+	ready_button.position = Vector2(230, 420)
+	ready_button.size = Vector2(200, 46)
+	ready_button.add_theme_font_size_override("font_size", 16)
+	ready_button.add_theme_color_override("font_color", Color("1a0d04"))
+	var button_style := StyleBoxFlat.new()
+	button_style.bg_color = Color("d9a441")
+	button_style.set_corner_radius_all(8)
+	ready_button.add_theme_stylebox_override("normal", button_style)
+	var button_style_hover := StyleBoxFlat.new()
+	button_style_hover.bg_color = Color("eec06a")
+	button_style_hover.set_corner_radius_all(8)
+	ready_button.add_theme_stylebox_override("hover", button_style_hover)
+	ready_button.pressed.connect(func() -> void:
+		overlay.queue_free()
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	)
+	panel.add_child(ready_button)
+
 func _update_hud() -> void:
 	if player == null or not is_instance_valid(player):
+		return
+	if _is_coop_mode():
+		# Pas de round/BO3/camp adverse en Co-op : timer_label/score_label/
+		# subtitle_label n'existent même pas (_build_coop_progress_panel
+		# les remplace), les toucher plantait _update_hud() à chaque appel.
+		# La barre de progression est mise à jour par pushs serveur
+		# (_broadcast_coop_progress), pas ici.
 		return
 
 	var seconds := 0

@@ -280,6 +280,17 @@ var controller_device_id: int = -1
 var network_fighters: Dictionary = {}
 var network_bot_ids: Array[int] = []
 var network_next_bot_id: int = 1001
+
+# Mode Co-op Donjon (CUSTOM COOP DUNGEON, cf. ArenaLabyrinth.tscn).
+var coop_monsters: Array[ArenaPlayer3D] = []
+var coop_monster_room: Dictionary = {}
+var coop_rooms_cleared: Dictionary = {}
+var coop_boss: ArenaPlayer3D = null
+var coop_key_dropped: bool = false
+var coop_victory: bool = false
+var coop_defeat: bool = false
+var coop_chest_positions: Dictionary = {}
+var coop_chest_looted: Dictionary = {}
 var network_sync_timer: float = 0.0
 var network_server_initialized: bool = false
 var network_match_countdown_active: bool = false
@@ -359,7 +370,9 @@ func _process(delta: float) -> void:
 		_update_thrown_axes(delta)
 		_update_thrown_daggers(delta)
 		_update_eren_fire_trails(delta)
-		if _is_duel_mode():
+		if _is_coop_mode():
+			_update_coop_dungeon(delta)
+		elif _is_duel_mode():
 			_update_duel(delta)
 		elif _is_team_mode():
 			_update_team_mode(delta)
@@ -371,7 +384,7 @@ func _process(delta: float) -> void:
 			if fighter != null and fighter.global_position.distance_to(objective_position) < 2.0:
 				fighter.health = mini(fighter.max_health, fighter.health + delta * 9.0)
 
-		if not _is_duel_mode() and not _is_team_mode() and not _is_explore_mode() and round_time <= 0.0 and not game_over:
+		if not _is_coop_mode() and not _is_duel_mode() and not _is_team_mode() and not _is_explore_mode() and round_time <= 0.0 and not game_over:
 			# En réseau, cette branche ne faisait auparavant que positionner
 			# game_over sans jamais appeler _show_round_end() ni prévenir les
 			# clients : la partie DEATHMATCH s'arrêtait silencieusement.
@@ -1074,6 +1087,10 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 		fighter.team_color = Color("ff6276")
 	else:
 		fighter.team_color = Color("48a9ff") if network_fighters.is_empty() else Color("ff6276")
+	# Co-op Donjon : tous les joueurs réels sont alliés (ARCANE/ff6276 est
+	# réservé aux monstres), quel que soit l'ordre de connexion.
+	if _is_coop_mode():
+		fighter.team_color = Color("48a9ff")
 	fighter.set_multiplayer_authority(peer_id)
 	add_child(fighter)
 	fighter.global_position = _resolve_spawn_position(spawns[network_fighters.size() % spawns.size()], fighter)
@@ -1092,7 +1109,10 @@ func _on_network_client_ready(peer_id: int, hero: String, requested_mode: String
 		enemies.append(fighter)
 
 	if not network_server_initialized:
-		_start_network_bots()
+		if _is_coop_mode():
+			_start_coop_dungeon()
+		else:
+			_start_network_bots()
 
 	_network_broadcast_spawns()
 	_refresh_network_targets()
@@ -1250,6 +1270,227 @@ func _start_network_bots() -> void:
 		deathmatch_scores[bot] = 0
 		deathmatch_deaths[bot] = 0
 
+## Centres/demi-tailles (monde) des 6 salles du labyrinthe v2
+## (CELL=7.0, ORIGIN_X=-66.5, ORIGIN_Z=-59.5, cf. ArenaLabyrinth.tscn) :
+## calculés à partir des mêmes blocs de grille que la génération des murs,
+## donc garantis à l'intérieur du sol carvé (contrairement aux Marker3D
+## "Room_*" laissés tels quels depuis l'ancienne version de la map).
+func _coop_room_defs() -> Dictionary:
+	return {
+		"A_ENTRANCE": {"x": 7.0, "z": 49.0, "half_x": 10.5, "half_z": 10.5},
+		"B_REST": {"x": -49.0, "z": 28.0, "half_x": 10.5, "half_z": 10.5},
+		"C_HUB": {"x": 7.0, "z": 7.0, "half_x": 10.5, "half_z": 10.5},
+		"D_PUZZLE": {"x": -56.0, "z": -28.0, "half_x": 10.5, "half_z": 10.5},
+		"E_REWARD": {"x": 56.0, "z": 28.0, "half_x": 10.5, "half_z": 10.5},
+		"F_BOSS": {"x": 7.0, "z": -42.0, "half_x": 17.5, "half_z": 17.5},
+	}
+
+## Lance la partie Co-op Donjon : peuple les 5 salles (hors salle d'entrée)
+## de monstres, place le boss dans la salle F_BOSS et deux coffres à looter.
+func _start_coop_dungeon() -> void:
+	coop_monsters.clear()
+	coop_monster_room.clear()
+	coop_rooms_cleared.clear()
+	coop_boss = null
+	coop_key_dropped = false
+	coop_victory = false
+	coop_defeat = false
+
+	var defs := _coop_room_defs()
+	var monster_rooms := {"B_REST": 2, "C_HUB": 3, "D_PUZZLE": 3, "E_REWARD": 2}
+	for room_id in monster_rooms.keys():
+		coop_rooms_cleared[room_id] = false
+		var def: Dictionary = defs[room_id]
+		var count: int = int(monster_rooms[room_id])
+		for i in range(count):
+			var angle: float = (float(i) / float(count)) * TAU
+			var offset := Vector3(cos(angle) * 4.5, 0.0, sin(angle) * 4.5)
+			var pos := Vector3(float(def["x"]), ORIGINAL_SPAWN_Y, float(def["z"])) + offset
+			_spawn_coop_monster(room_id, pos, false)
+
+	coop_rooms_cleared["F_BOSS"] = false
+	var boss_def: Dictionary = defs["F_BOSS"]
+	_spawn_coop_monster("F_BOSS", Vector3(float(boss_def["x"]), ORIGINAL_SPAWN_Y, float(boss_def["z"])), true)
+
+	coop_chest_positions = {
+		"chest_reward": Vector3(float(defs["E_REWARD"]["x"]), ORIGINAL_SPAWN_Y, float(defs["E_REWARD"]["z"])),
+		"chest_rest": Vector3(float(defs["B_REST"]["x"]), ORIGINAL_SPAWN_Y, float(defs["B_REST"]["z"])),
+	}
+	coop_chest_looted = {"chest_reward": false, "chest_rest": false}
+
+	_refresh_network_targets()
+
+func _spawn_coop_monster(room_id: String, pos: Vector3, is_boss: bool) -> void:
+	var bot_id := network_next_bot_id
+	network_next_bot_id += 1
+	var monster := PlayerScene.new() as ArenaPlayer3D
+	monster.name = ("Boss_%d" % bot_id) if is_boss else ("Monster_%d" % bot_id)
+	monster.is_bot = true
+	monster.network_peer_id = bot_id
+	monster.network_round_serial = network_round_serial
+	monster.hero_id = "EREN"
+	monster.team_color = Color("ff6276")
+	add_child(monster)
+	monster.global_position = _resolve_spawn_position(pos, monster)
+	monster.spell_cast.connect(_on_spell_cast)
+	monster.max_health *= 5.0 if is_boss else 1.4
+	monster.health = monster.max_health
+	monster.set_meta("coop_room", room_id)
+	monster.set_meta("coop_is_boss", is_boss)
+	network_fighters[bot_id] = monster
+	deathmatch_scores[monster] = 0
+	deathmatch_deaths[monster] = 0
+	coop_monster_room[monster] = room_id
+	coop_monsters.append(monster)
+	if is_boss:
+		coop_boss = monster
+
+## Tick serveur du mode Co-op Donjon : nettoyage des monstres tués (mort
+## définitive, pas de respawn), suivi des salles nettoyées, minuteur de
+## réanimation des joueurs à terre et condition de défaite d'équipe.
+func _update_coop_dungeon(delta: float) -> void:
+	if coop_victory or coop_defeat:
+		return
+
+	for i in range(coop_monsters.size() - 1, -1, -1):
+		var monster: ArenaPlayer3D = coop_monsters[i]
+		if monster == null or not is_instance_valid(monster):
+			coop_monsters.remove_at(i)
+			continue
+		if monster.health <= 0.0:
+			var room_id: String = str(coop_monster_room.get(monster, ""))
+			var was_boss: bool = bool(monster.get_meta("coop_is_boss", false))
+			coop_monsters.remove_at(i)
+			coop_monster_room.erase(monster)
+			network_fighters.erase(monster.network_peer_id)
+			monster.remove_from_group("fighters")
+			monster.queue_free()
+			if was_boss:
+				coop_key_dropped = true
+				_broadcast_coop_notice("LE BOSS EST TOMBÉ — LA CLÉ DU PORTAIL EST DISPONIBLE !")
+			_coop_check_room_cleared(room_id)
+
+	var total_players := 0
+	var alive_count := 0
+	for id in network_fighters.keys():
+		var fighter := network_fighters[id] as ArenaPlayer3D
+		if fighter == null or not is_instance_valid(fighter) or fighter.is_bot:
+			continue
+		total_players += 1
+		if fighter.is_downed:
+			fighter.down_time_left = maxf(0.0, fighter.down_time_left - delta)
+			if fighter.down_time_left <= 0.0:
+				fighter.health = 0.0
+				fighter.process_mode = Node.PROCESS_MODE_DISABLED
+				fighter.visible = false
+		elif fighter.health > 0.0:
+			alive_count += 1
+
+	if total_players > 0 and alive_count == 0 and not coop_defeat:
+		coop_defeat = true
+		_broadcast_coop_notice("TOUTE L'ÉQUIPE EST TOMBÉE — ÉCHEC DE LA MISSION")
+		_end_coop_match(false)
+
+func _coop_check_room_cleared(room_id: String) -> void:
+	if room_id == "" or bool(coop_rooms_cleared.get(room_id, true)):
+		return
+	for monster in coop_monsters:
+		if str(coop_monster_room.get(monster, "")) == room_id:
+			return
+	coop_rooms_cleared[room_id] = true
+	_broadcast_coop_notice("SALLE NETTOYÉE : %s" % room_id)
+
+func _coop_all_clear() -> bool:
+	if not coop_key_dropped:
+		return false
+	for room_id in coop_rooms_cleared.keys():
+		if not bool(coop_rooms_cleared[room_id]):
+			return false
+	return true
+
+## Résout l'action "interact" en Co-op Donjon : réanimer un allié à terre à
+## proximité, sinon ouvrir un coffre à proximité, sinon (dans la salle
+## d'entrée, donjon nettoyé + clé du boss récupérée) ouvrir le portail de
+## sortie et déclarer la victoire.
+func _resolve_coop_interact(caster: ArenaPlayer3D) -> void:
+	if caster == null or not is_instance_valid(caster) or caster.is_bot or caster.is_downed:
+		return
+	if coop_victory or coop_defeat:
+		return
+
+	for id in network_fighters.keys():
+		var ally := network_fighters[id] as ArenaPlayer3D
+		if ally == null or not is_instance_valid(ally) or ally == caster or ally.is_bot:
+			continue
+		if ally.is_downed and caster.global_position.distance_to(ally.global_position) < 2.6:
+			ally.is_downed = false
+			ally.down_time_left = 0.0
+			ally.health = ally.max_health * 0.5
+			_broadcast_coop_notice("%s A ÉTÉ RÉANIMÉ(E) !" % ally.name)
+			return
+
+	for chest_id in coop_chest_looted.keys():
+		if bool(coop_chest_looted[chest_id]):
+			continue
+		var chest_pos: Vector3 = coop_chest_positions.get(chest_id, Vector3.ZERO)
+		if caster.global_position.distance_to(chest_pos) < 2.6:
+			coop_chest_looted[chest_id] = true
+			caster.health = minf(caster.max_health, caster.health + caster.max_health * 0.5)
+			_broadcast_coop_notice("COFFRE OUVERT : SOIN RÉCUPÉRÉ")
+			return
+
+	var defs := _coop_room_defs()
+	var entrance: Dictionary = defs["A_ENTRANCE"]
+	var to_entrance: Vector3 = caster.global_position - Vector3(float(entrance["x"]), caster.global_position.y, float(entrance["z"]))
+	to_entrance.y = 0.0
+	if to_entrance.length() < float(entrance["half_x"]):
+		if not _coop_all_clear():
+			_broadcast_coop_notice("IL FAUT NETTOYER TOUT LE DONJON ET RÉCUPÉRER LA CLÉ DU BOSS")
+		else:
+			coop_victory = true
+			_broadcast_coop_notice("LE PORTAIL S'OUVRE — VICTOIRE !")
+			_end_coop_match(true)
+
+func _broadcast_coop_notice(text: String) -> void:
+	print("COOP DONJON : ", text)
+	_network_client_coop_notice(text)
+	var network_node := get_node_or_null("/root/Network")
+	if network_node == null or not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	for target_id in multiplayer.get_peers():
+		network_node.arena_coop_notice.rpc_id(int(target_id), text)
+
+func _network_client_coop_notice(text: String) -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	var label := Label.new()
+	label.position = Vector2(390, 40)
+	label.size = Vector2(500, 50)
+	label.text = text
+	_style_banner_label(label, Color("c9a24d"), 15)
+	hud.add_child(label)
+	var tween := create_tween()
+	tween.tween_interval(3.5)
+	tween.tween_property(label, "modulate:a", 0.0, 0.6)
+	tween.tween_callback(label.queue_free)
+
+func _end_coop_match(victory: bool) -> void:
+	if game_over:
+		return
+	game_over = true
+	_show_match_results(victory, "ÉQUIPE" if victory else "LE DONJON", "")
+	var network_node := get_node_or_null("/root/Network")
+	if network_node == null or not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	for target_id in multiplayer.get_peers():
+		network_node.arena_coop_result.rpc_id(int(target_id), victory)
+
+func _network_client_coop_result(victory: bool) -> void:
+	if game_over:
+		return
+	game_over = true
+	_show_match_results(victory, "ÉQUIPE" if victory else "LE DONJON", "")
+
 func _network_receive_player_input(peer_id: int, move_direction: Vector3, aim_direction: Vector3, input_sequence: int = 0, jump_pressed: bool = false, sprint_held: bool = false) -> void:
 	if not multiplayer.is_server() or peer_id <= 0:
 		return
@@ -1280,7 +1521,7 @@ func _network_receive_ability_request(peer_id: int, kind: String, direction: Vec
 	var fighter := network_fighters.get(peer_id) as ArenaPlayer3D
 	if fighter == null or not is_instance_valid(fighter) or fighter.is_bot:
 		return
-	var allowed := ["dash", "teleport", "orb", "nova", "flee", "charge", "eren_charge", "spirit", "heal", "shield", "axe_throw", "dagger_throw"]
+	var allowed := ["dash", "teleport", "orb", "nova", "flee", "charge", "eren_charge", "spirit", "heal", "shield", "axe_throw", "dagger_throw", "interact"]
 	if kind not in allowed:
 		return
 	if fighter.process_mode == Node.PROCESS_MODE_DISABLED or fighter.health <= 0.0:
@@ -1302,6 +1543,7 @@ func _network_receive_ability_request(peer_id: int, kind: String, direction: Vec
 		"shield": fighter.try_shield()
 		"axe_throw": fighter.try_throw_axe(direction, clampf(value, 0.0, 1.0))
 		"dagger_throw": fighter.try_throw_dagger(direction)
+		"interact": fighter.try_interact()
 
 func _refresh_network_targets() -> void:
 	var fighters := get_tree().get_nodes_in_group("fighters")
@@ -1604,6 +1846,9 @@ func mode_value_for_bots() -> String:
 ## illimité pour tester une map librement.
 func _is_explore_mode() -> bool:
 	return mode_value_for_bots() == "CUSTOM EXPLORE"
+
+func _is_coop_mode() -> bool:
+	return mode_value_for_bots() == "CUSTOM COOP DUNGEON"
 
 func _is_duel_mode() -> bool:
 	return mode_value_for_bots() == "1V1 DUEL"
@@ -2624,6 +2869,8 @@ func _on_spell_cast(kind: String, origin: Vector3, direction: Vector3, caster: C
 		_spawn_thrown_axe(caster, direction)
 	elif kind == "dagger_throw":
 		_spawn_thrown_dagger(caster, direction)
+	elif kind == "interact":
+		_resolve_coop_interact(caster as ArenaPlayer3D)
 	elif kind == "shield":
 		vfx_manager.spawn_shield_bash(self, caster.global_position, direction)
 		_spawn_kaithlyn_shield_fx(caster)

@@ -1601,7 +1601,12 @@ func _resolve_coop_interact(caster: ArenaPlayer3D) -> void:
 	var entrance: Dictionary = defs["A_ENTRANCE"]
 	var to_entrance: Vector3 = caster.global_position - Vector3(float(entrance["x"]), caster.global_position.y, float(entrance["z"]))
 	to_entrance.y = 0.0
-	if to_entrance.length() < float(entrance["half_x"]):
+	# Marge généreuse au-delà du rayon "officiel" de la salle : les bornes de
+	# _coop_room_defs sont calculées à partir de la grille de génération du
+	# labyrinthe, pas mesurées sur la géométrie réelle — mieux vaut détecter
+	# un peu trop large ici (aucun autre système ne réagit dans cette zone)
+	# que rater le portail parce que le joueur est jugé "à quelques mètres".
+	if to_entrance.length() < float(entrance["half_x"]) + 6.0:
 		if not _coop_all_clear():
 			_broadcast_coop_notice("IL FAUT NETTOYER TOUT LE DONJON ET RÉCUPÉRER LA CLÉ DU BOSS")
 		else:
@@ -1609,6 +1614,11 @@ func _resolve_coop_interact(caster: ArenaPlayer3D) -> void:
 			_broadcast_coop_notice("LE PORTAIL S'OUVRE — VICTOIRE !")
 			_broadcast_coop_portal_vfx(Vector3(float(entrance["x"]), caster.global_position.y, float(entrance["z"])))
 			_end_coop_match(true)
+	else:
+		# Sans ce message, un "interact" qui ne touche ni allié à terre, ni
+		# coffre, ni la zone du portail ne donnait AUCUN retour au joueur —
+		# impossible de distinguer "rien à proximité" d'un bug silencieux.
+		_broadcast_coop_notice("RIEN À PROXIMITÉ (allié à terre, coffre, ou portail dans la salle d'entrée)")
 
 func _broadcast_coop_notice(text: String) -> void:
 	print("COOP DONJON : ", text)

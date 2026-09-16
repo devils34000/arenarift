@@ -1230,7 +1230,6 @@ func _create_monster_health_bar() -> void:
 	background_material.albedo_color = Color(0.05, 0.02, 0.02, 0.85)
 	background_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	background_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	background_material.no_depth_test = true
 	background_material.render_priority = 10
 	background.material_override = background_material
 	_health_bar_root.add_child(background)
@@ -1243,7 +1242,6 @@ func _create_monster_health_bar() -> void:
 	fill_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	fill_material.albedo_color = Color(0.85, 0.15, 0.15, 1.0)
 	fill_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	fill_material.no_depth_test = true
 	fill_material.render_priority = 11
 	_health_bar_fill.material_override = fill_material
 	_health_bar_fill.position.z = 0.001

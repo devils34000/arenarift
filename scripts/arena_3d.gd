@@ -342,6 +342,7 @@ func _ready() -> void:
 		_build_pause_menu()
 		_build_axe_preview()
 		_create_network_countdown_display()
+		_warmup_spell_shaders()
 		if multiplayer.has_multiplayer_peer():
 			call_deferred("_send_network_ready")
 		else:
@@ -603,6 +604,94 @@ func _camera_collision_distance(target: Vector3, desired: Vector3, desired_dista
 		return desired_distance
 	var hit_distance: float = target.distance_to(result.position) - CAMERA_COLLISION_MARGIN
 	return clampf(hit_distance, CAMERA_MIN_DISTANCE, desired_distance)
+
+## En rendu GL Compatibility, chaque nuance de shader (particules, décalcomanies
+## de sort, matériaux émissifs...) est compilée au tout premier affichage réel —
+## d'où les gros freeze ressentis au premier sort lancé en partie. On force ici
+## cette compilation en amont, pendant un court écran de chargement opaque juste
+## après la connexion (donc masquée), plutôt que de la laisser surprendre le
+## joueur au milieu d'un combat.
+func _warmup_spell_shaders() -> void:
+	if vfx_manager == null or camera == null:
+		return
+
+	var overlay := CanvasLayer.new()
+	overlay.name = "ShaderWarmupOverlay"
+	overlay.layer = 200
+	add_child(overlay)
+
+	var backdrop := ColorRect.new()
+	backdrop.color = Color("05070d")
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(backdrop)
+
+	var label := Label.new()
+	label.text = "PRÉPARATION DES EFFETS..."
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_color_override("font_color", Color("9fb4d6"))
+	backdrop.add_child(label)
+
+	# Rig placé devant la caméra (espace local) : garanti dans le frustum quel
+	# que soit l'endroit où le joueur apparaîtra ensuite.
+	var rig := Node3D.new()
+	rig.name = "ShaderWarmupRig"
+	rig.position = Vector3(0.0, 0.0, -3.0)
+	camera.add_child(rig)
+
+	var dummy_projectile := Node3D.new()
+	dummy_projectile.name = "ShaderWarmupProjectile"
+	rig.add_child(dummy_projectile)
+
+	var p: Vector3 = rig.global_position
+	var d := Vector3(0.0, 0.0, -1.0)
+
+	# On couvre un représentant de chaque famille de shader utilisée en jeu
+	# (packs BinbunVFX + shaders procéduraux Aeris/Maylinh/Eren) pour que le
+	# hitch de compilation arrive maintenant, masqué par l'écran ci-dessus.
+	vfx_manager.spawn_orb(rig, p, d)
+	vfx_manager.spawn_hit(rig, p, false)
+	vfx_manager.spawn_hit(rig, p, true)
+	vfx_manager.spawn_explosion(rig, p)
+	vfx_manager.spawn_charge(rig, p)
+	vfx_manager.spawn_dash(rig, p, d)
+	vfx_manager.spawn_axe_plant(rig, p)
+	vfx_manager.spawn_axe_hit(rig, p, d)
+	vfx_manager.spawn_damage_flash(rig, p, d)
+	vfx_manager.spawn_axe_swing(rig, p, d)
+	vfx_manager.spawn_shield_bash(rig, p, d)
+	vfx_manager.spawn_shield_block(rig, p)
+	vfx_manager.spawn_shield_hit(rig, p)
+	vfx_manager.spawn_teleport_start(rig, p)
+	vfx_manager.spawn_teleport_end(rig, p)
+	vfx_manager.spawn_aeris_orb(dummy_projectile, d)
+	vfx_manager.spawn_aeris_hit(rig, p)
+	vfx_manager.spawn_aeris_dash(rig, p, d)
+	vfx_manager.spawn_maylinh_elemental_projectile(dummy_projectile, d)
+	vfx_manager.spawn_maylinh_elemental_heal(rig, p)
+	vfx_manager.spawn_maylinh_hit(rig, p)
+	vfx_manager.spawn_maylinh_spirit(rig, p, d)
+	vfx_manager.spawn_maylinh_heal(rig, p)
+	vfx_manager.spawn_maylinh_flee(rig, p)
+	vfx_manager.spawn_maylinh_cage(rig, p)
+	vfx_manager.spawn_eren_fire_projectile(dummy_projectile, d)
+	vfx_manager.spawn_eren_fire_cast(rig, p, d)
+	vfx_manager.spawn_eren_fire_nova(rig, p)
+	vfx_manager.spawn_eren_fire_nova(rig, p, 1.0, true)
+	vfx_manager.spawn_eren_fire_impact(rig, p)
+	vfx_manager.spawn_eren_fire_trail(rig, p, d)
+	vfx_manager.spawn_eren_charge_burst(rig, p, d)
+
+	# Le temps que le rendu ait vraiment affiché quelques frames avec tous ces
+	# matériaux (donc que la compilation ait eu lieu), avant de retirer l'écran
+	# de chargement et de laisser le joueur agir.
+	await get_tree().create_timer(0.7).timeout
+	if is_instance_valid(rig):
+		rig.queue_free()
+	if is_instance_valid(overlay):
+		overlay.queue_free()
 
 func _build_world() -> void:
 	# Si la scène de l'arène (arena.tscn / Arena1v1.tscn) contient déjà ses

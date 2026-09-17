@@ -59,14 +59,14 @@ size = Vector3(7, 5, 0.4)
 [sub_resource type="BoxShape3D" id="wall_shape"]
 size = Vector3(7, 5, 0.4)
 
-[sub_resource type="BoxShape3D" id="asset_pillar_shape"]
-size = Vector3(1, 2, 1)
-
 [sub_resource type="BoxShape3D" id="asset_steps_shape"]
 size = Vector3(2, 0.5, 1)
 
 [sub_resource type="BoxShape3D" id="asset_floorstep_shape"]
 size = Vector3(2, 0.1, 2)
+
+[sub_resource type="BoxShape3D" id="asset_pillar_shape"]
+size = Vector3(1, 2, 1)
 
 [sub_resource type="StandardMaterial3D" id="pillar_mat"]
 albedo_color = Color(0.85, 0.8, 0.75, 1)
@@ -3673,7 +3673,7 @@ transform = Transform3D(-0.304187, 0, -0.00029775637, 0, 0.24359846, 0, 0.000287
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x2/Collision" unique_id=249081663]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x3" parent="Walls/SpawnZone/steps_1x2" unique_id=1408569015 instance=ExtResource("12_nstko")]
@@ -3683,7 +3683,7 @@ transform = Transform3D(0.9998003, 0, -0.019983392, 0, 1, 0, 0.019983392, 0, 0.9
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x2/steps_1x3/Collision" unique_id=1602467581]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x4" parent="Walls/SpawnZone/steps_1x2" unique_id=1380522594 instance=ExtResource("12_nstko")]
@@ -3693,7 +3693,7 @@ transform = Transform3D(0.9998556, 0, -0.016997255, 0, 1, 0, 0.016997255, 0, 0.9
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x2/steps_1x4/Collision" unique_id=535901256]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x8" parent="Walls/SpawnZone" unique_id=1754446531 instance=ExtResource("12_nstko")]
@@ -3703,7 +3703,7 @@ transform = Transform3D(0.00011392933, 0, -0.30418718, 0, 0.24359846, 0, 0.29393
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x8/Collision" unique_id=309655412]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x7" parent="Walls/SpawnZone" unique_id=690959698 instance=ExtResource("12_nstko")]
@@ -3713,7 +3713,7 @@ transform = Transform3D(-0.00079457887, 0, -0.30418625, 0, 0.24359846, 0, 0.2939
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x7/Collision" unique_id=230106707]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x8" parent="Walls/SpawnZone/steps_1x7" unique_id=1815434955 instance=ExtResource("12_nstko")]
@@ -3723,7 +3723,7 @@ transform = Transform3D(1.0000002, 0, -0.000109460205, 0, 1, 0, 0.000109460205, 
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x7/steps_1x8/Collision" unique_id=1600571865]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x7" parent="Walls/SpawnZone/steps_1x7" unique_id=1605893517 instance=ExtResource("12_nstko")]
@@ -3733,7 +3733,7 @@ transform = Transform3D(0.999995, 0, -0.0030961465, 0, 1, 0, 0.0030961465, 0, 0.
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x7/steps_1x7/Collision" unique_id=1181165722]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x10" parent="Walls/SpawnZone" unique_id=686976170 instance=ExtResource("12_nstko")]
@@ -3743,7 +3743,7 @@ transform = Transform3D(-0.00012335856, 0, 0.30418733, 0, 0.24359846, 0, -0.2939
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x10/Collision" unique_id=1278073012]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x12" parent="Walls/SpawnZone" unique_id=1834511082 instance=ExtResource("12_nstko")]
@@ -3753,7 +3753,7 @@ transform = Transform3D(-0.0016497811, 0, 0.30418268, 0, 0.24359846, 0, -0.29393
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x12/Collision" unique_id=78252793]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x11" parent="Walls/SpawnZone" unique_id=1217509631 instance=ExtResource("12_nstko")]
@@ -3763,7 +3763,7 @@ transform = Transform3D(-0.0010318644, 0, 0.30418554, 0, 0.24359846, 0, -0.29393
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x11/Collision" unique_id=211209005]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="floor_step_x1_2x2" parent="Walls/SpawnZone" unique_id=465746802 instance=ExtResource("13_sx43e")]
@@ -3773,7 +3773,7 @@ transform = Transform3D(1.7968328, 0, -7.093677e-09, 0, 0.24359846, 0, -5.880666
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/floor_step_x1_2x2/Collision" unique_id=509635468]
-position = Vector3(0, -0.05, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
 shape = SubResource("asset_floorstep_shape")
 
 [node name="steps_1x13" parent="Walls/SpawnZone" unique_id=1109109150 instance=ExtResource("12_nstko")]
@@ -3783,7 +3783,7 @@ transform = Transform3D(0.0026291998, 0, 0.30417594, 0, 0.24359846, 0, -0.293928
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x13/Collision" unique_id=1302825378]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x13" parent="Walls/SpawnZone/steps_1x13" unique_id=1828372581 instance=ExtResource("12_nstko")]
@@ -3793,7 +3793,7 @@ transform = Transform3D(0.9999541, 0, -0.009585839, 0, 1, 0, 0.009585839, 0, 0.9
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x13/steps_1x13/Collision" unique_id=1215264595]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x9" parent="Walls/SpawnZone" unique_id=1244866544 instance=ExtResource("12_nstko")]
@@ -3803,7 +3803,7 @@ transform = Transform3D(-0.0035470892, 0, -0.30416653, 0, 0.24359846, 0, 0.29391
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x9/Collision" unique_id=1547640408]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x6" parent="Walls/SpawnZone" unique_id=1710108984 instance=ExtResource("12_nstko")]
@@ -3813,7 +3813,7 @@ transform = Transform3D(0.30417758, 0, 0.0024125006, 0, 0.24359846, 0, -0.002331
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/Collision" unique_id=1516083910]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x6" parent="Walls/SpawnZone/steps_1x6" unique_id=1110791437 instance=ExtResource("12_nstko")]
@@ -3823,7 +3823,7 @@ transform = Transform3D(0.99996996, 0, 0.007930966, 0, 1, 0, -0.007930966, 0, 0.
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/Collision" unique_id=910911954]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x6" parent="Walls/SpawnZone/steps_1x6/steps_1x6" unique_id=2042620829 instance=ExtResource("12_nstko")]
@@ -3833,7 +3833,7 @@ transform = Transform3D(0.99997026, 0, 0.007930972, 0, 1, 0, -0.007930972, 0, 0.
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/steps_1x6/Collision" unique_id=974669077]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="pillar" parent="Walls/SpawnZone/steps_1x6/steps_1x6" unique_id=1224365497 instance=ExtResource("8_gsq78")]
@@ -3843,7 +3843,7 @@ transform = Transform3D(0.99987286, 0, -0.015861424, 0, 2.2034974, 0, 0.01586142
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x6/pillar/Collision" unique_id=607409992]
-position = Vector3(0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("asset_pillar_shape")
 
 [node name="steps_1x5" parent="Walls/SpawnZone/steps_1x6" unique_id=889847445 instance=ExtResource("12_nstko")]
@@ -3853,7 +3853,7 @@ transform = Transform3D(0.9999885, 0, 0.0049443785, 0, 1, 0, -0.0049443785, 0, 0
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x6/steps_1x5/Collision" unique_id=1876808229]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x5" parent="Walls/SpawnZone" unique_id=1501787922 instance=ExtResource("12_nstko")]
@@ -3863,7 +3863,7 @@ transform = Transform3D(0.30418342, 0, 0.0015040133, 0, 0.24359846, 0, -0.001453
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x5/Collision" unique_id=1639526405]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x14" parent="Walls/SpawnZone" unique_id=1811652454 instance=ExtResource("12_nstko")]
@@ -3873,7 +3873,7 @@ transform = Transform3D(0.3041846, 0, -0.0012485674, 0, 0.24359846, 0, 0.0012065
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x14/Collision" unique_id=352865762]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x15" parent="Walls/SpawnZone" unique_id=1449034373 instance=ExtResource("12_nstko")]
@@ -3883,7 +3883,7 @@ transform = Transform3D(-0.30408457, 0, 0.007899492, 0, 0.24359846, 0, -0.007633
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x15/Collision" unique_id=917557512]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x3" parent="Walls/SpawnZone" unique_id=1279376673 instance=ExtResource("12_nstko")]
@@ -3893,7 +3893,7 @@ transform = Transform3D(-0.30418476, 0, -0.0012062597, 0, 0.24359846, 0, 0.00116
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x3/Collision" unique_id=606724164]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="steps_1x4" parent="Walls/SpawnZone" unique_id=1027547755 instance=ExtResource("12_nstko")]
@@ -3903,7 +3903,7 @@ transform = Transform3D(-0.30417725, 0, 0.002454807, 0, 0.24359846, 0, -0.002372
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/steps_1x4/Collision" unique_id=472382781]
-position = Vector3(0, 0.25, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.5)
 shape = SubResource("asset_steps_shape")
 
 [node name="pillar8" parent="Walls/SpawnZone" unique_id=1762544496 instance=ExtResource("8_gsq78")]
@@ -3913,7 +3913,7 @@ transform = Transform3D(0.29885033, 0, 0, 0, 0.4862944, 0, 0, 0, 0.29393908, -2.
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/pillar8/Collision" unique_id=1649591159]
-position = Vector3(0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("asset_pillar_shape")
 
 [node name="pillar9" parent="Walls/SpawnZone" unique_id=2131308754 instance=ExtResource("8_gsq78")]
@@ -3923,7 +3923,7 @@ transform = Transform3D(0.30418715, 0, 0, 0, 0.5605723, 0, 0, 0, 0.29393908, -6.
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/pillar9/Collision" unique_id=229494902]
-position = Vector3(0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("asset_pillar_shape")
 
 [node name="pillar10" parent="Walls/SpawnZone" unique_id=360819458 instance=ExtResource("8_gsq78")]
@@ -3933,7 +3933,7 @@ transform = Transform3D(0.30418715, 0, 0, 0, 0.5549596, 0, 0, 0, 0.29393908, -6.
 collision_layer = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Walls/SpawnZone/pillar10/Collision" unique_id=825887678]
-position = Vector3(0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("asset_pillar_shape")
 
 [node name="Pillars" type="Node3D" parent="." unique_id=330722810]
@@ -4553,43 +4553,51 @@ omni_range = 11.696
 omni_attenuation = 0.0
 script = ExtResource("2_torch")
 
+[node name="Torch_61" type="OmniLight3D" parent="Torches" unique_id=751208631]
+transform = Transform3D(0.6981267, 0, 0, 0, 0.6362643, 0, 0, 0, 0.5904376, 55.09046, 12.722732, 46.9194)
+light_color = Color(1, 0.58, 0.25, 1)
+light_energy = 4.023
+omni_range = 31.938
+omni_attenuation = -0.29
+script = ExtResource("2_torch")
+
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1082077178]
 
 [node name="Ally_Astral_01" type="Marker3D" parent="SpawnPoints" unique_id=1073262095]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.001154, 0.34953016, 82.66014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.001154, 0.823131, 82.66014)
 
 [node name="Ally_Astral_02" type="Marker3D" parent="SpawnPoints" unique_id=1543710776]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.001154, 0.34953016, 86.12015)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.001154, 0.823131, 86.12015)
 
 [node name="Ally_Astral_03" type="Marker3D" parent="SpawnPoints" unique_id=90856612]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.001154, 0.34953016, 86.12015)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.001154, 0.823131, 86.12015)
 
 [node name="Ally_Astral_04" type="Marker3D" parent="SpawnPoints" unique_id=1787336118]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.001154, 0.34953016, 82.66014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.001154, 0.823131, 82.66014)
 
 [node name="Ally_Astral_05" type="Marker3D" parent="SpawnPoints" unique_id=1154274772]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.001154, 0.34953016, 79.20015)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.001154, 0.823131, 79.20015)
 
 [node name="Ally_Astral_06" type="Marker3D" parent="SpawnPoints" unique_id=1270051828]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.001154, 0.34953016, 79.20015)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.001154, 0.823131, 79.20015)
 
 [node name="Enemy_Arcane_01" type="Marker3D" parent="SpawnPoints" unique_id=1157097400]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.001154, 0.34953016, 82.66014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.001154, 0.823131, 82.66014)
 
 [node name="Enemy_Arcane_02" type="Marker3D" parent="SpawnPoints" unique_id=435818067]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.001154, 0.34953016, 84.390144)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.001154, 0.823131, 84.390144)
 
 [node name="Enemy_Arcane_03" type="Marker3D" parent="SpawnPoints" unique_id=18898206]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.001154, 0.34953016, 84.390144)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.001154, 0.823131, 84.390144)
 
 [node name="Enemy_Arcane_04" type="Marker3D" parent="SpawnPoints" unique_id=1910685622]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.001154, 0.34953016, 82.66014)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.001154, 0.823131, 82.66014)
 
 [node name="Enemy_Arcane_05" type="Marker3D" parent="SpawnPoints" unique_id=1743520015]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.001154, 0.34953016, 80.930145)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.001154, 0.823131, 80.930145)
 
 [node name="Enemy_Arcane_06" type="Marker3D" parent="SpawnPoints" unique_id=813777116]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.001154, 0.34953016, 80.930145)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.001154, 0.823131, 80.930145)
 
 [node name="MonsterSpawnPoints" type="Node3D" parent="." unique_id=14677019]
 
@@ -4651,7 +4659,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.1005964, 0.1, 17.746162)
 transform = Transform3D(-0.010442807, 0, 0.9999981, 0, 4.5656376, 0, -5.3603315, 0, -0.0019481607, -15.082804, -0.33829117, -59.23327)
 
 [node name="block_arch_4x5" parent="." unique_id=2104079909 instance=ExtResource("10_ljvxv")]
-transform = Transform3D(0.038033, 0, 1.2313066, 0, 4.520938, 0, -5.634878, 0, 0.008310789, 24.64804, 0, 83.24042)
+transform = Transform3D(0.038033, 0, 1.2313066, 0, 4.520938, 0, -5.634878, 0, 0.008310789, 24.64804, -0.23070616, 83.24042)
 
 [node name="block_rnd_crn_1x1" parent="." unique_id=1369232792 instance=ExtResource("11_t3cey")]
 transform = Transform3D(-0.03776931, 0, 1.5869225, 0, 3.7042086, 0, -1.4715792, 0, -0.04072969, -14.466925, -0.15674019, -100.442444)
